@@ -50,7 +50,7 @@ export function buildQuote(listing: Listing, nights: number, settings: Settings)
     const rate =
       rule.kind === "percent" ? `${trimNumber(rule.value)} %` : formatMoney(rule.value, currency);
     lines.push({
-      label: `Commission ${rate} · ${payerLabel(rule.payer)}`,
+      label: `Commission ${rate} · ${rule.label} · ${payerLabel(rule.payer)}`,
       amount: gross,
     });
     for (const promo of promos.filter((item) => item.target === "commission")) {

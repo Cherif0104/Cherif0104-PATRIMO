@@ -5,6 +5,20 @@ import type { LayerGroup, Map as LeafletMap, Marker } from "leaflet";
 import { pinPrice } from "@/lib/format";
 import type { Listing } from "@/lib/types";
 
+const BASE_TILES =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}";
+const LABEL_TILES =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}";
+
+function addBasemap(L: typeof import("leaflet"), map: import("leaflet").Map) {
+  const options = {
+    attribution: "Tuiles &copy; Esri",
+    maxZoom: 16,
+  };
+  L.tileLayer(BASE_TILES, options).addTo(map);
+  L.tileLayer(LABEL_TILES, { ...options, attribution: "" }).addTo(map);
+}
+
 type MapProps = {
   listings: Listing[];
   activeId?: string | null;
@@ -31,11 +45,7 @@ export function MapView({ listings, activeId, hoveredId, onSelect }: MapProps) {
       await import("leaflet/dist/leaflet.css");
       if (disposed || !node.current || mapRef.current) return;
       const map = L.map(node.current, { scrollWheelZoom: true }).setView([14.72, -17.45], 11);
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-        attribution: "&copy; OpenStreetMap &copy; CARTO",
-        subdomains: "abcd",
-        maxZoom: 19,
-      }).addTo(map);
+      addBasemap(L, map);
       layerRef.current = L.layerGroup().addTo(map);
       mapRef.current = map;
       const observer = new ResizeObserver(() => map.invalidateSize());
@@ -125,10 +135,7 @@ export function PickMap({
       await import("leaflet/dist/leaflet.css");
       if (disposed || !node.current || mapRef.current) return;
       const map = L.map(node.current).setView([lat, lng], 12);
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-        attribution: "&copy; OpenStreetMap &copy; CARTO",
-        subdomains: "abcd",
-      }).addTo(map);
+      addBasemap(L, map);
       const marker = L.marker([lat, lng]).addTo(map);
       map.on("click", (event) => {
         marker.setLatLng(event.latlng);

@@ -155,10 +155,10 @@ function RuleCard({ rule, onChange }: { rule: CommissionRule; onChange: (partial
       </div>
       <p className="mt-1 text-xs leading-5 text-[#6a6a6a]">
         {rule.mode === "gestion"
-          ? "S'applique aux biens marqués « Géré par Ameena ». En séjour, le pourcentage porte sur le montant du séjour. En location, il suit la base choisie."
+          ? "S'applique à tous les biens marqués « Géré par Ameena », à la place de la règle Séjour ou Location. En séjour, le pourcentage porte sur le montant du séjour. En location, il suit la base choisie."
           : rule.mode === "sejour"
-            ? "Pour les séjours que le propriétaire gère lui-même. Le pourcentage porte sur le montant des nuits."
-            : "Pour les locations longue durée. Choisissez un mois de loyer, l'avance, ou le montant encaissé."}
+            ? "Pour les séjours que le propriétaire gère lui-même. Un bien géré par Ameena suit la règle Gestion, pas celle-ci."
+            : "Pour les locations que le propriétaire gère lui-même. Un bien géré par Ameena suit la règle Gestion."}
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="text-sm">

@@ -143,6 +143,8 @@ test("un bien géré utilise la règle Gestion", () => {
   assert.equal(quote.commission, 38_250);
   assert.equal(quote.payer, "client");
   assert.equal(quote.guestPays, 255_000 + 38_250);
+  assert.match(quote.lines.map((line) => line.label).join(" "), /Gestion/);
+  assert.match(quote.lines.map((line) => line.label).join(" "), /client/);
 });
 
 test("montant fixe", () => {

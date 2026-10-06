@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Bed, Building2, Globe, Home, KeyRound, Shield, Sparkles, Waves } from "lucide-react";
 import { AdSlot } from "@/components/ad-slot";
+import { OfferCard } from "@/components/offer-card";
 import { PropertyCard } from "@/components/property-card";
 import { SearchBar } from "@/components/search-bar";
 import { cx } from "@/lib/format";
+import { EXPERIENCES, SERVICES } from "@/lib/catalog";
 import { useAmeena } from "@/lib/store";
 import type { Listing } from "@/lib/types";
 
@@ -79,16 +81,16 @@ export default function HomePage() {
             Afficher la carte
           </Link>
         </div>
-        <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 xl:grid-cols-4">
-          {listings.slice(0, 4).map((listing) => (
+        <div className="grid grid-cols-1 gap-x-6 gap-y-10 min-[550px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          {listings.slice(0, 5).map((listing) => (
             <PropertyCard key={listing.id} listing={listing} />
           ))}
         </div>
         <div className="my-10">
           <AdSlot placement="accueil-bandeau" />
         </div>
-        <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 xl:grid-cols-4">
-          {listings.slice(4).map((listing) => (
+        <div className="grid grid-cols-1 gap-x-6 gap-y-10 min-[550px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          {listings.slice(5).map((listing) => (
             <PropertyCard key={listing.id} listing={listing} />
           ))}
         </div>
@@ -97,6 +99,44 @@ export default function HomePage() {
         )}
         <div className="mt-12">
           <AdSlot placement="accueil-rangee" />
+        </div>
+      </section>
+
+      <section className="px-4 pb-4 md:px-10 xl:px-16">
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight">Expériences</h2>
+            <p className="mt-1 text-sm text-[#6a6a6a]">Pirogue, table, marché, lagune — à réserver à part du logement.</p>
+          </div>
+          <Link href="/experiences" className="shrink-0 text-sm font-medium underline">
+            Tout voir
+          </Link>
+        </div>
+        <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0">
+          {EXPERIENCES.map((offer) => (
+            <div key={offer.id} className="w-[78vw] shrink-0 sm:w-[300px] lg:w-[320px]">
+              <OfferCard offer={offer} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="px-4 py-10 md:px-10 xl:px-16">
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight">Services</h2>
+            <p className="mt-1 text-sm text-[#6a6a6a]">Ménage, accueil, chef, linge, photos, trajet depuis l&apos;aéroport.</p>
+          </div>
+          <Link href="/services" className="shrink-0 text-sm font-medium underline">
+            Tout voir
+          </Link>
+        </div>
+        <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0">
+          {SERVICES.map((offer) => (
+            <div key={offer.id} className="w-[78vw] shrink-0 sm:w-[300px] lg:w-[320px]">
+              <OfferCard offer={offer} />
+            </div>
+          ))}
         </div>
       </section>
 

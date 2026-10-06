@@ -25,5 +25,5 @@ export function readImage(file: File, max = 1400): Promise<string> {
 }
 
 export function photo(id: string) {
-  return `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1800&q=80`;
+  return `https://images.unsplash.com/${id}?auto=format&fit=crop&w=2000&q=85`;
 }

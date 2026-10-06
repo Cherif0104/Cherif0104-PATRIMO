@@ -7,8 +7,9 @@ import { BadgeCheck, Bath, BedDouble, MapPin, Ruler, Star, X } from "lucide-reac
 import { AdSlot } from "@/components/ad-slot";
 import { BookingCard } from "@/components/booking-card";
 import { MapView } from "@/components/map";
+import { MediaCarousel } from "@/components/media-carousel";
 import { Photo } from "@/components/photo";
-import { btnSecondary, formatDate } from "@/lib/format";
+import { btnSecondary, formatDate, formatMoney } from "@/lib/format";
 import { hostById } from "@/lib/seed";
 import { useAmeena } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
@@ -49,11 +50,12 @@ export default function ListingPage() {
   const images = listing.images.slice(0, 5);
 
   return (
-    <article className="mx-auto max-w-[1120px] px-4 py-6 md:px-6">
+    <article className="mx-auto max-w-[1120px] px-0 pb-36 pt-4 md:px-6 md:py-6 lg:pb-10">
+      <div className="px-4 md:px-0">
       <Link href="/explorer" className="text-sm underline">
         Explorer
       </Link>
-      <h1 className="mt-3 text-[28px] font-semibold tracking-tight md:text-[32px]">{listing.title}</h1>
+      <h1 className="mt-3 text-[26px] font-semibold tracking-tight md:text-[32px]">{listing.title}</h1>
       <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <span className="inline-flex items-center gap-1 font-medium">
           <Star className="h-4 w-4 fill-current" />
@@ -65,25 +67,41 @@ export default function ListingPage() {
           {listing.neighborhood}, {listing.city}, {listing.country}
         </span>
       </p>
+      </div>
 
       <div className="relative mt-4 md:hidden">
-        <div className="relative h-72 overflow-hidden rounded-2xl">
-          <Photo src={images[0]} alt={listing.title} priority sizes="100vw" />
-        </div>
+        <MediaCarousel
+          images={listing.images}
+          alt={listing.title}
+          ratio="h-[72vw] min-h-[280px] max-h-[520px]"
+          radius="rounded-none"
+          sizes="100vw"
+          priority
+          counter
+          onOpen={(index) => setLightbox(index)}
+        />
       </div>
-      <div className="mt-4 hidden h-[420px] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-2xl md:grid">
+      <div className="relative mt-4 hidden h-[min(52vh,480px)] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-[20px] md:grid">
         {images.map((image, index) => (
           <button
-            key={image}
-            className={`relative ${index === 0 ? "col-span-2 row-span-2" : ""}`}
+            key={`${image}-${index}`}
+            className={`relative overflow-hidden ${index === 0 ? "col-span-2 row-span-2" : ""} ${
+              images.length <= 3 && index > 0 ? "col-span-2" : ""
+            } ${images.length === 4 && index === images.length - 1 ? "col-span-2" : ""}`}
             onClick={() => setLightbox(index)}
           >
             <Photo src={image} alt="" priority={index === 0} sizes={index === 0 ? "50vw" : "25vw"} />
           </button>
         ))}
+        <button
+          className="absolute bottom-4 right-4 rounded-lg border border-[#222] bg-white px-4 py-2 text-sm font-medium shadow-sm"
+          onClick={() => setLightbox(0)}
+        >
+          Afficher les photos
+        </button>
       </div>
 
-      <div className="mt-8 grid items-start gap-12 lg:grid-cols-[minmax(0,1.4fr)_380px]">
+      <div className="mt-8 grid items-start gap-12 px-4 lg:grid-cols-[minmax(0,1.4fr)_380px] md:px-0">
         <div>
           <div className="flex items-start justify-between gap-4 border-b border-[#ebebeb] pb-6">
             <div>
@@ -151,20 +169,36 @@ export default function ListingPage() {
         <BookingCard listing={listing} />
       </div>
 
+      <div className="fixed inset-x-0 bottom-[4.25rem] z-40 border-t border-[#ebebeb] bg-white px-4 py-3 lg:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[15px] font-semibold">{formatMoney(listing.price, listing.currency)}</p>
+            <p className="text-xs text-[#6a6a6a]">{listing.mode === "sejour" ? "par nuit" : "par mois"}</p>
+          </div>
+          <a href="#reservation" className={`${btnSecondary} px-5 py-2.5`}>
+            {listing.mode === "sejour" ? "Réserver" : "Demander"}
+          </a>
+        </div>
+      </div>
+
       {lightbox !== null && (
-        <div className="fixed inset-0 z-[1400] flex items-center justify-center bg-black/90 p-4" role="dialog" aria-modal>
-          <button className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white" onClick={() => setLightbox(null)} aria-label="Fermer">
+        <div className="fixed inset-0 z-[1400] bg-black" role="dialog" aria-modal>
+          <button className="absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full bg-white" onClick={() => setLightbox(null)} aria-label="Fermer">
             <X />
           </button>
-          <button className="absolute left-4 rounded-full bg-white px-3 py-2 text-sm" onClick={() => setLightbox((value) => (value === null ? 0 : (value - 1 + images.length) % images.length))}>
-            Précédente
-          </button>
-          <div className="relative h-[80vh] w-full max-w-5xl">
-            <Photo src={images[lightbox]} alt="" sizes="100vw" />
+          <div className="flex h-full items-center px-2 md:px-16">
+            <MediaCarousel
+              images={listing.images}
+              alt={listing.title}
+              ratio="h-[78vh] w-full"
+              radius="rounded-none"
+              sizes="100vw"
+              priority
+              counter
+              index={lightbox}
+              onIndexChange={setLightbox}
+            />
           </div>
-          <button className="absolute right-16 rounded-full bg-white px-3 py-2 text-sm" onClick={() => setLightbox((value) => (value === null ? 0 : (value + 1) % images.length))}>
-            Suivante
-          </button>
         </div>
       )}
     </article>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Bell, ChevronDown } from "lucide-react";
+import { Bell, ChevronDown, Compass, ConciergeBell, Home } from "lucide-react";
 import { btnGhost, cx, formatDateTime, roleLabel } from "@/lib/format";
 import { useAmeena, visibleNotification } from "@/lib/store";
 import type { Role } from "@/lib/types";
@@ -53,25 +53,62 @@ export function Header() {
           <span className="logo-word text-[28px] leading-none text-[#1a1a1a]">Ameena</span>
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex">
-          {links.map((link) => {
-            const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-end gap-8 lg:flex" aria-label="Offres">
+          {[
+            {
+              href: "/",
+              label: "Logements",
+              icon: Home,
+              active: pathname === "/" || pathname.startsWith("/logements") || pathname.startsWith("/explorer"),
+            },
+            {
+              href: "/experiences",
+              label: "Expériences",
+              icon: Compass,
+              active: pathname.startsWith("/experiences"),
+            },
+            {
+              href: "/services",
+              label: "Services",
+              icon: ConciergeBell,
+              active: pathname.startsWith("/services"),
+            },
+          ].map((item) => {
+            const Icon = item.icon;
             return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cx(
-                  "rounded-full px-4 py-2 text-sm font-medium",
-                  active ? "bg-[#f2f2f2]" : "hover:bg-[#f7f7f7]",
-                )}
-              >
-                {link.label}
+              <Link key={item.href} href={item.href} className="flex flex-col items-center gap-1">
+                <Icon className={cx("h-6 w-6", item.active ? "text-[#222]" : "text-[#6a6a6a]")} strokeWidth={item.active ? 2.2 : 1.6} />
+                <span
+                  className={cx(
+                    "border-b-2 pb-0.5 text-xs",
+                    item.active ? "border-[#222] font-semibold text-[#222]" : "border-transparent text-[#6a6a6a] hover:text-[#222]",
+                  )}
+                >
+                  {item.label}
+                </span>
               </Link>
             );
           })}
         </nav>
 
         <div className="ml-auto flex items-center gap-1 md:gap-2">
+          <nav className="mr-1 hidden items-center gap-1 xl:flex">
+            {links.map((link) => {
+              const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cx(
+                    "rounded-full px-3 py-2 text-sm font-medium",
+                    active ? "bg-[#f2f2f2]" : "hover:bg-[#f7f7f7]",
+                  )}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
           <Link href="/publier" className={`${btnGhost} hidden sm:inline-flex`}>
             Publier un bien
           </Link>

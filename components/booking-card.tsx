@@ -49,7 +49,7 @@ export function BookingCard({ listing }: { listing: Listing }) {
   }
 
   return (
-    <aside className="sticky top-28 rounded-3xl border border-[#dddddd] p-6 shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
+    <aside id="reservation" className="rounded-[20px] border border-[#dddddd] p-6 shadow-[0_6px_16px_rgba(0,0,0,0.08)] lg:sticky lg:top-28">
       <p className="text-2xl font-semibold tracking-tight">
         {listing.mode === "sejour" ? "Réserver un séjour" : "Demander la location"}
       </p>

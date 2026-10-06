@@ -63,7 +63,7 @@ function Explorer() {
   const activeListing = listings.find((listing) => listing.id === active) ?? null;
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] flex-col">
+    <div className="flex h-[calc(100dvh-5rem-4.25rem)] flex-col lg:h-[calc(100dvh-5rem)]">
       <div className="flex flex-wrap items-center gap-3 border-b border-[#ebebeb] px-4 py-3 md:px-8">
         <SlidersHorizontal className="h-4 w-4 text-[#6a6a6a]" />
         <select className={`${fieldClass} w-auto`} value={mode} onChange={(event) => setMode(event.target.value)}>
@@ -87,7 +87,7 @@ function Explorer() {
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)]">
         <div className="overflow-y-auto px-4 py-6 md:px-8">
           <AdSlot placement="explorer" compact />
-          <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2">
+          <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 xl:grid-cols-2">
             {listings.map((listing) => (
               <PropertyCard
                 key={listing.id}
@@ -123,7 +123,7 @@ function Explorer() {
         </div>
       </div>
       <button
-        className="fixed bottom-6 left-1/2 z-[400] flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#222] px-5 py-3 text-sm font-medium text-white shadow-lg lg:hidden"
+        className="fixed bottom-[5.15rem] left-1/2 z-[400] flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#222] px-5 py-3 text-sm font-medium text-white shadow-lg lg:hidden"
         onClick={() => setShowMap(true)}
       >
         <Map className="h-4 w-4" />

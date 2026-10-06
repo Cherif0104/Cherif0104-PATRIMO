@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import { BottomNav } from "@/components/bottom-nav";
 import { FooterGate } from "@/components/footer-gate";
 import { Header } from "@/components/header";
 import { Providers } from "@/lib/store";
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Header />
           <main>{children}</main>
           <FooterGate />
+          <BottomNav />
         </Providers>
       </body>
     </html>

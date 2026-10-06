@@ -37,6 +37,7 @@ export function MediaCarousel({
   const [inner, setInner] = useState(0);
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [hot, setHot] = useState(false);
   const startX = useRef(0);
   const startY = useRef(0);
   const axis = useRef<"x" | "y" | null>(null);
@@ -104,7 +105,11 @@ export function MediaCarousel({
   const dots = photos.slice(0, 5);
 
   return (
-    <div className={cx("group/media relative select-none overflow-hidden bg-[#e8e8e8]", radius, ratio)}>
+    <div
+      className={cx("group/media relative select-none overflow-hidden bg-[#e8e8e8]", radius, ratio)}
+      onMouseEnter={() => setHot(true)}
+      onMouseLeave={() => setHot(false)}
+    >
       <div
         className="media-viewport absolute inset-0"
         onPointerDown={onPointerDown}
@@ -144,7 +149,10 @@ export function MediaCarousel({
         <button
           type="button"
           aria-label="Photo précédente"
-          className="media-arrow absolute left-3 top-1/2 z-10 h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-black/10 bg-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.18)]"
+          className={cx(
+            "media-arrow absolute left-3 top-1/2 z-10 h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-black/10 bg-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.18)]",
+            hot && "is-on",
+          )}
           onClick={(event) => {
             event.stopPropagation();
             commit(index - 1);
@@ -157,7 +165,10 @@ export function MediaCarousel({
         <button
           type="button"
           aria-label="Photo suivante"
-          className="media-arrow absolute right-3 top-1/2 z-10 h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-black/10 bg-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.18)]"
+          className={cx(
+            "media-arrow absolute right-3 top-1/2 z-10 h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-black/10 bg-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.18)]",
+            hot && "is-on",
+          )}
           onClick={(event) => {
             event.stopPropagation();
             commit(index + 1);

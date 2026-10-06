@@ -65,8 +65,8 @@ textarea {
   display: none;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .group\/media:hover .media-arrow {
+@media (min-width: 768px) {
+  .media-arrow.is-on {
     display: grid;
   }
 }

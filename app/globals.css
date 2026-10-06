@@ -55,6 +55,22 @@ textarea {
   cursor: pointer;
 }
 
+.media-viewport img {
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.media-arrow {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .group\/media:hover .media-arrow {
+    display: grid;
+  }
+}
+
 .search-pill {
   border: 1px solid #dddddd;
   background: #ffffff;

@@ -12,7 +12,7 @@ export function Photo({
   sizes?: string;
 }) {
   if (!src || src.startsWith("data:") || src.startsWith("blob:")) {
-    return <img src={src} alt={alt} className="h-full w-full object-cover" />;
+    return <img src={src} alt={alt} draggable={false} className="pointer-events-none h-full w-full object-cover" />;
   }
   return (
     <Image
@@ -22,7 +22,8 @@ export function Photo({
       priority={priority}
       quality={85}
       sizes={sizes}
-      className="object-cover"
+      draggable={false}
+      className="pointer-events-none object-cover"
     />
   );
 }

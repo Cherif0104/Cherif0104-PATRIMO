@@ -40,7 +40,8 @@ export function MediaCarousel({
   const startX = useRef(0);
   const startY = useRef(0);
   const axis = useRef<"x" | "y" | null>(null);
-  const moved = useRef(false);
+  const tracking = useRef(false);
+  const moved = useRef(0);
   const index = Math.min(indexProp ?? inner, count - 1);
 
   function commit(next: number) {
@@ -50,28 +51,27 @@ export function MediaCarousel({
   }
 
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    if (photos.length < 2) return;
+    if (photos.length < 2 && !href && !onOpen) return;
+    tracking.current = true;
     startX.current = event.clientX;
     startY.current = event.clientY;
     axis.current = null;
-    moved.current = false;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    moved.current = 0;
+    if (photos.length > 1) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
   }
 
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
-    if (photos.length < 2 || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    if (!tracking.current || photos.length < 2) return;
     const dx = event.clientX - startX.current;
     const dy = event.clientY - startY.current;
+    moved.current = Math.max(moved.current, Math.abs(dx), Math.abs(dy));
     if (!axis.current) {
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
       axis.current = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
-      if (axis.current === "y") {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-        return;
-      }
     }
     if (axis.current !== "x") return;
-    moved.current = true;
     setDragging(true);
     const resist = (index === 0 && dx > 0) || (index === count - 1 && dx < 0);
     setDragX(resist ? dx * 0.32 : dx);
@@ -83,14 +83,15 @@ export function MediaCarousel({
       if (dragX < -width * 0.16) commit(index + 1);
       else if (dragX > width * 0.16) commit(index - 1);
     }
+    tracking.current = false;
     setDragging(false);
     setDragX(0);
     axis.current = null;
   }
 
   function onClick() {
-    if (moved.current) {
-      moved.current = false;
+    if (moved.current > 8) {
+      moved.current = 0;
       return;
     }
     if (onOpen) {
@@ -110,6 +111,7 @@ export function MediaCarousel({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onDragStart={(event) => event.preventDefault()}
         onClick={onClick}
         role={href || onOpen ? "link" : undefined}
         aria-label={href || onOpen ? alt : undefined}
@@ -142,7 +144,7 @@ export function MediaCarousel({
         <button
           type="button"
           aria-label="Photo précédente"
-          className="absolute left-3 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-black/10 bg-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.18)] group-hover/media:grid"
+          className="media-arrow absolute left-3 top-1/2 z-10 h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-black/10 bg-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.18)]"
           onClick={(event) => {
             event.stopPropagation();
             commit(index - 1);
@@ -155,7 +157,7 @@ export function MediaCarousel({
         <button
           type="button"
           aria-label="Photo suivante"
-          className="absolute right-3 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-black/10 bg-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.18)] group-hover/media:grid"
+          className="media-arrow absolute right-3 top-1/2 z-10 h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-black/10 bg-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.18)]"
           onClick={(event) => {
             event.stopPropagation();
             commit(index + 1);

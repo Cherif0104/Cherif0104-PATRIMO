@@ -101,7 +101,13 @@ function Explorer() {
             <p className="py-20 text-center text-[#6a6a6a]">Aucun bien ne correspond. Élargissez la destination ou le prix.</p>
           )}
         </div>
-        <div className={`${showMap ? "fixed inset-0 z-[1200] bg-white pt-20 lg:static lg:pt-0" : "hidden"} relative lg:block`}>
+        <div
+          className={
+            showMap
+              ? "fixed inset-0 z-[1300] h-full bg-white lg:relative lg:inset-auto lg:z-0 lg:h-full lg:bg-transparent"
+              : "relative hidden h-full lg:block"
+          }
+        >
           <MapView
             listings={listings}
             activeId={active}
@@ -116,19 +122,21 @@ function Explorer() {
             </div>
           )}
           {showMap && (
-            <button className="absolute right-4 top-4 z-[500] rounded-full bg-white px-4 py-2 text-sm font-medium shadow lg:hidden" onClick={() => setShowMap(false)}>
+            <button className="absolute right-4 top-4 z-[1400] rounded-full bg-white px-4 py-2 text-sm font-medium shadow lg:hidden" onClick={() => setShowMap(false)}>
               Fermer la carte
             </button>
           )}
         </div>
       </div>
-      <button
-        className="fixed bottom-[5.15rem] left-1/2 z-[400] flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#222] px-5 py-3 text-sm font-medium text-white shadow-lg lg:hidden"
-        onClick={() => setShowMap(true)}
-      >
-        <Map className="h-4 w-4" />
-        Carte
-      </button>
+      {!showMap && (
+        <button
+          className="fixed bottom-[5.15rem] left-1/2 z-[400] flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#222] px-5 py-3 text-sm font-medium text-white shadow-lg lg:hidden"
+          onClick={() => setShowMap(true)}
+        >
+          <Map className="h-4 w-4" />
+          Carte
+        </button>
+      )}
     </div>
   );
 }

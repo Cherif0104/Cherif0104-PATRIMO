@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
 import { createInitial, hostById, hostIdForRole } from "./seed";
+import { loadRemoteState, saveRemoteState, supabase } from "./supabase";
 import type {
   Ad,
   AppState,
@@ -294,25 +295,50 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
 
   useEffect(() => {
-    const raw = localStorage.getItem(KEY);
-    if (raw) {
-      try {
-        dispatch({ type: "hydrate", payload: JSON.parse(raw) as AppState });
-      } catch {
-        setStorageWarning("Les données locales étaient illisibles. La démonstration repart des exemples.");
+    let cancel = false;
+    (async () => {
+      if (supabase) {
+        try {
+          const remote = await loadRemoteState();
+          if (cancel) return;
+          if (remote) dispatch({ type: "hydrate", payload: remote });
+        } catch {
+          if (!cancel) {
+            setStorageWarning("Supabase est injoignable. Les données affichées restent celles de cet appareil.");
+          }
+        }
       }
-    }
-    setReady(true);
+      if (!supabase) {
+        const raw = localStorage.getItem(KEY);
+        if (raw) {
+          try {
+            dispatch({ type: "hydrate", payload: JSON.parse(raw) as AppState });
+          } catch {
+            setStorageWarning("Les données locales étaient illisibles. La démonstration repart des exemples.");
+          }
+        }
+      }
+      if (!cancel) setReady(true);
+    })();
+    return () => {
+      cancel = true;
+    };
   }, []);
 
   useEffect(() => {
     if (!ready) return;
     try {
       localStorage.setItem(KEY, JSON.stringify(state));
-      setStorageWarning(null);
     } catch {
       setStorageWarning("Le navigateur n'a plus assez de place pour les photos. Retirez une image ou réinitialisez la démo.");
     }
+    if (!supabase) return;
+    const timer = window.setTimeout(() => {
+      saveRemoteState(state).catch(() => {
+        setStorageWarning("L'enregistrement Supabase a échoué. La copie locale est conservée.");
+      });
+    }, 400);
+    return () => window.clearTimeout(timer);
   }, [state, ready]);
 
   const value = useMemo(

@@ -7,6 +7,7 @@ import { AdSlot } from "@/components/ad-slot";
 import { OfferCard } from "@/components/offer-card";
 import { PropertyCard } from "@/components/property-card";
 import { SearchBar } from "@/components/search-bar";
+import { TrustStrip } from "@/components/trust-strip";
 import { cx } from "@/lib/format";
 import { EXPERIENCES, SERVICES } from "@/lib/catalog";
 import { useAmeena } from "@/lib/store";
@@ -39,7 +40,12 @@ export default function HomePage() {
   const { state } = useAmeena();
   const [category, setCategory] = useState("tous");
   const listings = useMemo(
-    () => state.listings.filter((listing) => matchCategory(listing, category)),
+    () =>
+      state.listings.filter(
+        (listing) =>
+          (!listing.publicationStatus || listing.publicationStatus === "published") &&
+          matchCategory(listing, category),
+      ),
     [state.listings, category],
   );
   const shops = state.settings.ads.filter((ad) => ad.active && ad.placement === "boutique");
@@ -68,6 +74,8 @@ export default function HomePage() {
           })}
         </div>
       </section>
+
+      <TrustStrip />
 
       <section className="px-4 py-8 md:px-10 xl:px-16">
         <div className="mb-6 flex items-end justify-between gap-4">

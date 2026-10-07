@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { btnPrimary, fieldClass, nightsBetween, addDaysISO } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
 import { buildQuote } from "@/lib/quote";
+import { createMarketBooking } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import type { Listing } from "@/lib/types";
 import { QuoteView } from "./quote-view";
@@ -10,15 +14,25 @@ import { uid } from "@/lib/format";
 
 export function BookingCard({ listing }: { listing: Listing }) {
   const { state, dispatch } = useAmeena();
+  const { user, profile } = useAuth();
+  const pathname = usePathname();
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     setFrom(addDaysISO(5));
     setTo(addDaysISO(8));
   }, []);
+
+  useEffect(() => {
+    if (profile?.full_name) setName(profile.full_name);
+    if (profile?.phone) setPhone(profile.phone);
+  }, [profile]);
 
   const nights = listing.mode === "sejour" ? Math.max(1, nightsBetween(from, to) || 3) : 1;
   const invalid = Boolean(listing.mode === "sejour" && from && to && nightsBetween(from, to) < 1);
@@ -27,25 +41,44 @@ export function BookingCard({ listing }: { listing: Listing }) {
     [listing, nights, invalid, state.settings],
   );
 
-  function reserve() {
-    if (!name.trim() || invalid) return;
-    dispatch({
-      type: "add-reservation",
-      reservation: {
-        id: uid("res"),
-        listingId: listing.id,
+  async function reserve() {
+    if (!user || !name.trim() || invalid) return;
+    setBusy(true);
+    setError("");
+    const start = from || addDaysISO(5);
+    const end = listing.mode === "sejour" ? to || addDaysISO(8) : addDaysISO(370);
+    try {
+      await createMarketBooking({
+        listing,
+        userId: user.id,
         guestName: name.trim(),
-        mode: listing.mode,
-        from: from || addDaysISO(5),
-        to: listing.mode === "sejour" ? to || addDaysISO(8) : addDaysISO(370),
-        status: "demande",
-        subtotal: quote.subtotal,
-        commission: quote.commission,
-        guestPays: quote.guestPays,
-        currency: quote.currency,
-      },
-    });
-    setSent(true);
+        guestPhone: phone.trim(),
+        from: start,
+        to: end,
+        quote,
+      });
+      dispatch({
+        type: "add-reservation",
+        reservation: {
+          id: uid("res"),
+          listingId: listing.id,
+          guestName: name.trim(),
+          mode: listing.mode,
+          from: start,
+          to: end,
+          status: "demande",
+          subtotal: quote.subtotal,
+          commission: quote.commission,
+          guestPays: quote.guestPays,
+          currency: quote.currency,
+        },
+      });
+      setSent(true);
+    } catch {
+      setError("La demande n’a pas pu être enregistrée. Vérifiez votre connexion puis réessayez.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -74,20 +107,33 @@ export function BookingCard({ listing }: { listing: Listing }) {
           Votre nom
           <input className={`${fieldClass} mt-1`} value={name} onChange={(event) => setName(event.target.value)} placeholder="Nom et prénom" />
         </label>
+        <label className="text-xs font-medium">
+          Téléphone
+          <input className={`${fieldClass} mt-1`} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+221 77 000 00 00" autoComplete="tel" />
+        </label>
       </div>
       {invalid && <p className="mt-3 text-sm text-[#c13515]">Le départ doit suivre l&apos;arrivée.</p>}
       <div className="mt-5">
         <QuoteView quote={quote} />
       </div>
+      {error && <p role="alert" className="mt-3 text-sm text-[#a52a12]">{error}</p>}
       {sent ? (
         <p className="mt-5 rounded-2xl bg-[#e7f4f2] px-4 py-3 text-sm leading-6 text-[#145e57]">
-          Demande envoyée. Elle apparaît dans l&apos;espace du propriétaire, avec le montant et la commission du moment.
+          Demande enregistrée. Vous pouvez la suivre dans votre compte, avec le prix et la commission figés à cet instant.
         </p>
+      ) : !user ? (
+        <Link
+          className={`${btnPrimary} mt-5 w-full py-3`}
+          href={`/connexion?retour=${encodeURIComponent(pathname)}`}
+        >
+          Se connecter pour demander
+        </Link>
       ) : (
-        <button className={`${btnPrimary} mt-5 w-full py-3`} disabled={!name.trim() || invalid} onClick={reserve}>
-          {listing.mode === "sejour" ? "Demander le séjour" : "Demander à visiter"}
+        <button className={`${btnPrimary} mt-5 w-full py-3`} disabled={busy || !name.trim() || invalid} onClick={() => void reserve()}>
+          {busy ? "Enregistrement…" : listing.mode === "sejour" ? "Demander le séjour" : "Demander à visiter"}
         </button>
       )}
+      <p className="mt-3 text-center text-xs text-[#6a6a6a]">Aucun débit à cette étape.</p>
     </aside>
   );
 }

@@ -1,22 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Photo } from "@/components/photo";
 import { PageHead, Pill } from "@/components/ui";
+import { useAuth } from "@/lib/auth";
 import { QuoteView } from "@/components/quote-view";
 import { btnPrimary, btnSecondary, fieldClass, uid } from "@/lib/format";
 import { readImage } from "@/lib/images";
 import { PLACEMENT_LABEL } from "@/lib/labels";
 import { buildQuote } from "@/lib/quote";
+import { loadListingsForReview, reviewListing, savePlatformSettings } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
-import type { Ad, AdPlacement, CommissionRule, Payer, Promo } from "@/lib/types";
+import type { Ad, AdPlacement, CommissionRule, Listing, Payer, Promo } from "@/lib/types";
 
 export default function AdminPage() {
-  const { state, dispatch, storageWarning } = useAmeena();
+  const { state, dispatch, storageWarning, ready } = useAmeena();
+  const { user } = useAuth();
+  const [settingsStatus, setSettingsStatus] = useState("");
   const { settings, listings } = state;
   const villa = listings.find((item) => item.id === "villa-almadies") ?? listings.find((item) => item.mode === "sejour");
   const flat = listings.find((item) => item.id === "mermoz") ?? listings.find((item) => item.mode === "location");
   useTitle("Réglages · Ameena");
+
+  useEffect(() => {
+    if (!ready || !user) return;
+    setSettingsStatus("Enregistrement…");
+    const timer = window.setTimeout(() => {
+      savePlatformSettings(user.id, settings)
+        .then(() => setSettingsStatus("Réglages enregistrés"))
+        .catch(() => setSettingsStatus("Échec de l’enregistrement"));
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [ready, settings, user]);
 
   function save(next: typeof settings) {
     dispatch({ type: "patch-settings", settings: next });
@@ -42,14 +58,8 @@ export default function AdminPage() {
         }
       />
       {storageWarning && <p className="mb-4 rounded-2xl bg-[#fff4e5] px-4 py-3 text-sm">{storageWarning}</p>}
-      {state.role !== "admin" && (
-        <p className="mb-6 rounded-2xl bg-[#f7f7f7] px-4 py-3 text-sm">
-          Vous consultez les réglages. Passez en Admin Ameena pour que ce soit l&apos;espace affiché dans le menu.
-          <button className="ml-3 underline" onClick={() => dispatch({ type: "set-role", role: "admin" })}>
-            Passer en admin
-          </button>
-        </p>
-      )}
+      {settingsStatus && <p className="mb-4 text-right text-xs text-[#6a6a6a]">{settingsStatus}</p>}
+      <ReviewQueue />
 
       <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-4">
@@ -130,6 +140,71 @@ export default function AdminPage() {
         <AddAd onAdd={(ad) => save({ ...settings, ads: [...settings.ads, ad] })} />
       </section>
     </div>
+  );
+}
+
+function ReviewQueue() {
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    loadListingsForReview()
+      .then(setListings)
+      .catch(() => setError("La file de validation ne peut pas être chargée."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function decide(listing: Listing, status: "published" | "suspended") {
+    if (!listing.databaseId) return;
+    setBusy(listing.id);
+    setError("");
+    try {
+      await reviewListing(listing.databaseId, status);
+      setListings((rows) => rows.filter((row) => row.id !== listing.id));
+    } catch {
+      setError("La décision n’a pas pu être enregistrée.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  return (
+    <section className="mb-12">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">Validation des annonces</h2>
+          <p className="mt-2 text-sm text-[#6a6a6a]">Une annonce soumise n’est jamais publique avant cette décision.</p>
+        </div>
+        <Pill tone={listings.length ? "warn" : "good"}>{listings.length} à traiter</Pill>
+      </div>
+      {error && <p className="mt-4 rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
+      {loading ? (
+        <p className="mt-4 rounded-2xl bg-[#f7f7f7] p-5 text-sm">Chargement de la file…</p>
+      ) : listings.length === 0 ? (
+        <p className="mt-4 rounded-2xl border border-dashed border-[#cccccc] p-6 text-sm text-[#6a6a6a]">Aucune annonce en attente.</p>
+      ) : (
+        <div className="mt-4 grid gap-4">
+          {listings.map((listing) => (
+            <article key={listing.id} className="grid gap-4 rounded-[20px] border border-[#e5e5e5] p-4 md:grid-cols-[160px_1fr_auto] md:items-center">
+              <div className="relative h-28 overflow-hidden rounded-2xl bg-[#f2f2f2]">
+                <Photo src={listing.images[0]} alt="" sizes="160px" />
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[.12em] text-[#1F6F66]">{listing.mode === "sejour" ? "Séjour" : "Location"}</p>
+                <h3 className="mt-1 font-semibold">{listing.title}</h3>
+                <p className="mt-1 text-sm text-[#6a6a6a]">{listing.neighborhood}, {listing.city} · {listing.images.length} photos</p>
+              </div>
+              <div className="flex flex-wrap gap-2 md:flex-col">
+                <button className={btnPrimary} disabled={busy === listing.id} onClick={() => void decide(listing, "published")}>Publier</button>
+                <button className={btnSecondary} disabled={busy === listing.id} onClick={() => void decide(listing, "suspended")}>Suspendre</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

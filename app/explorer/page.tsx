@@ -54,6 +54,7 @@ function Explorer() {
     if (managedOnly) next.set("gere", "1");
     else next.delete("gere");
     return state.listings.filter((listing) => {
+      if (listing.publicationStatus && listing.publicationStatus !== "published") return false;
       if (!match(listing, next)) return false;
       if (maxPrice && listing.price > Number(maxPrice)) return false;
       return true;

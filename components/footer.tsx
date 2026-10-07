@@ -4,6 +4,9 @@ const columns = [
   {
     title: "Ameena",
     links: [
+      ["Mon compte", "/compte"],
+      ["Centre de confiance", "/confiance"],
+      ["Confidentialité", "/confidentialite"],
       ["Explorer la carte", "/explorer"],
       ["Boutiques partenaires", "/boutiques"],
       ["Publier un bien", "/publier"],

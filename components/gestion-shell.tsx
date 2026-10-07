@@ -11,9 +11,9 @@ import {
   Wallet,
   Wrench,
 } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import { cx, roleLabel } from "@/lib/format";
 import { useAmeena } from "@/lib/store";
-import type { Role } from "@/lib/types";
 
 const links = [
   { href: "/gestion", label: "Tableau", icon: LayoutDashboard, exact: true },
@@ -27,20 +27,22 @@ const links = [
 
 export function GestionShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { state, dispatch } = useAmeena();
+  const { state } = useAmeena();
+  const { user, loading } = useAuth();
 
-  if (state.role === "voyageur") {
+  if (loading) return <div className="p-12 text-center text-sm text-[#6a6a6a]">Ouverture de la gestion…</div>;
+
+  if (!user || state.role === "voyageur") {
     return (
       <div className="mx-auto max-w-xl px-6 py-24 text-center">
         <p className="text-sm text-[#6a6a6a]">Espace de gestion</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">Réservé aux propriétaires et aux agences</h1>
         <p className="mt-3 text-[15px] leading-6 text-[#6a6a6a]">
-          Ouvrez le portefeuille d&apos;Aminata Diallo ou celui de Ndar Immobilier pour suivre les biens, l&apos;argent, les pannes et les états des lieux.
+          Connectez-vous avec un profil professionnel pour suivre vos biens, demandes, finances, incidents et états des lieux.
         </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <RoleButton role="proprietaire" onPick={(role) => dispatch({ type: "set-role", role })} />
-          <RoleButton role="agence" onPick={(role) => dispatch({ type: "set-role", role })} />
-        </div>
+        <Link href={user ? "/compte" : "/connexion?retour=/gestion"} className="mt-6 inline-flex rounded-full bg-[#222] px-5 py-2.5 text-sm font-medium text-white">
+          {user ? "Activer mon profil professionnel" : "Se connecter"}
+        </Link>
       </div>
     );
   }
@@ -74,13 +76,5 @@ export function GestionShell({ children }: { children: React.ReactNode }) {
       </aside>
       <div className="px-4 py-8 md:px-8 lg:px-10">{children}</div>
     </div>
-  );
-}
-
-function RoleButton({ role, onPick }: { role: Role; onPick: (role: Role) => void }) {
-  return (
-    <button className="rounded-full bg-[#222] px-5 py-2.5 text-sm font-medium text-white" onClick={() => onPick(role)}>
-      Entrer comme {roleLabel(role)}
-    </button>
   );
 }

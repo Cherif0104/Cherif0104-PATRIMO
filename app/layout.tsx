@@ -3,6 +3,7 @@ import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import { BottomNav } from "@/components/bottom-nav";
 import { FooterGate } from "@/components/footer-gate";
 import { Header } from "@/components/header";
+import { AuthProvider } from "@/lib/auth";
 import { Providers } from "@/lib/store";
 import "./globals.css";
 
@@ -30,12 +31,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr" className={display.variable}>
       <body className={`${sans.className} antialiased`}>
-        <Providers>
-          <Header />
-          <main>{children}</main>
-          <FooterGate />
-          <BottomNav />
-        </Providers>
+        <AuthProvider>
+          <Providers>
+            <Header />
+            <main>{children}</main>
+            <FooterGate />
+            <BottomNav />
+          </Providers>
+        </AuthProvider>
       </body>
     </html>
   );

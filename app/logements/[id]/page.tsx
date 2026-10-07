@@ -47,11 +47,17 @@ export default function ListingPage() {
   }
 
   const host = hostById(listing.hostId);
+  const hostName = host?.name ?? "Hôte Ameena";
   const images = listing.images.slice(0, 5);
 
   return (
     <article className="mx-auto max-w-[1120px] px-0 pb-36 pt-4 md:px-6 md:py-6 lg:pb-10">
       <div className="px-4 md:px-0">
+      {listing.publicationStatus === "pending_review" && (
+        <p className="mb-4 rounded-xl bg-[#fff4dd] px-4 py-3 text-sm text-[#7a4c00]">
+          Annonce envoyée en validation. Elle n’est visible que dans votre espace tant que le contrôle n’est pas terminé.
+        </p>
+      )}
       <Link href="/explorer" className="text-sm underline">
         Explorer
       </Link>
@@ -106,14 +112,14 @@ export default function ListingPage() {
           <div className="flex items-start justify-between gap-4 border-b border-[#ebebeb] pb-6">
             <div>
               <p className="text-xl font-semibold">
-                {TYPE_LABEL[listing.type]} {listing.mode === "sejour" ? "entier" : "à louer"} · proposé par {host?.name}
+                {TYPE_LABEL[listing.type]} {listing.mode === "sejour" ? "entier" : "à louer"} · proposé par {hostName}
               </p>
               <p className="mt-1 text-sm text-[#6a6a6a]">
                 {listing.guests} voyageurs · {listing.bedrooms} chambres · {listing.beds} lits · {listing.baths} salles d&apos;eau
               </p>
             </div>
             <div className="grid h-12 w-12 place-items-center rounded-full bg-[#1F6F66] text-sm font-semibold text-white">
-              {host?.name.slice(0, 1)}
+              {hostName.slice(0, 1)}
             </div>
           </div>
 

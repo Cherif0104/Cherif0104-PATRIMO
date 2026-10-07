@@ -7,6 +7,9 @@ export type PropertyType = "villa" | "appartement" | "maison" | "riad" | "studio
 
 export type Listing = {
   id: string;
+  databaseId?: string;
+  ownerUserId?: string;
+  publicationStatus?: "draft" | "pending_review" | "published" | "suspended" | "archived";
   title: string;
   city: string;
   country: string;
@@ -227,6 +230,45 @@ export type AppState = {
   notifications: Notification[];
   saved: string[];
   settings: Settings;
+};
+
+export type AccountType = "voyageur" | "proprietaire" | "agence";
+
+export type Profile = {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+  account_type: AccountType;
+  phone: string | null;
+  country_code: string;
+  identity_status: "non_verifie" | "en_verification" | "verifie" | "refuse";
+};
+
+export type MarketBooking = {
+  id: string;
+  listing_id: string | null;
+  listing_key: string;
+  listing_title: string;
+  guest_id: string;
+  guest_name: string;
+  guest_phone: string | null;
+  mode: Mode;
+  start_date: string;
+  end_date: string;
+  status:
+    | "requested"
+    | "preapproved"
+    | "awaiting_payment"
+    | "confirmed"
+    | "declined"
+    | "cancelled"
+    | "completed";
+  subtotal: number;
+  commission: number;
+  total: number;
+  currency: Currency;
+  quote_snapshot: Quote;
+  created_at: string;
 };
 
 export type QuoteLine = { label: string; amount: number };

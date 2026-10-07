@@ -3,36 +3,44 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Bell, ChevronDown, Compass, ConciergeBell, Home } from "lucide-react";
-import { btnGhost, cx, formatDateTime, roleLabel } from "@/lib/format";
+import { Bell, Compass, ConciergeBell, Home, UserRound } from "lucide-react";
+import { btnGhost, cx, formatDateTime } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
 import { useAmeena, visibleNotification } from "@/lib/store";
 import type { Role } from "@/lib/types";
-
-const ROLES: { id: Role; hint: string }[] = [
-  { id: "voyageur", hint: "Marketplace, carte, réservation" },
-  { id: "proprietaire", hint: "Biens d'Aminata Diallo" },
-  { id: "agence", hint: "Portefeuille Ndar Immobilier" },
-  { id: "admin", hint: "Commissions, publicités, gestes" },
-];
 
 export function Header() {
   const pathname = usePathname();
   const { state, dispatch } = useAmeena();
-  const [openRole, setOpenRole] = useState(false);
+  const { user, profile } = useAuth();
   const [openNotes, setOpenNotes] = useState(false);
-  const roleRef = useRef<HTMLDivElement>(null);
   const noteRef = useRef<HTMLDivElement>(null);
   const notes = state.notifications.filter((note) => visibleNotification(state, note));
   const unread = notes.filter((note) => !note.read).length;
 
   useEffect(() => {
     function onPointer(event: MouseEvent) {
-      if (!roleRef.current?.contains(event.target as Node)) setOpenRole(false);
       if (!noteRef.current?.contains(event.target as Node)) setOpenNotes(false);
     }
     window.addEventListener("mousedown", onPointer);
     return () => window.removeEventListener("mousedown", onPointer);
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      if (state.role !== "voyageur") dispatch({ type: "set-role", role: "voyageur" });
+      return;
+    }
+    const role: Role =
+      user.app_metadata?.role === "admin"
+        ? "admin"
+        : profile?.account_type === "agence"
+          ? "agence"
+          : profile?.account_type === "proprietaire"
+            ? "proprietaire"
+            : "voyageur";
+    if (state.role !== role) dispatch({ type: "set-role", role });
+  }, [dispatch, profile?.account_type, state.role, user]);
 
   const links = [
     { href: "/explorer", label: "Explorer" },
@@ -120,7 +128,6 @@ export function Header() {
                 aria-label="Notifications"
                 onClick={() => {
                   setOpenNotes((value) => !value);
-                  setOpenRole(false);
                 }}
               >
                 <Bell className="h-5 w-5" />
@@ -160,40 +167,26 @@ export function Header() {
             </div>
           )}
 
-          <div className="relative" ref={roleRef}>
-            <button
+          {user ? (
+            <Link
+              href="/compte"
               className="flex items-center gap-2 rounded-full border border-[#dddddd] py-2 pl-3 pr-2 text-sm font-medium hover:shadow-sm"
-              onClick={() => {
-                setOpenRole((value) => !value);
-                setOpenNotes(false);
-              }}
-              aria-expanded={openRole}
+              aria-label="Mon compte"
             >
-              <span className="max-w-[140px] truncate">{roleLabel(state.role)}</span>
-              <ChevronDown className="h-4 w-4" />
-            </button>
-            {openRole && (
-              <div className="absolute right-0 mt-2 w-72 overflow-hidden rounded-2xl border border-[#ebebeb] bg-white p-2 shadow-[0_8px_28px_rgba(0,0,0,0.12)]">
-                <p className="px-3 py-2 text-xs text-[#6a6a6a]">Espace de démonstration</p>
-                {ROLES.map((role) => (
-                  <button
-                    key={role.id}
-                    className={cx(
-                      "block w-full rounded-xl px-3 py-2.5 text-left hover:bg-[#f7f7f7]",
-                      state.role === role.id && "bg-[#f7f7f7]",
-                    )}
-                    onClick={() => {
-                      dispatch({ type: "set-role", role: role.id });
-                      setOpenRole(false);
-                    }}
-                  >
-                    <span className="block text-sm font-medium">{roleLabel(role.id)}</span>
-                    <span className="block text-xs text-[#6a6a6a]">{role.hint}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+              <span className="hidden max-w-[120px] truncate sm:block">{profile?.full_name || "Mon compte"}</span>
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#1F6F66] text-[10px] font-semibold text-white">
+                {(profile?.full_name || user.email || "A").slice(0, 1).toUpperCase()}
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/connexion"
+              className="flex items-center gap-2 rounded-full border border-[#dddddd] px-3 py-2 text-sm font-medium hover:shadow-sm"
+            >
+              <UserRound className="h-4 w-4" />
+              <span className="hidden sm:inline">Connexion</span>
+            </Link>
+          )}
         </div>
       </div>
     </header>

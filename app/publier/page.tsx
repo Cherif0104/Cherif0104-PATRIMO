@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PickMap } from "@/components/map";
 import { PageHead } from "@/components/ui";
-import { btnPrimary, btnSecondary, fieldClass, roleLabel, uid } from "@/lib/format";
-import { readImage } from "@/lib/images";
-import { hostIdForRole } from "@/lib/seed";
+import { btnPrimary, fieldClass, uid } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
+import { submitListing, uploadListingPhoto } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
 import type { Currency, Mode, PropertyType } from "@/lib/types";
@@ -22,7 +23,8 @@ const places = [
 ];
 
 export default function PublishPage() {
-  const { state, dispatch } = useAmeena();
+  const { dispatch } = useAmeena();
+  const { user, profile, loading } = useAuth();
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [place, setPlace] = useState(places[0]);
@@ -35,28 +37,42 @@ export default function PublishPage() {
   const [description, setDescription] = useState("");
   const [managed, setManaged] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
   const [lat, setLat] = useState(places[0].lat);
   const [lng, setLng] = useState(places[0].lng);
   useTitle("Publier un bien · Ameena");
 
-  const professional = state.role === "proprietaire" || state.role === "agence" || state.role === "admin";
+  const professional = profile?.account_type === "proprietaire" || profile?.account_type === "agence" || user?.app_metadata?.role === "admin";
 
   async function onFiles(files: FileList | null) {
-    if (!files) return;
-    const next: string[] = [];
-    for (const file of Array.from(files).slice(0, 5 - images.length)) {
-      next.push(await readImage(file));
+    if (!files || !user) return;
+    setUploading(true);
+    setError("");
+    try {
+      const next: string[] = [];
+      for (const file of Array.from(files).slice(0, 5 - images.length)) {
+        if (file.size > 10 * 1024 * 1024) throw new Error("Chaque photo doit peser moins de 10 Mo.");
+        next.push(await uploadListingPhoto(user.id, file));
+      }
+      setImages((current) => [...current, ...next].slice(0, 5));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Une photo n’a pas pu être envoyée.");
+    } finally {
+      setUploading(false);
     }
-    setImages((current) => [...current, ...next].slice(0, 5));
   }
 
-  function publish() {
-    if (!title.trim()) return;
+  async function publish() {
+    if (!user || !professional || !title.trim() || images.length < 3) return;
+    setSubmitting(true);
+    setError("");
     const id = uid("bien");
-    dispatch({
-      type: "add-listing",
-      listing: {
+    const listing = {
         id,
+        ownerUserId: user.id,
+        publicationStatus: "pending_review" as const,
         title: title.trim(),
         city: place.city,
         country: place.country,
@@ -72,17 +88,49 @@ export default function PublishPage() {
         surface: 40,
         rating: 5,
         reviewsCount: 0,
-        images: images.length ? images : ["https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1800&q=80"],
+        images,
         lat,
         lng,
         description: description.trim() || "Bien publié en direct sur Ameena.",
         amenities: ["Wifi"],
-        hostId: hostIdForRole(state.role),
+        hostId: `user-${user.id}`,
         managedByPlatform: managed,
         reviews: [],
-      },
-    });
-    router.push(`/logements/${id}`);
+      };
+    try {
+      const saved = await submitListing(user.id, listing);
+      dispatch({
+        type: "add-listing",
+        listing: { ...listing, databaseId: saved.id, publicationStatus: saved.status },
+      });
+      router.push(`/logements/${id}`);
+    } catch {
+      setError("La publication n’a pas pu être enregistrée. Vérifiez les informations puis réessayez.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (loading) return <div className="p-12 text-center text-sm text-[#6a6a6a]">Ouverture de la publication…</div>;
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-24 text-center">
+        <h1 className="text-3xl font-semibold">Connectez-vous pour publier</h1>
+        <p className="mt-3 text-[#6a6a6a]">Le compte permet d’attribuer le bien au bon propriétaire et de protéger ses demandes.</p>
+        <Link href="/connexion?retour=/publier" className={`${btnPrimary} mt-7`}>Créer un compte ou se connecter</Link>
+      </div>
+    );
+  }
+
+  if (!professional) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-24 text-center">
+        <h1 className="text-3xl font-semibold">Activez votre profil propriétaire</h1>
+        <p className="mt-3 text-[#6a6a6a]">Choisissez « Propriétaire » ou « Agence » dans votre compte avant d’envoyer un bien en validation.</p>
+        <Link href="/compte" className={`${btnPrimary} mt-7`}>Ouvrir mon compte</Link>
+      </div>
+    );
   }
 
   return (
@@ -90,21 +138,8 @@ export default function PublishPage() {
       <PageHead
         eyebrow="Publication"
         title="Mettre un bien en ligne"
-        text="Le logement rejoint la carte tout de suite. La commission appliquée est celle des réglages en cours."
+        text="Le logement est envoyé en validation. Une annonce ne devient publique qu'après contrôle de son contenu et de son propriétaire."
       />
-      {!professional && (
-        <div className="mb-6 rounded-2xl bg-[#f7f7f7] p-4 text-sm leading-6">
-          Vous êtes en vue voyageur. Choisissez un espace pour signer la publication.
-          <div className="mt-3 flex gap-2">
-            <button className={btnSecondary} onClick={() => dispatch({ type: "set-role", role: "proprietaire" })}>
-              {roleLabel("proprietaire")}
-            </button>
-            <button className={btnSecondary} onClick={() => dispatch({ type: "set-role", role: "agence" })}>
-              {roleLabel("agence")}
-            </button>
-          </div>
-        </div>
-      )}
       <div className="grid gap-4">
         <label className="text-sm font-medium">
           Titre
@@ -178,9 +213,10 @@ export default function PublishPage() {
           Géré par Ameena — la règle Gestion s&apos;applique
         </label>
         <label className="text-sm font-medium">
-          Photos
+          Photos <span className="font-normal text-[#6a6a6a]">· 3 minimum, 5 maximum</span>
           <input className="mt-2 block text-sm" type="file" accept="image/*" multiple onChange={(event) => onFiles(event.target.files)} />
         </label>
+        {uploading && <p className="text-sm text-[#6a6a6a]">Envoi sécurisé des photos…</p>}
         {images.length > 0 && (
           <div className="grid grid-cols-4 gap-2">
             {images.map((image) => (
@@ -188,8 +224,9 @@ export default function PublishPage() {
             ))}
           </div>
         )}
-        <button className={`${btnPrimary} mt-2`} disabled={!professional || !title.trim()} onClick={publish}>
-          Publier
+        {error && <p role="alert" className="rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
+        <button className={`${btnPrimary} mt-2`} disabled={submitting || uploading || !title.trim() || images.length < 3} onClick={() => void publish()}>
+          {submitting ? "Envoi en validation…" : "Envoyer en validation"}
         </button>
       </div>
     </div>

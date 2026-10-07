@@ -4,15 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Compass, ConciergeBell, Home, Map, UserRound } from "lucide-react";
 import { cx } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
 import { useAmeena } from "@/lib/store";
 
 export function BottomNav() {
   const pathname = usePathname();
   const { state } = useAmeena();
+  const { user } = useAuth();
   if (pathname.startsWith("/gestion") || pathname.startsWith("/admin")) return null;
 
-  const spaceHref = state.role === "voyageur" ? "/publier" : "/gestion";
-  const spaceLabel = state.role === "voyageur" ? "Publier" : "Gestion";
+  const spaceHref = !user ? "/connexion" : state.role === "voyageur" ? "/compte" : "/gestion";
+  const spaceLabel = !user ? "Connexion" : state.role === "voyageur" ? "Compte" : "Gestion";
 
   const items = [
     { href: "/", label: "Logements", icon: Home, active: pathname === "/" || pathname.startsWith("/logements") },

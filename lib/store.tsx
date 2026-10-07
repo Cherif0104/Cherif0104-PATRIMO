@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
 import { createInitial, hostById, hostIdForRole } from "./seed";
-import { loadRemoteState, saveRemoteState, supabase } from "./supabase";
+import { loadPlatformSettings, loadPublishedListings } from "./supabase";
 import type {
   Ad,
   AppState,
@@ -18,11 +18,13 @@ import type {
   Role,
 } from "./types";
 import { uid } from "./format";
+import { useAuth } from "./auth";
 
 const KEY = "ameena-os-v1";
 
 type Action =
   | { type: "hydrate"; payload: AppState }
+  | { type: "merge-marketplace-listings"; listings: Listing[] }
   | { type: "reset" }
   | { type: "set-role"; role: Role }
   | { type: "toggle-save"; id: string }
@@ -42,6 +44,16 @@ function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case "hydrate":
       return hydrate(action.payload);
+    case "merge-marketplace-listings": {
+      const remoteIds = new Set(action.listings.map((listing) => listing.id));
+      return {
+        ...state,
+        listings: [
+          ...action.listings,
+          ...state.listings.filter((listing) => !remoteIds.has(listing.id)),
+        ],
+      };
+    }
     case "reset":
       return createInitial();
     case "set-role":
@@ -297,26 +309,27 @@ export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancel = false;
     (async () => {
-      if (supabase) {
+      const raw = localStorage.getItem(KEY);
+      if (raw) {
         try {
-          const remote = await loadRemoteState();
-          if (cancel) return;
-          if (remote) dispatch({ type: "hydrate", payload: remote });
+          dispatch({ type: "hydrate", payload: JSON.parse(raw) as AppState });
         } catch {
-          if (!cancel) {
-            setStorageWarning("Supabase est injoignable. Les données affichées restent celles de cet appareil.");
-          }
+          setStorageWarning("Les données locales étaient illisibles. La démonstration repart des exemples.");
         }
       }
-      if (!supabase) {
-        const raw = localStorage.getItem(KEY);
-        if (raw) {
-          try {
-            dispatch({ type: "hydrate", payload: JSON.parse(raw) as AppState });
-          } catch {
-            setStorageWarning("Les données locales étaient illisibles. La démonstration repart des exemples.");
-          }
+      try {
+        const [listings, settings] = await Promise.all([
+          loadPublishedListings(),
+          loadPlatformSettings(),
+        ]);
+        if (!cancel && listings.length) {
+          dispatch({ type: "merge-marketplace-listings", listings });
         }
+        if (!cancel && settings) {
+          dispatch({ type: "patch-settings", settings });
+        }
+      } catch {
+        if (!cancel) setStorageWarning("Le catalogue en ligne est momentanément indisponible.");
       }
       if (!cancel) setReady(true);
     })();
@@ -332,13 +345,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     } catch {
       setStorageWarning("Le navigateur n'a plus assez de place pour les photos. Retirez une image ou réinitialisez la démo.");
     }
-    if (!supabase) return;
-    const timer = window.setTimeout(() => {
-      saveRemoteState(state).catch(() => {
-        setStorageWarning("L'enregistrement Supabase a échoué. La copie locale est conservée.");
-      });
-    }, 400);
-    return () => window.clearTimeout(timer);
+    // Demo preferences stay local. Market data is written table-by-table through RLS.
   }, [state, ready]);
 
   const value = useMemo(
@@ -357,12 +364,17 @@ export function useAmeena() {
 
 export function useScope() {
   const { state } = useAmeena();
+  const { user } = useAuth();
   const listings =
     state.role === "admin"
       ? state.listings
       : state.role === "voyageur"
         ? []
-        : state.listings.filter((listing) => listing.hostId === hostIdForRole(state.role));
+        : state.listings.filter(
+            (listing) =>
+              listing.ownerUserId === user?.id ||
+              (!listing.ownerUserId && listing.hostId === hostIdForRole(state.role)),
+          );
   const ids = new Set(listings.map((listing) => listing.id));
   const inScope = <T extends { listingId: string }>(rows: T[]) =>
     state.role === "admin" ? rows : rows.filter((row) => ids.has(row.listingId));

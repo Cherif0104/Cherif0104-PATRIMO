@@ -47,8 +47,8 @@ export function todayISO() {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
-export function addDaysISO(days: number) {
-  const d = new Date();
+export function addDaysISO(days: number, from?: string) {
+  const d = from ? new Date(`${from}T12:00:00`) : new Date();
   d.setDate(d.getDate() + days);
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
+import { addDaysISO } from "@/lib/format";
 import { useAmeena } from "@/lib/store";
 import type { Mode } from "@/lib/types";
 
@@ -13,6 +14,8 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [guests, setGuests] = useState(1);
+  const [from, setFrom] = useState(addDaysISO(5));
+  const [to, setTo] = useState(addDaysISO(8));
 
   const cities = useMemo(() => {
     const set = new Map<string, string>();
@@ -30,6 +33,8 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
     const destination = city ?? query.trim();
     if (destination) params.set("q", destination);
     if (guests > 1) params.set("voyageurs", String(guests));
+    if (from) params.set("arrivee", from);
+    if (mode === "sejour" && to) params.set("depart", to);
     router.push(`/explorer?${params.toString()}`);
     setOpen(false);
   }
@@ -50,13 +55,13 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
         </div>
       </div>
       <form
-        className="search-pill mx-auto flex max-w-3xl items-center rounded-full"
+        className="search-pill mx-auto flex max-w-4xl flex-wrap items-center rounded-[24px] p-1 sm:flex-nowrap sm:rounded-full sm:p-0"
         onSubmit={(event) => {
           event.preventDefault();
           go();
         }}
       >
-        <label className="relative min-w-0 flex-1 px-6 py-3 text-left">
+        <label className="relative min-w-0 basis-full px-5 py-3 text-left sm:basis-auto">
           <span className="block text-xs font-semibold">Destination</span>
           <input
             className="w-full bg-transparent text-sm outline-none placeholder:text-[#8a8a8a]"
@@ -92,10 +97,39 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
           )}
         </label>
         <div className="hidden h-8 w-px bg-[#dddddd] sm:block" />
-        <label className="hidden px-5 py-3 sm:block">
+        <label className="min-w-0 flex-1 border-t border-[#eeeeee] px-4 py-2.5 sm:border-t-0 sm:px-4 sm:py-3">
+          <span className="block text-[11px] font-semibold">{mode === "sejour" ? "Arrivée" : "Emménagement"}</span>
+          <input
+            className="w-full bg-transparent text-xs outline-none sm:text-sm"
+            type="date"
+            value={from}
+            min={new Date().toISOString().slice(0, 10)}
+            onChange={(event) => {
+              setFrom(event.target.value);
+              if (mode === "sejour" && event.target.value >= to) setTo(addDaysISO(3, event.target.value));
+            }}
+          />
+        </label>
+        {mode === "sejour" && (
+          <>
+            <div className="hidden h-8 w-px bg-[#dddddd] sm:block" />
+            <label className="min-w-0 flex-1 border-t border-[#eeeeee] px-4 py-2.5 sm:border-t-0 sm:px-4 sm:py-3">
+              <span className="block text-[11px] font-semibold">Départ</span>
+              <input
+                className="w-full bg-transparent text-xs outline-none sm:text-sm"
+                type="date"
+                value={to}
+                min={from || new Date().toISOString().slice(0, 10)}
+                onChange={(event) => setTo(event.target.value)}
+              />
+            </label>
+          </>
+        )}
+        <div className="hidden h-8 w-px bg-[#dddddd] sm:block" />
+        <label className="min-w-[90px] border-t border-[#eeeeee] px-4 py-2.5 sm:border-t-0 sm:px-4 sm:py-3">
           <span className="block text-xs font-semibold">Voyageurs</span>
           <input
-            className="w-16 bg-transparent text-sm outline-none"
+            className="w-14 bg-transparent text-sm outline-none"
             type="number"
             min={1}
             max={16}
@@ -104,7 +138,7 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
           />
         </label>
         <button
-          className="mr-2 grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#1F6F66] text-white"
+          className="ml-auto mr-1 grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#1F6F66] text-white sm:mr-2"
           aria-label="Rechercher"
         >
           <Search className="h-5 w-5" />

@@ -157,6 +157,27 @@ export async function loadMyBookings(): Promise<MarketBooking[]> {
   return (data ?? []) as MarketBooking[];
 }
 
+export async function loadBlockedListingIds(
+  listingIds: string[],
+  from: string,
+  to: string,
+): Promise<string[]> {
+  if (!supabase || !listingIds.length || !from || !to) return [];
+  const { data, error } = await supabase
+    .from("availability_blocks")
+    .select("listing_id")
+    .in("listing_id", listingIds)
+    .lt("start_date", to)
+    .gt("end_date", from);
+  if (error) throw error;
+  return [...new Set((data ?? []).map((row) => row.listing_id as string))];
+}
+
+export async function isListingAvailable(listingId: string, from: string, to: string) {
+  const blocked = await loadBlockedListingIds([listingId], from, to);
+  return blocked.length === 0;
+}
+
 export async function updateMarketBookingStatus(
   id: string,
   status: "preapproved" | "declined" | "cancelled",

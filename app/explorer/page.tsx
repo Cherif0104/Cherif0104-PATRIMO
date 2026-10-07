@@ -1,12 +1,13 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Map, SlidersHorizontal } from "lucide-react";
 import { AdSlot } from "@/components/ad-slot";
 import { MapView } from "@/components/map";
 import { PropertyCard } from "@/components/property-card";
-import { fieldClass } from "@/lib/format";
+import { fieldClass, nightsBetween } from "@/lib/format";
+import { loadBlockedListingIds } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
 import type { Listing, Mode } from "@/lib/types";
@@ -45,7 +46,27 @@ function Explorer() {
   const [maxPrice, setMaxPrice] = useState("");
   const [managedOnly, setManagedOnly] = useState(params.get("gere") === "1");
   const [mode, setMode] = useState(params.get("mode") ?? "");
+  const [blockedIds, setBlockedIds] = useState<string[]>([]);
   useTitle("Explorer · Ameena");
+
+  const arrival = params.get("arrivee") ?? "";
+  const departure = params.get("depart") ?? "";
+  const stayNights = arrival && departure ? Math.max(1, nightsBetween(arrival, departure)) : undefined;
+  const listingIdsKey = state.listings
+    .map((listing) => listing.databaseId)
+    .filter((id): id is string => Boolean(id))
+    .sort()
+    .join(",");
+
+  useEffect(() => {
+    if (!arrival || !departure || !listingIdsKey) {
+      setBlockedIds([]);
+      return;
+    }
+    loadBlockedListingIds(listingIdsKey.split(","), arrival, departure)
+      .then(setBlockedIds)
+      .catch(() => setBlockedIds([]));
+  }, [arrival, departure, listingIdsKey]);
 
   const listings = useMemo(() => {
     const next = new URLSearchParams(params.toString());
@@ -55,11 +76,12 @@ function Explorer() {
     else next.delete("gere");
     return state.listings.filter((listing) => {
       if (listing.publicationStatus && listing.publicationStatus !== "published") return false;
+      if (listing.databaseId && blockedIds.includes(listing.databaseId)) return false;
       if (!match(listing, next)) return false;
       if (maxPrice && listing.price > Number(maxPrice)) return false;
       return true;
     });
-  }, [state.listings, params, mode, managedOnly, maxPrice]);
+  }, [state.listings, params, mode, managedOnly, maxPrice, blockedIds]);
 
   const activeListing = listings.find((listing) => listing.id === active) ?? null;
 
@@ -83,6 +105,11 @@ function Explorer() {
           <input type="checkbox" checked={managedOnly} onChange={(event) => setManagedOnly(event.target.checked)} />
           Géré par Ameena
         </label>
+        {arrival && (
+          <span className="rounded-full border border-[#dddddd] px-3 py-2 text-xs font-medium">
+            {arrival}{departure ? ` → ${departure}` : ""}
+          </span>
+        )}
         <p className="ml-auto text-sm text-[#6a6a6a]">{listings.length} logement{listings.length > 1 ? "s" : ""}</p>
       </div>
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)]">
@@ -95,6 +122,7 @@ function Explorer() {
                 listing={listing}
                 active={listing.id === active}
                 onHover={setHovered}
+                stayNights={stayNights}
               />
             ))}
           </div>
@@ -118,7 +146,7 @@ function Explorer() {
           {activeListing && (
             <div className="absolute bottom-4 left-4 right-4 z-[500] max-w-sm">
               <div className="rounded-2xl bg-white p-2 shadow-[0_8px_28px_rgba(0,0,0,0.18)]">
-                <PropertyCard listing={activeListing} />
+                <PropertyCard listing={activeListing} stayNights={stayNights} />
               </div>
             </div>
           )}

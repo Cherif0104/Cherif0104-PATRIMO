@@ -11,10 +11,12 @@ export function PropertyCard({
   listing,
   onHover,
   active = false,
+  stayNights,
 }: {
   listing: Listing;
   onHover?: (id: string | null) => void;
   active?: boolean;
+  stayNights?: number;
 }) {
   const { state, dispatch } = useAmeena();
   const saved = state.saved.includes(listing.id);
@@ -70,8 +72,21 @@ export function PropertyCard({
           {listing.mode === "sejour" ? `${listing.guests} voyageurs` : `${listing.surface} m² · longue durée`}
         </p>
         <p className="mt-1.5 text-[15px]">
-          <span className="font-semibold">{formatMoney(listing.price, listing.currency)}</span>
-          <span> {listing.mode === "sejour" ? "par nuit" : "par mois"}</span>
+          <span className="font-semibold">
+            {formatMoney(
+              listing.mode === "sejour" && stayNights && stayNights > 1
+                ? listing.price * stayNights
+                : listing.price,
+              listing.currency,
+            )}
+          </span>
+          <span>
+            {listing.mode === "sejour" && stayNights && stayNights > 1
+              ? ` pour ${stayNights} nuits`
+              : listing.mode === "sejour"
+                ? " par nuit"
+                : " par mois"}
+          </span>
         </p>
       </Link>
     </article>

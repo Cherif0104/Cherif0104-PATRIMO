@@ -118,7 +118,16 @@ export function MediaCarousel({
         onPointerCancel={onPointerUp}
         onDragStart={(event) => event.preventDefault()}
         onClick={onClick}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onClick();
+          }
+          if (event.key === "ArrowRight") commit(index + 1);
+          if (event.key === "ArrowLeft") commit(index - 1);
+        }}
         role={href || onOpen ? "link" : undefined}
+        tabIndex={href || onOpen ? 0 : undefined}
         aria-label={href || onOpen ? alt : undefined}
       >
         <div
@@ -193,7 +202,7 @@ export function MediaCarousel({
       )}
 
       {counter && photos.length > 0 && (
-        <span className="absolute bottom-3 right-3 z-10 rounded-md bg-black/60 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
+        <span aria-live="polite" className="absolute bottom-3 right-3 z-10 rounded-md bg-black/60 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
           {index + 1} / {photos.length}
         </span>
       )}

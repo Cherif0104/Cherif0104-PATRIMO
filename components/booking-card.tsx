@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { btnPrimary, fieldClass, nightsBetween, addDaysISO } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
 import { buildQuote } from "@/lib/quote";
-import { createMarketBooking } from "@/lib/supabase";
+import { createMarketBooking, isListingAvailable } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import type { Listing } from "@/lib/types";
 import { QuoteView } from "./quote-view";
@@ -23,6 +23,9 @@ export function BookingCard({ listing }: { listing: Listing }) {
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [availability, setAvailability] = useState<"idle" | "checking" | "available" | "blocked">("idle");
+  const nights = listing.mode === "sejour" ? Math.max(1, nightsBetween(from, to) || 3) : 1;
+  const invalid = Boolean(listing.mode === "sejour" && from && to && nightsBetween(from, to) < 1);
 
   useEffect(() => {
     setFrom(addDaysISO(5));
@@ -34,8 +37,25 @@ export function BookingCard({ listing }: { listing: Listing }) {
     if (profile?.phone) setPhone(profile.phone);
   }, [profile]);
 
-  const nights = listing.mode === "sejour" ? Math.max(1, nightsBetween(from, to) || 3) : 1;
-  const invalid = Boolean(listing.mode === "sejour" && from && to && nightsBetween(from, to) < 1);
+  useEffect(() => {
+    if (!listing.databaseId || listing.mode !== "sejour" || !from || !to || invalid) {
+      setAvailability("idle");
+      return;
+    }
+    let active = true;
+    setAvailability("checking");
+    isListingAvailable(listing.databaseId, from, to)
+      .then((available) => {
+        if (active) setAvailability(available ? "available" : "blocked");
+      })
+      .catch(() => {
+        if (active) setAvailability("idle");
+      });
+    return () => {
+      active = false;
+    };
+  }, [from, invalid, listing.databaseId, listing.mode, to]);
+
   const quote = useMemo(
     () => buildQuote(listing, invalid ? 3 : nights, state.settings),
     [listing, nights, invalid, state.settings],
@@ -48,6 +68,13 @@ export function BookingCard({ listing }: { listing: Listing }) {
     const start = from || addDaysISO(5);
     const end = listing.mode === "sejour" ? to || addDaysISO(8) : addDaysISO(370);
     try {
+      if (listing.databaseId && listing.mode === "sejour") {
+        const available = await isListingAvailable(listing.databaseId, start, end);
+        if (!available) {
+          setAvailability("blocked");
+          throw new Error("dates_blocked");
+        }
+      }
       await createMarketBooking({
         listing,
         userId: user.id,
@@ -74,8 +101,12 @@ export function BookingCard({ listing }: { listing: Listing }) {
         },
       });
       setSent(true);
-    } catch {
-      setError("La demande n’a pas pu être enregistrée. Vérifiez votre connexion puis réessayez.");
+    } catch (cause) {
+      setError(
+        cause instanceof Error && cause.message === "dates_blocked"
+          ? "Ces dates ne sont plus disponibles. Choisissez un autre séjour."
+          : "La demande n’a pas pu être enregistrée. Vérifiez votre connexion puis réessayez.",
+      );
     } finally {
       setBusy(false);
     }
@@ -113,6 +144,9 @@ export function BookingCard({ listing }: { listing: Listing }) {
         </label>
       </div>
       {invalid && <p className="mt-3 text-sm text-[#c13515]">Le départ doit suivre l&apos;arrivée.</p>}
+      {availability === "checking" && <p className="mt-3 text-sm text-[#6a6a6a]">Vérification des dates…</p>}
+      {availability === "available" && <p className="mt-3 text-sm font-medium text-[#145e57]">Ces dates sont disponibles.</p>}
+      {availability === "blocked" && <p className="mt-3 text-sm font-medium text-[#a52a12]">Ces dates sont déjà bloquées.</p>}
       <div className="mt-5">
         <QuoteView quote={quote} />
       </div>
@@ -129,7 +163,7 @@ export function BookingCard({ listing }: { listing: Listing }) {
           Se connecter pour demander
         </Link>
       ) : (
-        <button className={`${btnPrimary} mt-5 w-full py-3`} disabled={busy || !name.trim() || invalid} onClick={() => void reserve()}>
+        <button className={`${btnPrimary} mt-5 w-full py-3`} disabled={busy || availability === "checking" || availability === "blocked" || !name.trim() || invalid} onClick={() => void reserve()}>
           {busy ? "Enregistrement…" : listing.mode === "sejour" ? "Demander le séjour" : "Demander à visiter"}
         </button>
       )}

@@ -3,6 +3,7 @@ import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import { BottomNav } from "@/components/bottom-nav";
 import { FooterGate } from "@/components/footer-gate";
 import { Header } from "@/components/header";
+import { AppInstallButton } from "@/components/app-install-button";
 import { AuthProvider } from "@/lib/auth";
 import { PreferencesProvider } from "@/lib/preferences";
 import { Providers } from "@/lib/store";
@@ -45,14 +46,14 @@ export const metadata: Metadata = {
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: light)", color: "#FFFDF7" },
     { media: "(prefers-color-scheme: dark)", color: "#101010" },
   ],
   width: "device-width",
@@ -78,6 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <main>{children}</main>
               <FooterGate />
               <BottomNav />
+              <AppInstallButton />
             </Providers>
           </AuthProvider>
         </PreferencesProvider>

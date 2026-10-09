@@ -20,13 +20,17 @@ function match(listing: Listing, params: URLSearchParams) {
   const managed = params.get("gere") === "1";
   if (q) {
     const blob = `${listing.city} ${listing.country} ${listing.neighborhood} ${listing.title}`.toLowerCase();
-    if (!blob.includes(q)) return false;
+    const terms = q.split(/\s+/).filter((term) => term.length > 1 && !["à", "au", "aux", "un", "une", "de"].includes(term));
+    if (!terms.every((term) => blob.includes(term))) return false;
   }
   if (mode === "sejour" || mode === "location") {
     if (listing.mode !== mode) return false;
   }
   if (guests && listing.guests < guests) return false;
   if (managed && !listing.managedByPlatform) return false;
+  if (params.get("certifie") === "1" && !listing.managedByPlatform) return false;
+  if (params.get("type") && listing.type !== params.get("type")) return false;
+  if (Number(params.get("chambres") ?? 0) > listing.bedrooms) return false;
   if (category === "mer" && !listing.amenities.includes("Vue mer")) return false;
   if (category === "location" && listing.mode !== "location") return false;
   if (category === "gere" && !listing.managedByPlatform) return false;
@@ -43,7 +47,12 @@ function Explorer() {
   const [hovered, setHovered] = useState<string | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
-  const [maxPrice, setMaxPrice] = useState("");
+  const [query, setQuery] = useState(params.get("q") ?? "");
+  const [minPrice, setMinPrice] = useState(params.get("prix_min") ?? "");
+  const [maxPrice, setMaxPrice] = useState(params.get("prix_max") ?? "");
+  const [type, setType] = useState(params.get("type") ?? "");
+  const [bedrooms, setBedrooms] = useState(params.get("chambres") ?? "");
+  const [verifiedOnly, setVerifiedOnly] = useState(params.get("certifie") === "1");
   const [managedOnly, setManagedOnly] = useState(params.get("gere") === "1");
   const [mode, setMode] = useState(params.get("mode") ?? "");
   const [blockedIds, setBlockedIds] = useState<string[]>([]);
@@ -74,26 +83,60 @@ function Explorer() {
     else next.delete("mode");
     if (managedOnly) next.set("gere", "1");
     else next.delete("gere");
+    if (query.trim()) next.set("q", query.trim());
+    else next.delete("q");
+    if (type) next.set("type", type);
+    else next.delete("type");
+    if (bedrooms) next.set("chambres", bedrooms);
+    else next.delete("chambres");
+    if (verifiedOnly) next.set("certifie", "1");
+    else next.delete("certifie");
     return state.listings.filter((listing) => {
       if (listing.publicationStatus && listing.publicationStatus !== "published") return false;
       if (listing.databaseId && blockedIds.includes(listing.databaseId)) return false;
       if (!match(listing, next)) return false;
+      if (minPrice && listing.price < Number(minPrice)) return false;
       if (maxPrice && listing.price > Number(maxPrice)) return false;
       return true;
     });
-  }, [state.listings, params, mode, managedOnly, maxPrice, blockedIds]);
+  }, [state.listings, params, mode, managedOnly, query, type, bedrooms, verifiedOnly, minPrice, maxPrice, blockedIds]);
 
   const activeListing = listings.find((listing) => listing.id === active) ?? null;
 
   return (
     <div className="flex h-[calc(100dvh-5rem-4.25rem)] flex-col lg:h-[calc(100dvh-5rem)]">
-      <div className="flex flex-wrap items-center gap-3 border-b border-[#ebebeb] px-4 py-3 md:px-8">
+      <div className="flex flex-wrap items-center gap-3 border-b border-[#ebebeb] bg-[#FFFDF7] px-4 py-3 md:px-8">
         <SlidersHorizontal className="h-4 w-4 text-[#6a6a6a]" />
+        <label className="relative min-w-[220px] flex-1 lg:max-w-sm">
+          <span className="sr-only">Destination ou logement</span>
+          <input
+            className={`${fieldClass} w-full pl-9`}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Appartement à Dakar…"
+          />
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm">⌕</span>
+        </label>
         <select className={`${fieldClass} w-auto`} value={mode} onChange={(event) => setMode(event.target.value)}>
           <option value="">Séjours et locations</option>
           <option value="sejour">Séjours</option>
           <option value="location">Locations</option>
         </select>
+        <select className={`${fieldClass} w-auto`} value={type} onChange={(event) => setType(event.target.value)}>
+          <option value="">Tous les types</option>
+          <option value="appartement">Appartement</option>
+          <option value="villa">Villa</option>
+          <option value="maison">Maison</option>
+          <option value="studio">Studio</option>
+          <option value="ecolodge">Écolodge</option>
+        </select>
+        <input
+          className={`${fieldClass} w-32`}
+          inputMode="numeric"
+          placeholder="Prix min"
+          value={minPrice}
+          onChange={(event) => setMinPrice(event.target.value.replace(/[^\d]/g, ""))}
+        />
         <input
           className={`${fieldClass} w-36`}
           inputMode="numeric"
@@ -101,6 +144,17 @@ function Explorer() {
           value={maxPrice}
           onChange={(event) => setMaxPrice(event.target.value.replace(/[^\d]/g, ""))}
         />
+        <select className={`${fieldClass} w-auto`} value={bedrooms} onChange={(event) => setBedrooms(event.target.value)}>
+          <option value="">Chambres</option>
+          <option value="1">1+</option>
+          <option value="2">2+</option>
+          <option value="3">3+</option>
+          <option value="4">4+</option>
+        </select>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={verifiedOnly} onChange={(event) => setVerifiedOnly(event.target.checked)} className="accent-[#FF4845]" />
+          Certifié
+        </label>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={managedOnly} onChange={(event) => setManagedOnly(event.target.checked)} />
           Géré par Se Loger au Sénégal

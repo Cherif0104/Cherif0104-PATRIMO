@@ -8,6 +8,7 @@ import { btnGhost, cx, formatDateTime } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
 import { loadUserNotifications, markNotificationsRead, supabase } from "@/lib/supabase";
 import { CompactPreferences } from "@/components/preference-controls";
+import { BrandLogo } from "@/components/brand-logo";
 import { usePreferences } from "@/lib/preferences";
 import { useAmeena } from "@/lib/store";
 import type { Role, UserNotification } from "@/lib/types";
@@ -89,17 +90,7 @@ export function Header() {
   return (
     <header className="app-surface theme-border no-print sticky top-0 z-[1100] hidden h-20 border-b border-[#ebebeb] lg:block">
       <div className="grid h-full grid-cols-[minmax(190px,1fr)_auto_minmax(190px,1fr)] items-center gap-5 px-6 xl:px-12 2xl:px-16">
-        <Link href="/" className="flex min-w-0 items-center gap-2.5" aria-label="Se Loger au Sénégal, accueil">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#FF385C] text-white">
-            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
-              <path fill="currentColor" d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-5.4h-5.6V21H4a1 1 0 0 1-1-1v-8.8Z" />
-            </svg>
-          </span>
-          <span className="min-w-0 leading-none">
-            <span className="block truncate text-[18px] font-extrabold tracking-[-0.04em] text-[#1a1a1a]">Se Loger</span>
-            <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[#FF385C]">au Sénégal</span>
-          </span>
-        </Link>
+        <BrandLogo />
 
         <nav className="hidden items-end justify-self-center gap-8 xl:flex" aria-label="Offres">
           {[

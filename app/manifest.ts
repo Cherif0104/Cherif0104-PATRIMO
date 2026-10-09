@@ -7,9 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Logements, expériences, services et transferts au Sénégal.",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#FF385C",
-    orientation: "portrait-primary",
+    background_color: "#FFFDF7",
+    theme_color: "#FF4845",
     lang: "fr",
     categories: ["travel", "lifestyle"],
     icons: [

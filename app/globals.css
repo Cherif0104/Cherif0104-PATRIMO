@@ -3,10 +3,13 @@
 :root {
   color: #222222;
   background: #ffffff;
-  --ameena-primary: #ff385c;
-  --ameena-primary-dark: #c13515;
-  --ameena-gold-soft: #fff1f3;
-  --ameena-ink: #000000;
+  --ameena-primary: #ff4845;
+  --ameena-primary-dark: #d93634;
+  --ameena-gold: #ffb21f;
+  --ameena-gold-soft: #fff8ed;
+  --ameena-ivory: #fffdf7;
+  --ameena-navy: #182a39;
+  --ameena-ink: #182a39;
   --ameena-muted: #6a6a6a;
   --ameena-line: #ebebeb;
   --ameena-soft: #f7f7f7;
@@ -44,15 +47,15 @@ body {
 }
 
 .section-ivory {
-  background: linear-gradient(180deg, #ffffff 0%, #fff8f9 100%);
+  background: linear-gradient(180deg, #fffdf7 0%, #fff9ed 100%);
 }
 
 .section-champagne {
-  background: linear-gradient(135deg, #fff1f3 0%, #ffffff 58%, #ffe1e7 100%);
+  background: linear-gradient(135deg, #fff3e0 0%, #fffdf7 58%, #ffe5de 100%);
 }
 
 .section-pearl {
-  background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 65%);
+  background: linear-gradient(135deg, #f3f6f7 0%, #ffffff 65%);
 }
 
 .section-noir {
@@ -108,13 +111,13 @@ html[data-theme="dark"] .bg-white\/95 {
 }
 
 .gold-cta {
-  background: linear-gradient(135deg, #ff6b81 0%, #ff385c 48%, #c13515 100%);
+  background: linear-gradient(135deg, #ff6a5f 0%, #ff4845 48%, #d93634 100%);
   color: #ffffff;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 7px 20px rgba(193, 53, 21, 0.22);
 }
 
 .gold-ring {
-  border: 1.5px solid #ff385c;
+  border: 1.5px solid #ff4845;
 }
 
 html[data-theme="dark"] .bg-\[\#f7f7f7\],
@@ -196,6 +199,19 @@ textarea {
 
 .search-pill:focus-within {
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+}
+
+.brand-reveal {
+  animation: brand-reveal 450ms cubic-bezier(.2,.75,.25,1) both;
+}
+
+@keyframes brand-reveal {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-reveal { animation: none; }
 }
 
 .leaflet-container {

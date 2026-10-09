@@ -2,38 +2,31 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, ConciergeBell, Home, Map, UserRound } from "lucide-react";
+import { Heart, Luggage, MessageSquare, Search, UserRound } from "lucide-react";
 import { cx } from "@/lib/format";
-import { useAuth } from "@/lib/auth";
-import { useAmeena } from "@/lib/store";
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { state } = useAmeena();
-  const { user } = useAuth();
   if (pathname.startsWith("/gestion") || pathname.startsWith("/admin")) return null;
 
-  const spaceHref = !user ? "/connexion" : state.role === "voyageur" ? "/compte" : "/gestion";
-  const spaceLabel = !user ? "Connexion" : state.role === "voyageur" ? "Compte" : "Gestion";
-
   const items = [
-    { href: "/", label: "Logements", icon: Home, active: pathname === "/" || pathname.startsWith("/logements") },
-    { href: "/experiences", label: "Expériences", icon: Compass, active: pathname.startsWith("/experiences") },
-    { href: "/services", label: "Services", icon: ConciergeBell, active: pathname.startsWith("/services") },
-    { href: "/explorer", label: "Carte", icon: Map, active: pathname.startsWith("/explorer") },
-    { href: spaceHref, label: spaceLabel, icon: UserRound, active: pathname.startsWith(spaceHref) },
+    { href: "/", label: "Explorer", icon: Search, active: pathname === "/" || pathname.startsWith("/explorer") || pathname.startsWith("/logements") || pathname.startsWith("/experiences") || pathname.startsWith("/services") },
+    { href: "/favoris", label: "Favoris", icon: Heart, active: pathname.startsWith("/favoris") },
+    { href: "/voyages", label: "Voyages", icon: Luggage, active: pathname.startsWith("/voyages") },
+    { href: "/messages", label: "Messages", icon: MessageSquare, active: pathname.startsWith("/messages") },
+    { href: "/compte", label: "Profil", icon: UserRound, active: pathname.startsWith("/compte") || pathname.startsWith("/connexion") },
   ];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-[450] border-t border-[#ebebeb] bg-white/95 backdrop-blur lg:hidden" aria-label="Navigation principale">
-      <ul className="grid grid-cols-5 px-1 pb-[max(6px,env(safe-area-inset-bottom))] pt-1">
+    <nav className="fixed inset-x-0 bottom-0 z-[1200] border-t border-[#e5e5e5] bg-white lg:hidden" aria-label="Navigation principale">
+      <ul className="grid h-[68px] grid-cols-5 px-1 pb-[max(5px,env(safe-area-inset-bottom))] pt-1">
         {items.map((item) => {
           const Icon = item.icon;
           return (
             <li key={item.label}>
-              <Link href={item.href} className="flex flex-col items-center gap-0.5 py-1.5">
-                <Icon className={cx("h-5 w-5", item.active ? "text-[#222]" : "text-[#6a6a6a]")} strokeWidth={item.active ? 2.25 : 1.75} />
-                <span className={cx("text-[10px] leading-tight", item.active ? "font-semibold text-[#222]" : "text-[#6a6a6a]")}>
+              <Link href={item.href} className="flex min-h-12 flex-col items-center justify-center gap-1 py-1">
+                <Icon className={cx("h-[23px] w-[23px]", item.active ? "text-[#E21D5A]" : "text-[#6a6a6a]")} strokeWidth={item.active ? 2.35 : 1.75} />
+                <span className={cx("text-[10px] leading-tight", item.active ? "font-semibold text-[#E21D5A]" : "text-[#6a6a6a]")}>
                   {item.label}
                 </span>
               </Link>

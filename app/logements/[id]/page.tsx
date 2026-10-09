@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BadgeCheck, Bath, BedDouble, MapPin, Ruler, Star, X } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Bath, BedDouble, Heart, MapPin, Ruler, Share2, Star, X } from "lucide-react";
 import { AdSlot } from "@/components/ad-slot";
 import { BookingCard } from "@/components/booking-card";
 import { MapView } from "@/components/map";
@@ -52,7 +52,7 @@ export default function ListingPage() {
 
   return (
     <article className="mx-auto max-w-[1120px] px-0 pb-36 pt-4 md:px-6 md:py-6 lg:pb-10">
-      <div className="px-4 md:px-0">
+      <div className="hidden px-4 md:block md:px-0">
       {listing.publicationStatus === "pending_review" && (
         <p className="mb-4 rounded-xl bg-[#fff4dd] px-4 py-3 text-sm text-[#7a4c00]">
           Annonce envoyée en validation. Elle n’est visible que dans votre espace tant que le contrôle n’est pas terminé.
@@ -86,7 +86,28 @@ export default function ListingPage() {
           counter
           onOpen={(index) => setLightbox(index)}
         />
+        <Link href="/" aria-label="Retour" className="absolute left-4 top-4 z-20 grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <div className="absolute right-4 top-4 z-20 flex gap-3">
+          <button aria-label="Partager" className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm"><Share2 className="h-5 w-5" /></button>
+          <button aria-label="Enregistrer" className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm"><Heart className="h-5 w-5" /></button>
+        </div>
       </div>
+      <section className="relative z-10 -mt-3 rounded-t-[30px] bg-white px-6 pb-2 pt-9 text-center md:hidden">
+        <h1 className="text-[28px] font-semibold leading-[1.12] tracking-[-0.035em]">{listing.title}</h1>
+        <p className="mt-5 text-[16px] text-[#6a6a6a]">
+          {TYPE_LABEL[listing.type]} entier · {listing.neighborhood}, {listing.country}
+        </p>
+        <p className="mt-1 text-[15px] text-[#6a6a6a]">
+          {listing.guests} voyageurs · {listing.bedrooms} chambre{listing.bedrooms > 1 ? "s" : ""} · {listing.beds} lits · {listing.baths} salles de bain
+        </p>
+        <div className="mt-7 grid grid-cols-3 divide-x divide-[#dddddd]">
+          <div><p className="text-xl font-semibold">{listing.rating.toFixed(2).replace(".", ",")}</p><p className="text-xs">★★★★★</p></div>
+          <div><p className="text-sm font-semibold">Coup de cœur</p><p className="mt-1 text-xs text-[#6a6a6a]">voyageurs</p></div>
+          <div><p className="text-xl font-semibold">{listing.reviewsCount}</p><p className="text-xs underline">Commentaires</p></div>
+        </div>
+      </section>
       <div className="relative mt-4 hidden h-[min(52vh,480px)] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-[20px] md:grid">
         {images.map((image, index) => (
           <button
@@ -181,7 +202,7 @@ export default function ListingPage() {
             <p className="text-[15px] font-semibold">{formatMoney(listing.price, listing.currency)}</p>
             <p className="text-xs text-[#6a6a6a]">{listing.mode === "sejour" ? "par nuit" : "par mois"}</p>
           </div>
-          <a href="#reservation" className={`${btnSecondary} px-5 py-2.5`}>
+          <a href="#reservation" className="inline-flex items-center justify-center rounded-full bg-[#E21D5A] px-7 py-3 text-sm font-semibold text-white">
             {listing.mode === "sejour" ? "Réserver" : "Demander"}
           </a>
         </div>

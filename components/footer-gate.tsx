@@ -9,7 +9,7 @@ export function FooterGate() {
     return null;
   }
   return (
-    <div className="pb-[4.75rem] lg:pb-0">
+    <div className="hidden lg:block">
       <Footer />
     </div>
   );

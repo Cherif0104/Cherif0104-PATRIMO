@@ -3,6 +3,13 @@
 :root {
   color: #222222;
   background: #ffffff;
+  --ameena-primary: #e21d5a;
+  --ameena-primary-dark: #c9144c;
+  --ameena-ink: #222222;
+  --ameena-muted: #6a6a6a;
+  --ameena-line: #ebebeb;
+  --ameena-soft: #f7f7f7;
+  --ameena-teal: #1f6f66;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -19,7 +26,7 @@ body {
 }
 
 ::selection {
-  background: #d7efe9;
+  background: #ffd9e5;
 }
 
 :focus-visible {
@@ -137,5 +144,41 @@ textarea {
 
   body {
     background: white;
+  }
+}
+
+@media (max-width: 1023px) {
+  body {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom));
+  }
+}
+
+.mobile-page {
+  min-height: calc(100dvh - 68px - env(safe-area-inset-bottom));
+}
+
+.mobile-rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(205px, 44vw);
+  gap: 14px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: inline proximity;
+  scrollbar-width: none;
+}
+
+.mobile-rail > * {
+  scroll-snap-align: start;
+}
+
+.mobile-rail::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .mobile-rail {
+    grid-auto-columns: minmax(250px, 28vw);
+    gap: 18px;
   }
 }

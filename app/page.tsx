@@ -1,147 +1,102 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Bed, Building2, Globe, Home, KeyRound, Shield, Sparkles, Waves } from "lucide-react";
+import { ArrowRight, CarFront, ChevronRight } from "lucide-react";
 import { AdSlot } from "@/components/ad-slot";
+import { DiscoveryHeader } from "@/components/discovery-header";
 import { OfferCard } from "@/components/offer-card";
 import { PropertyCard } from "@/components/property-card";
 import { SearchBar } from "@/components/search-bar";
 import { TrustStrip } from "@/components/trust-strip";
-import { cx } from "@/lib/format";
 import { EXPERIENCES, SERVICES } from "@/lib/catalog";
 import { useAmeena } from "@/lib/store";
 import type { Listing } from "@/lib/types";
 
-const categories = [
-  { id: "tous", label: "Tout", icon: Sparkles },
-  { id: "mer", label: "Bord de mer", icon: Waves },
-  { id: "villa", label: "Villas", icon: Home },
-  { id: "appartement", label: "Appartements", icon: Building2 },
-  { id: "location", label: "Longue durée", icon: KeyRound },
-  { id: "gere", label: "Géré par Ameena", icon: Shield },
-  { id: "monde", label: "À l'international", icon: Globe },
-  { id: "studio", label: "Studios", icon: Bed },
-];
-
-function matchCategory(listing: Listing, category: string) {
-  if (category === "tous") return true;
-  if (category === "mer") return listing.amenities.includes("Vue mer");
-  if (category === "location") return listing.mode === "location";
-  if (category === "gere") return listing.managedByPlatform;
-  if (category === "monde") return listing.country !== "Sénégal";
-  if (category === "villa") return listing.type === "villa" || listing.type === "maison";
-  if (category === "studio") return listing.type === "studio";
-  if (category === "appartement") return listing.type === "appartement";
-  return true;
-}
-
 export default function HomePage() {
   const { state } = useAmeena();
-  const [category, setCategory] = useState("tous");
-  const listings = useMemo(
-    () =>
-      state.listings.filter(
-        (listing) =>
-          (!listing.publicationStatus || listing.publicationStatus === "published") &&
-          matchCategory(listing, category),
-      ),
-    [state.listings, category],
+  const listings = state.listings.filter(
+    (listing) => !listing.publicationStatus || listing.publicationStatus === "published",
   );
   const shops = state.settings.ads.filter((ad) => ad.active && ad.placement === "boutique");
+  const destinations = [...new Map(listings.map((listing) => [listing.city, listing])).values()].slice(0, 6);
+  const cities = [...new Set(listings.map((listing) => listing.city))].slice(0, 4);
 
   return (
-    <div>
-      <section className="px-4 pb-4 pt-8 md:px-10 xl:px-16">
+    <div className="mobile-page">
+      <DiscoveryHeader />
+      <section className="hidden px-4 pb-4 pt-8 md:px-10 lg:block xl:px-16">
         <SearchBar />
-        <div className="no-scrollbar mt-8 flex gap-8 overflow-x-auto border-b border-[#ebebeb] px-2">
-          {categories.map((item) => {
-            const Icon = item.icon;
-            const active = category === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setCategory(item.id)}
-                className={cx(
-                  "flex shrink-0 flex-col items-center gap-2 border-b-2 pb-3 text-xs",
-                  active ? "border-[#222] text-[#222]" : "border-transparent text-[#6a6a6a] hover:text-[#222]",
-                )}
-              >
-                <Icon className="h-6 w-6" strokeWidth={1.5} />
-                {item.label}
-              </button>
-            );
-          })}
+      </section>
+
+      <div className="hidden lg:block"><TrustStrip /></div>
+
+      <section className="px-4 pb-4 pt-5 md:px-10 lg:pt-9 xl:px-16">
+        <h1 className="text-[22px] font-semibold tracking-[-0.025em] md:text-[28px]">Destinations pour vous</h1>
+        <div className="no-scrollbar -mx-4 mt-4 flex gap-3 overflow-x-auto px-4 md:mx-0 md:px-0">
+          {destinations.map((listing) => (
+            <Link key={listing.city} href={`/explorer?q=${encodeURIComponent(listing.city)}`} className="w-[132px] shrink-0 md:w-[164px]">
+              <div className="aspect-square overflow-hidden rounded-[20px] bg-[#eeeeee]">
+                <img src={listing.images[0]} alt={listing.city} className="h-full w-full object-cover transition duration-500 hover:scale-105" />
+              </div>
+              <p className="mt-2 text-[15px] font-semibold">{listing.city}</p>
+              <p className="line-clamp-2 text-[13px] leading-[18px] text-[#6a6a6a]">
+                {listing.amenities.includes("Vue mer") ? "Près de la plage" : listing.country}
+              </p>
+            </Link>
+          ))}
         </div>
       </section>
 
-      <TrustStrip />
+      <div id="logements">
+        {cities.map((city, index) => (
+          <ListingRail
+            key={city}
+            title={index === 0 ? `Logements populaires · ${city}` : index === 1 ? `Disponibles ce week-end · ${city}` : `Logements · ${city}`}
+            listings={listings.filter((listing) => listing.city === city)}
+          />
+        ))}
+      </div>
 
-      <section className="px-4 py-8 md:px-10 xl:px-16">
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <div>
-            <h1 className="text-[28px] font-semibold tracking-tight">
-              {category === "location" ? "Locations longue durée" : category === "gere" ? "Biens gérés par Ameena" : "Logements"}
-            </h1>
-            <p className="mt-1 text-sm text-[#6a6a6a]">{listings.length} bien{listings.length > 1 ? "s" : ""} · prix affiché, hôte identifié</p>
-          </div>
-          <Link href={`/explorer?categorie=${category}`} className="text-sm font-medium underline">
-            Afficher la carte
+      <div className="mx-4 my-8 md:mx-10 xl:mx-16">
+        <AdSlot placement="accueil-bandeau" />
+      </div>
+
+      <section className="px-4 py-7 md:px-10 xl:px-16">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <h2 className="text-[22px] font-semibold tracking-[-0.025em] md:text-2xl">Expériences ce week-end</h2>
+          <Link href="/experiences" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f2f2f2]" aria-label="Voir les expériences">
+            <ChevronRight className="h-5 w-5" />
           </Link>
         </div>
-        <div className="grid grid-cols-1 gap-x-6 gap-y-10 min-[550px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-          {listings.slice(0, 5).map((listing) => (
-            <PropertyCard key={listing.id} listing={listing} />
-          ))}
-        </div>
-        <div className="my-10">
-          <AdSlot placement="accueil-bandeau" />
-        </div>
-        <div className="grid grid-cols-1 gap-x-6 gap-y-10 min-[550px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-          {listings.slice(5).map((listing) => (
-            <PropertyCard key={listing.id} listing={listing} />
-          ))}
-        </div>
-        {listings.length === 0 && (
-          <p className="py-16 text-center text-[#6a6a6a]">Aucun bien dans cette catégorie pour le moment.</p>
-        )}
-        <div className="mt-12">
-          <AdSlot placement="accueil-rangee" />
-        </div>
-      </section>
-
-      <section className="px-4 pb-4 md:px-10 xl:px-16">
-        <div className="mb-5 flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight">Expériences</h2>
-            <p className="mt-1 text-sm text-[#6a6a6a]">Pirogue, table, marché, lagune — à réserver à part du logement.</p>
-          </div>
-          <Link href="/experiences" className="shrink-0 text-sm font-medium underline">
-            Tout voir
-          </Link>
-        </div>
-        <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0">
+        <div className="mobile-rail -mx-4 px-4 pb-2 md:mx-0 md:px-0">
           {EXPERIENCES.map((offer) => (
-            <div key={offer.id} className="w-[78vw] shrink-0 sm:w-[300px] lg:w-[320px]">
+            <div key={offer.id}>
               <OfferCard offer={offer} />
             </div>
           ))}
         </div>
       </section>
 
-      <section className="px-4 py-10 md:px-10 xl:px-16">
-        <div className="mb-5 flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight">Services</h2>
-            <p className="mt-1 text-sm text-[#6a6a6a]">Ménage, accueil, chef, linge, photos, trajet depuis l&apos;aéroport.</p>
-          </div>
-          <Link href="/services" className="shrink-0 text-sm font-medium underline">
-            Tout voir
+      <section className="px-4 py-7 md:px-10 xl:px-16">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <h2 className="text-[22px] font-semibold tracking-[-0.025em] md:text-2xl">Services pour votre séjour</h2>
+          <Link href="/services" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f2f2f2]" aria-label="Voir les services">
+            <ChevronRight className="h-5 w-5" />
           </Link>
         </div>
-        <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0">
+        <Link href="/services#mobilite" className="mb-5 flex items-center gap-4 rounded-[24px] border border-[#e5e5e5] bg-white p-5 shadow-[0_6px_20px_rgba(0,0,0,.08)]">
+          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#fff0f5] text-[#E21D5A]">
+            <CarFront className="h-8 w-8" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-lg font-semibold">Taxi, transfert aéroport et location</span>
+            <span className="mt-1 block text-sm text-[#6a6a6a]">AIBD, Dakar, Petite Côte · chauffeurs vérifiés</span>
+          </span>
+          <ArrowRight className="ml-auto h-5 w-5 shrink-0" />
+        </Link>
+        <div className="mobile-rail -mx-4 px-4 pb-2 md:mx-0 md:px-0">
           {SERVICES.map((offer) => (
-            <div key={offer.id} className="w-[78vw] shrink-0 sm:w-[300px] lg:w-[320px]">
+            <div key={offer.id}>
               <OfferCard offer={offer} />
             </div>
           ))}
@@ -173,5 +128,28 @@ export default function HomePage() {
         </section>
       )}
     </div>
+  );
+}
+
+function ListingRail({ title, listings }: { title: string; listings: Listing[] }) {
+  if (listings.length === 0) return null;
+  return (
+    <section className="px-4 py-7 md:px-10 xl:px-16">
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h2 className="text-[22px] font-semibold tracking-[-0.025em] md:text-2xl">{title}</h2>
+        <Link
+          href={`/explorer?q=${encodeURIComponent(listings[0].city)}`}
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f2f2f2]"
+          aria-label={`Voir les logements à ${listings[0].city}`}
+        >
+          <ChevronRight className="h-5 w-5" />
+        </Link>
+      </div>
+      <div className="mobile-rail -mx-4 px-4 pb-2 md:mx-0 md:px-0 lg:grid lg:grid-flow-row lg:grid-cols-4 lg:overflow-visible lg:px-0 xl:grid-cols-5">
+        {listings.slice(0, 5).map((listing) => (
+          <PropertyCard key={listing.id} listing={listing} stayNights={2} />
+        ))}
+      </div>
+    </section>
   );
 }

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BadgeCheck, CalendarDays, CreditCard, Home, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { BadgeCheck, Bell, CalendarDays, CreditCard, Home, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { InstallAppCard } from "@/components/install-app-card";
 import { useAuth } from "@/lib/auth";
 import { btnPrimary, btnSecondary, cx, fieldClass, formatDate, formatMoney } from "@/lib/format";
 import { loadMyBookings, supabase, updateProfile } from "@/lib/supabase";
@@ -117,7 +118,21 @@ export default function AccountPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-7 lg:hidden">
+        <div className="flex items-center justify-between">
+          <h1 className="text-[30px] font-semibold tracking-[-0.04em]">Profil</h1>
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-[#f7f7f7]"><Bell className="h-5 w-5" /></span>
+        </div>
+        <div className="mt-7 rounded-[24px] border border-[#e8e8e8] p-7 text-center shadow-[0_8px_24px_rgba(0,0,0,.08)]">
+          <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-[#e7f4f2] text-4xl font-semibold text-[#1F6F66]">
+            {(profile?.full_name || user.email || "A").slice(0, 1).toUpperCase()}
+          </div>
+          <p className="mt-4 text-3xl font-semibold">{profile?.full_name || user.email}</p>
+          <p className="mt-1 text-[#6a6a6a]">{profile?.account_type === "voyageur" ? "Voyageur" : profile?.account_type === "agence" ? "Agence" : "Propriétaire"}</p>
+        </div>
+      </div>
+
+      <div className="hidden flex-wrap items-end justify-between gap-4 lg:flex">
         <div>
           <p className="text-sm font-medium text-[#1F6F66]">Compte sécurisé</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">Bonjour {profile?.full_name || user.email}</h1>
@@ -224,6 +239,9 @@ export default function AccountPage() {
             <Link href="/publier" className={`${btnSecondary} mt-3 w-full`}>Publier un bien</Link>
           )}
         </aside>
+      </div>
+      <div className="mt-6 lg:ml-auto lg:w-[380px]">
+        <InstallAppCard />
       </div>
     </div>
   );

@@ -20,7 +20,7 @@ export function OfferCard({ offer }: { offer: Offer }) {
           <h2 className="line-clamp-1 text-[15px] font-semibold">{offer.title}</h2>
           <p className="flex shrink-0 items-center gap-1 text-sm">
             <Star className="h-3.5 w-3.5 fill-current" />
-            {offer.rating.toFixed(2).replace(".", ",")}
+            {offer.reviewsCount > 0 ? offer.rating.toFixed(2).replace(".", ",") : "Nouveau"}
           </p>
         </div>
         <p className="mt-0.5 line-clamp-1 text-[15px] text-[#6a6a6a]">

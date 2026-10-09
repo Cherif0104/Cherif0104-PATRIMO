@@ -20,6 +20,7 @@ const display = Fraunces({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://cherif0104-patrimo.vercel.app"),
   title: {
     default: "Se Loger au Sénégal — Séjourner, louer, gérer",
     template: "%s · Se Loger au Sénégal",
@@ -28,6 +29,12 @@ export const metadata: Metadata = {
     "Marketplace immobilière et outil de gestion. Séjours, locations longue durée, finances, incidents et états des lieux.",
   manifest: "/manifest.webmanifest",
   applicationName: "Se Loger au Sénégal",
+  openGraph: {
+    type: "website",
+    locale: "fr_SN",
+    siteName: "Se Loger au Sénégal",
+  },
+  twitter: { card: "summary_large_image" },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

@@ -6,10 +6,11 @@ import { useEffect, useRef, useState } from "react";
 import { Bell, Compass, ConciergeBell, Home, UserRound } from "lucide-react";
 import { btnGhost, cx, formatDateTime } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
+import { loadUserNotifications, markNotificationsRead, supabase } from "@/lib/supabase";
 import { CompactPreferences } from "@/components/preference-controls";
 import { usePreferences } from "@/lib/preferences";
-import { useAmeena, visibleNotification } from "@/lib/store";
-import type { Role } from "@/lib/types";
+import { useAmeena } from "@/lib/store";
+import type { Role, UserNotification } from "@/lib/types";
 
 export function Header() {
   const pathname = usePathname();
@@ -17,9 +18,9 @@ export function Header() {
   const { user, profile } = useAuth();
   const { t } = usePreferences();
   const [openNotes, setOpenNotes] = useState(false);
+  const [notes, setNotes] = useState<UserNotification[]>([]);
   const noteRef = useRef<HTMLDivElement>(null);
-  const notes = state.notifications.filter((note) => visibleNotification(state, note));
-  const unread = notes.filter((note) => !note.read).length;
+  const unread = notes.filter((note) => !note.read_at).length;
 
   useEffect(() => {
     function onPointer(event: MouseEvent) {
@@ -44,6 +45,38 @@ export function Header() {
             : "voyageur";
     if (state.role !== role) dispatch({ type: "set-role", role });
   }, [dispatch, profile?.account_type, state.role, user]);
+
+  useEffect(() => {
+    if (!user || !supabase) {
+      setNotes([]);
+      return;
+    }
+    let active = true;
+    loadUserNotifications().then((rows) => {
+      if (active) setNotes(rows);
+    }).catch(() => {
+      if (active) setNotes([]);
+    });
+    const channel = supabase
+      .channel(`notifications:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "user_notifications", filter: `user_id=eq.${user.id}` },
+        (payload) => setNotes((rows) => [payload.new as UserNotification, ...rows].slice(0, 30)),
+      )
+      .subscribe();
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  async function readAllNotifications() {
+    const ids = notes.filter((note) => !note.read_at).map((note) => note.id);
+    await markNotificationsRead(ids);
+    const readAt = new Date().toISOString();
+    setNotes((rows) => rows.map((note) => note.read_at ? note : { ...note, read_at: readAt }));
+  }
 
   const links = [
     { href: "/explorer", label: t("explore") },
@@ -148,7 +181,7 @@ export function Header() {
                 <div className="absolute right-0 mt-2 w-[340px] overflow-hidden rounded-2xl border border-[#ebebeb] bg-white shadow-[0_8px_28px_rgba(0,0,0,0.12)]">
                   <div className="flex items-center justify-between px-4 py-3">
                     <p className="font-semibold">Notifications</p>
-                    <button className="text-sm underline" onClick={() => dispatch({ type: "mark-read" })}>
+                    <button className="text-sm underline" onClick={() => void readAllNotifications()}>
                       Tout lire
                     </button>
                   </div>
@@ -159,13 +192,13 @@ export function Header() {
                     {notes.slice(0, 8).map((note) => (
                       <Link
                         key={note.id}
-                        href={note.href}
+                        href={note.href || "/compte"}
                         onClick={() => setOpenNotes(false)}
-                        className={cx("block border-t border-[#f2f2f2] px-4 py-3 hover:bg-[#fafafa]", !note.read && "bg-[#f6fbfa]")}
+                        className={cx("block border-t border-[#f2f2f2] px-4 py-3 hover:bg-[#fafafa]", !note.read_at && "bg-[#f6fbfa]")}
                       >
                         <p className="text-sm font-medium">{note.title}</p>
                         <p className="mt-1 text-sm leading-5 text-[#6a6a6a]">{note.body}</p>
-                        <p className="mt-1 text-xs text-[#8a8a8a]">{formatDateTime(note.createdAt)}</p>
+                        <p className="mt-1 text-xs text-[#8a8a8a]">{formatDateTime(note.created_at)}</p>
                       </Link>
                     ))}
                   </div>

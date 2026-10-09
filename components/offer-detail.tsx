@@ -62,9 +62,9 @@ export function OfferDetail({ offer }: { offer: Offer }) {
         <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           <span className="inline-flex items-center gap-1 font-medium">
             <Star className="h-4 w-4 fill-current" />
-            {offer.rating.toFixed(2).replace(".", ",")}
+            {offer.reviewsCount > 0 ? offer.rating.toFixed(2).replace(".", ",") : "Nouveau"}
           </span>
-          <span className="text-[#6a6a6a]">{offer.reviewsCount} avis</span>
+          {offer.reviewsCount > 0 && <span className="text-[#6a6a6a]">{offer.reviewsCount} avis</span>}
           <span className="inline-flex items-center gap-1 underline">
             <MapPin className="h-4 w-4" />
             {offer.neighborhood}, {offer.city}

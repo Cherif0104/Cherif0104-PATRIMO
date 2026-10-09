@@ -4,14 +4,16 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { OfferDetail } from "@/components/offer-detail";
 import { btnSecondary } from "@/lib/format";
-import { experienceById } from "@/lib/catalog";
 import { useTitle } from "@/lib/use-title";
+import { usePublishedOffers } from "@/lib/use-offers";
 
 export default function ExperiencePage() {
   const { id } = useParams<{ id: string }>();
-  const offer = experienceById(id);
+  const { offers, loading } = usePublishedOffers("experience");
+  const offer = offers.find((item) => item.id === id);
   useTitle(offer ? `${offer.title} · Se Loger au Sénégal` : "Expérience · Se Loger au Sénégal");
 
+  if (loading) return <p className="px-6 py-24 text-center text-sm text-[#6a6a6a]">Chargement de l’expérience…</p>;
   if (!offer) {
     return (
       <div className="mx-auto max-w-lg px-6 py-24 text-center">

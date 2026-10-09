@@ -4,14 +4,16 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { OfferDetail } from "@/components/offer-detail";
 import { btnSecondary } from "@/lib/format";
-import { serviceById } from "@/lib/catalog";
 import { useTitle } from "@/lib/use-title";
+import { usePublishedOffers } from "@/lib/use-offers";
 
 export default function ServicePage() {
   const { id } = useParams<{ id: string }>();
-  const offer = serviceById(id);
+  const { offers, loading } = usePublishedOffers("service");
+  const offer = offers.find((item) => item.id === id);
   useTitle(offer ? `${offer.title} · Se Loger au Sénégal` : "Service · Se Loger au Sénégal");
 
+  if (loading) return <p className="px-6 py-24 text-center text-sm text-[#6a6a6a]">Chargement du service…</p>;
   if (!offer) {
     return (
       <div className="mx-auto max-w-lg px-6 py-24 text-center">

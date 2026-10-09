@@ -8,14 +8,18 @@ import { QuoteView } from "@/components/quote-view";
 import { btnPrimary, btnSecondary, fieldClass, uid } from "@/lib/format";
 import { readImage } from "@/lib/images";
 import { PLACEMENT_LABEL } from "@/lib/labels";
+import type { Offer } from "@/lib/catalog";
 import { buildQuote } from "@/lib/quote";
 import {
+  createAdminOffer,
   loadListingsForReview,
   loadOfferRequests,
+  loadOffersForReview,
   loadVerificationRequests,
   loadVerificationDocuments,
   getVerificationDocumentUrl,
   reviewListing,
+  reviewOffer,
   reviewVerificationRequest,
   savePlatformSettings,
   updateOfferRequestStatus,
@@ -66,6 +70,7 @@ export default function AdminPage() {
       {settingsStatus && <p className="mb-4 text-right text-xs text-[#6a6a6a]">{settingsStatus}</p>}
       <ReviewQueue />
       <OperationsQueue />
+      <OfferCatalogAdmin userId={user?.id} />
 
       <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-4">
@@ -146,6 +151,102 @@ export default function AdminPage() {
         <AddAd onAdd={(ad) => save({ ...settings, ads: [...settings.ads, ad] })} />
       </section>
     </div>
+  );
+}
+
+function OfferCatalogAdmin({ userId }: { userId?: string }) {
+  const [pending, setPending] = useState<Offer[]>([]);
+  const [kind, setKind] = useState<Offer["kind"]>("experience");
+  const [title, setTitle] = useState("");
+  const [city, setCity] = useState("Dakar");
+  const [neighborhood, setNeighborhood] = useState("");
+  const [price, setPrice] = useState(25000);
+  const [image, setImage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    loadOffersForReview().then(setPending).catch(() => setMessage("La file des offres ne peut pas être chargée."));
+  }, []);
+
+  async function create(event: React.FormEvent) {
+    event.preventDefault();
+    if (!userId || title.trim().length < 5 || !neighborhood.trim() || price <= 0 || !image.startsWith("https://")) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      await createAdminOffer(userId, {
+        id: uid(kind),
+        kind,
+        title: title.trim(),
+        city: city.trim(),
+        country: "Sénégal",
+        neighborhood: neighborhood.trim(),
+        price,
+        currency: "XOF",
+        unit: kind === "experience" ? "par personne" : "par prestation",
+        rating: 0,
+        reviewsCount: 0,
+        duration: "À confirmer",
+        images: [image],
+        description: "Offre publiée et administrée par Se Loger au Sénégal.",
+        includes: ["Confirmation par l’équipe"],
+        host: "Se Loger au Sénégal",
+      });
+      setTitle("");
+      setNeighborhood("");
+      setImage("");
+      setMessage("Offre publiée dans le catalogue serveur.");
+    } catch {
+      setMessage("L’offre n’a pas pu être publiée.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function decide(offer: Offer, status: "published" | "suspended") {
+    if (!offer.databaseId) return;
+    setBusy(true);
+    try {
+      await reviewOffer(offer.databaseId, status);
+      setPending((rows) => rows.filter((row) => row.databaseId !== offer.databaseId));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="mb-12 rounded-3xl border border-[#ebebeb] p-5">
+      <h2 className="text-2xl font-semibold">Catalogue expériences et services</h2>
+      <p className="mt-2 text-sm text-[#6a6a6a]">Les offres publiées ici deviennent immédiatement visibles dans le catalogue public serveur.</p>
+      <form onSubmit={create} className="mt-5 grid gap-3 md:grid-cols-2">
+        <select className={fieldClass} value={kind} onChange={(event) => setKind(event.target.value as Offer["kind"])}>
+          <option value="experience">Expérience</option>
+          <option value="service">Service</option>
+        </select>
+        <input className={fieldClass} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Titre" minLength={5} required />
+        <input className={fieldClass} value={city} onChange={(event) => setCity(event.target.value)} placeholder="Ville" required />
+        <input className={fieldClass} value={neighborhood} onChange={(event) => setNeighborhood(event.target.value)} placeholder="Quartier ou zone" required />
+        <input className={fieldClass} type="number" min={1} value={price} onChange={(event) => setPrice(Number(event.target.value))} required />
+        <input className={fieldClass} type="url" value={image} onChange={(event) => setImage(event.target.value)} placeholder="URL HTTPS de l’image" required />
+        <button className={`${btnPrimary} md:col-span-2`} disabled={busy || !userId}>{busy ? "Publication…" : "Publier l’offre"}</button>
+      </form>
+      {message && <p className="mt-3 text-sm">{message}</p>}
+      {pending.length > 0 && (
+        <div className="mt-6 grid gap-2">
+          <h3 className="font-semibold">Offres soumises à valider</h3>
+          {pending.map((offer) => (
+            <div key={offer.databaseId} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#f7f7f7] p-3">
+              <span>{offer.title} · {offer.city}</span>
+              <span className="flex gap-2">
+                <button className={btnPrimary} disabled={busy} onClick={() => void decide(offer, "published")}>Publier</button>
+                <button className={btnSecondary} disabled={busy} onClick={() => void decide(offer, "suspended")}>Refuser</button>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

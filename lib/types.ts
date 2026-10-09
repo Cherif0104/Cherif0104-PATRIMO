@@ -9,6 +9,8 @@ export type Listing = {
   id: string;
   databaseId?: string;
   ownerUserId?: string;
+  organizationId?: string;
+  manageable?: boolean;
   publicationStatus?: "draft" | "pending_review" | "published" | "suspended" | "archived";
   title: string;
   city: string;
@@ -272,6 +274,47 @@ export type Notification = {
   href: string;
   audience: "proprietaire" | "agence" | "admin" | "all";
   listingId?: string;
+};
+
+export type UserNotification = {
+  id: string;
+  user_id: string;
+  title: string;
+  body: string;
+  href: string | null;
+  listing_id: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+export type Organization = {
+  id: string;
+  name: string;
+  slug: string;
+  legal_name: string | null;
+  owner_id: string;
+  verification_status: "non_verifie" | "en_verification" | "verifie" | "refuse";
+  created_at: string;
+};
+
+export type OrganizationMember = {
+  organization_id: string;
+  user_id: string;
+  role: "owner" | "manager" | "agent" | "viewer";
+  created_at: string;
+  profile?: Pick<Profile, "full_name" | "avatar_url"> | null;
+};
+
+export type OrganizationInvitation = {
+  id: string;
+  organization_id: string;
+  email: string;
+  role: "manager" | "agent" | "viewer";
+  token: string;
+  invited_by: string;
+  expires_at: string;
+  accepted_at: string | null;
+  created_at: string;
 };
 
 export type AppState = {

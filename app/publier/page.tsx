@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PickMap } from "@/components/map";
@@ -8,10 +8,10 @@ import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { PageHead } from "@/components/ui";
 import { btnPrimary, fieldClass, uid } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
-import { submitListing, uploadListingPhoto } from "@/lib/supabase";
+import { loadOrganizations, submitListing, uploadListingPhoto } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
-import type { Currency, Mode, PropertyType } from "@/lib/types";
+import type { Currency, Mode, Organization, PropertyType } from "@/lib/types";
 
 const defaultPlace = {
   label: "Almadies, Dakar, Sénégal",
@@ -36,6 +36,8 @@ export default function PublishPage() {
   const [bedrooms, setBedrooms] = useState(1);
   const [description, setDescription] = useState("");
   const [managed, setManaged] = useState(false);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [organizationId, setOrganizationId] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -45,6 +47,14 @@ export default function PublishPage() {
   useTitle("Publier un bien · Se Loger au Sénégal");
 
   const professional = profile?.account_type === "proprietaire" || profile?.account_type === "agence" || user?.app_metadata?.role === "admin";
+
+  useEffect(() => {
+    if (!user || profile?.account_type !== "agence") return;
+    loadOrganizations().then((rows) => {
+      setOrganizations(rows);
+      setOrganizationId(rows[0]?.id ?? "");
+    }).catch(() => setOrganizations([]));
+  }, [profile?.account_type, user]);
 
   async function onFiles(files: FileList | null) {
     if (!files || !user) return;
@@ -72,6 +82,7 @@ export default function PublishPage() {
     const listing = {
         id,
         ownerUserId: user.id,
+        organizationId: organizationId || undefined,
         publicationStatus: "pending_review" as const,
         title: title.trim(),
         city: place.city,
@@ -208,6 +219,15 @@ export default function PublishPage() {
           <input type="checkbox" checked={managed} onChange={(event) => setManaged(event.target.checked)} />
           Géré par Se Loger au Sénégal — la règle Gestion s&apos;applique
         </label>
+        {organizations.length > 0 && (
+          <label className="text-sm font-medium">
+            Organisation responsable
+            <select className={`${fieldClass} mt-1`} value={organizationId} onChange={(event) => setOrganizationId(event.target.value)}>
+              <option value="">Compte personnel</option>
+              {organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}
+            </select>
+          </label>
+        )}
         <label className="text-sm font-medium">
           Photos <span className="font-normal text-[#6a6a6a]">· 3 minimum, 5 maximum</span>
           <input className="mt-2 block text-sm" type="file" accept="image/*" multiple onChange={(event) => onFiles(event.target.files)} />

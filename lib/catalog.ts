@@ -5,6 +5,9 @@ export type OfferKind = "experience" | "service";
 
 export type Offer = {
   id: string;
+  databaseId?: string;
+  ownerUserId?: string;
+  publicationStatus?: "draft" | "pending_review" | "published" | "suspended" | "archived";
   kind: OfferKind;
   title: string;
   city: string;

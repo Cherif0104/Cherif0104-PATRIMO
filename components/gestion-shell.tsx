@@ -7,6 +7,7 @@ import {
   CalendarDays,
   ClipboardCheck,
   LayoutDashboard,
+  UserCog,
   Users,
   Wallet,
   Wrench,
@@ -20,6 +21,7 @@ const links = [
   { href: "/gestion/reservations", label: "Réservations", icon: CalendarDays },
   { href: "/gestion/clients", label: "Clientèle", icon: Users },
   { href: "/gestion/finances", label: "Finances", icon: Wallet },
+  { href: "/gestion/equipe", label: "Équipe", icon: UserCog },
   { href: "/gestion/incidents", label: "Incidents", icon: Wrench },
   { href: "/gestion/etats-des-lieux", label: "États des lieux", icon: ClipboardCheck },
 ];

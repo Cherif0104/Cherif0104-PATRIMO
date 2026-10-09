@@ -7,6 +7,9 @@ import type {
   Listing,
   MarketBooking,
   OfferRequest,
+  Organization,
+  OrganizationInvitation,
+  OrganizationMember,
   PaymentOrder,
   Payout,
   Profile,
@@ -18,9 +21,11 @@ import type {
   RoomCheck,
   MeterReading,
   Settings,
+  UserNotification,
   VerificationDocument,
   VerificationRequest,
 } from "./types";
+import type { Offer, OfferKind } from "./catalog";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -50,7 +55,7 @@ export async function loadPublishedListings(): Promise<Listing[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("marketplace_listings")
-    .select("id, owner_id, status, data")
+    .select("id, owner_id, organization_id, status, data")
     .eq("status", "published")
     .order("published_at", { ascending: false });
   if (error) throw error;
@@ -58,6 +63,7 @@ export async function loadPublishedListings(): Promise<Listing[]> {
     ...(row.data as Listing),
     databaseId: row.id,
     ownerUserId: row.owner_id,
+    organizationId: row.organization_id ?? undefined,
     publicationStatus: row.status,
   }));
 }
@@ -66,14 +72,15 @@ export async function loadOwnedListings(userId: string): Promise<Listing[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("marketplace_listings")
-    .select("id, owner_id, status, data")
-    .eq("owner_id", userId)
+    .select("id, owner_id, organization_id, status, data")
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row) => ({
     ...(row.data as Listing),
     databaseId: row.id,
     ownerUserId: row.owner_id,
+    organizationId: row.organization_id ?? undefined,
+    manageable: row.owner_id === userId || Boolean(row.organization_id),
     publicationStatus: row.status,
   }));
 }
@@ -96,13 +103,15 @@ export async function updateOwnedListing(listing: Listing) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", listing.databaseId)
-    .select("id, owner_id, status, data")
+    .select("id, owner_id, organization_id, status, data")
     .single();
   if (error) throw error;
   return {
     ...(data.data as Listing),
     databaseId: data.id,
     ownerUserId: data.owner_id,
+    organizationId: (data as { organization_id?: string | null }).organization_id ?? undefined,
+    manageable: true,
     publicationStatus: data.status,
   } as Listing;
 }
@@ -117,6 +126,7 @@ export async function setOwnedListingStatus(listing: Listing, status: "archived"
   const row = data as {
     id: string;
     owner_id: string;
+    organization_id: string | null;
     status: Listing["publicationStatus"];
     data: Listing;
   };
@@ -124,6 +134,8 @@ export async function setOwnedListingStatus(listing: Listing, status: "archived"
     ...row.data,
     databaseId: row.id,
     ownerUserId: row.owner_id,
+    organizationId: row.organization_id ?? undefined,
+    manageable: true,
     publicationStatus: row.status,
   } as Listing;
 }
@@ -579,6 +591,83 @@ export async function getVerificationDocumentUrl(path: string) {
   return data.signedUrl;
 }
 
+function mapOffer(row: {
+  id: string;
+  slug: string;
+  owner_id: string | null;
+  status: Offer["publicationStatus"];
+  data: unknown;
+}) {
+  return {
+    ...(row.data as Offer),
+    id: row.slug,
+    databaseId: row.id,
+    ownerUserId: row.owner_id ?? undefined,
+    publicationStatus: row.status,
+  } as Offer;
+}
+
+export async function loadPublishedOffers(kind?: OfferKind): Promise<Offer[]> {
+  if (!supabase) return [];
+  let query = supabase
+    .from("marketplace_offers")
+    .select("id, slug, owner_id, status, data")
+    .eq("status", "published")
+    .order("published_at", { ascending: false });
+  if (kind) query = query.eq("kind", kind);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []).map(mapOffer);
+}
+
+export async function loadOffersForReview(): Promise<Offer[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("marketplace_offers")
+    .select("id, slug, owner_id, status, data")
+    .eq("status", "pending_review")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(mapOffer);
+}
+
+export async function createAdminOffer(userId: string, offer: Offer) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("marketplace_offers")
+    .insert({
+      slug: offer.id,
+      owner_id: userId,
+      kind: offer.kind,
+      status: "published",
+      title: offer.title,
+      city: offer.city,
+      country: offer.country,
+      neighborhood: offer.neighborhood,
+      price: offer.price,
+      currency: offer.currency,
+      data: offer,
+      published_at: new Date().toISOString(),
+    })
+    .select("id, slug, owner_id, status, data")
+    .single();
+  if (error) throw error;
+  return mapOffer(data);
+}
+
+export async function reviewOffer(id: string, status: "published" | "suspended") {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { error } = await supabase
+    .from("marketplace_offers")
+    .update({
+      status,
+      published_at: status === "published" ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 export async function createOfferRequest(input: {
   userId: string;
   kind: "experience" | "service";
@@ -663,11 +752,111 @@ export async function savePlatformSettings(userId: string, settings: Settings) {
   if (error) throw error;
 }
 
+export async function loadOrganizations(): Promise<Organization[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("organizations")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as Organization[];
+}
+
+export async function createOrganization(userId: string, name: string) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const slug = `${name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${crypto.randomUUID().slice(0, 8)}`;
+  const { data, error } = await supabase
+    .from("organizations")
+    .insert({ name: name.trim(), slug, owner_id: userId })
+    .select("*")
+    .single();
+  if (error) throw error;
+  const member = await supabase.from("organization_members").insert({
+    organization_id: data.id,
+    user_id: userId,
+    role: "owner",
+  });
+  if (member.error) throw member.error;
+  return data as Organization;
+}
+
+export async function loadOrganizationMembers(organizationId: string): Promise<OrganizationMember[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("organization_members")
+    .select("*")
+    .eq("organization_id", organizationId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as unknown as OrganizationMember[];
+}
+
+export async function loadOrganizationInvitations(organizationId: string): Promise<OrganizationInvitation[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("organization_invitations")
+    .select("*")
+    .eq("organization_id", organizationId)
+    .is("accepted_at", null)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as OrganizationInvitation[];
+}
+
+export async function createOrganizationInvitation(input: {
+  organizationId: string;
+  userId: string;
+  email: string;
+  role: OrganizationInvitation["role"];
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("organization_invitations")
+    .insert({
+      organization_id: input.organizationId,
+      invited_by: input.userId,
+      email: input.email.trim().toLowerCase(),
+      role: input.role,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as OrganizationInvitation;
+}
+
+export async function acceptOrganizationInvitation(token: string) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase.rpc("accept_organization_invitation", { p_token: token });
+  if (error) throw error;
+  return data as string;
+}
+
+export async function loadUserNotifications(): Promise<UserNotification[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("user_notifications")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(30);
+  if (error) throw error;
+  return (data ?? []) as UserNotification[];
+}
+
+export async function markNotificationsRead(ids: string[]) {
+  if (!supabase || ids.length === 0) return;
+  const { error } = await supabase
+    .from("user_notifications")
+    .update({ read_at: new Date().toISOString() })
+    .in("id", ids);
+  if (error) throw error;
+}
+
 export async function submitListing(userId: string, listing: Listing) {
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
   const row = {
     slug: listing.id,
     owner_id: userId,
+    organization_id: listing.organizationId || null,
     status: "pending_review",
     mode: listing.mode,
     title: listing.title,

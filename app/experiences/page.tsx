@@ -4,17 +4,17 @@ import { useState } from "react";
 import { DiscoveryHeader } from "@/components/discovery-header";
 import { OfferCard } from "@/components/offer-card";
 import { cx } from "@/lib/format";
-import { EXPERIENCES } from "@/lib/catalog";
 import { usePreferences } from "@/lib/preferences";
 import { useTitle } from "@/lib/use-title";
-
-const cities = ["Toutes", ...Array.from(new Set(EXPERIENCES.map((item) => item.city)))];
+import { usePublishedOffers } from "@/lib/use-offers";
 
 export default function ExperiencesPage() {
   const [city, setCity] = useState("Toutes");
   const { t } = usePreferences();
+  const { offers, loading, error } = usePublishedOffers("experience");
   useTitle("Expériences · Se Loger au Sénégal");
-  const items = EXPERIENCES.filter((item) => city === "Toutes" || item.city === city);
+  const cities = ["Toutes", ...Array.from(new Set(offers.map((item) => item.city)))];
+  const items = offers.filter((item) => city === "Toutes" || item.city === city);
 
   return (
     <div className="app-surface mobile-page">
@@ -43,6 +43,9 @@ export default function ExperiencesPage() {
           <OfferCard key={offer.id} offer={offer} />
         ))}
       </div>
+      {loading && <p className="mt-8 text-sm text-[#6a6a6a]">Chargement des expériences…</p>}
+      {error && <p role="alert" className="mt-8 text-sm text-[#a52a12]">{error}</p>}
+      {!loading && !error && items.length === 0 && <p className="mt-8 rounded-2xl border border-dashed border-[#cccccc] p-6 text-sm text-[#6a6a6a]">Aucune expérience vérifiée n’est publiée pour le moment.</p>}
       </div>
     </div>
   );

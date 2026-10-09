@@ -165,6 +165,7 @@ function hydrate(saved: Partial<AppState> | null): AppState {
 function createRuntimeInitial(): AppState {
   return {
     ...createInitial(),
+    listings: [],
     reservations: [],
     invoices: [],
     expenses: [],
@@ -417,7 +418,7 @@ export function useScope() {
       ? persistedListings
       : profile?.account_type === "voyageur"
         ? []
-        : persistedListings.filter((listing) => listing.ownerUserId === user?.id);
+        : persistedListings.filter((listing) => listing.ownerUserId === user?.id || listing.manageable);
   const ids = new Set(listings.map((listing) => listing.id));
   const inScope = <T extends { listingId: string }>(rows: T[]) =>
     isAdmin ? rows : rows.filter((row) => ids.has(row.listingId));

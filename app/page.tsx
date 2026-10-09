@@ -8,17 +8,18 @@ import { OfferCard } from "@/components/offer-card";
 import { PropertyCard } from "@/components/property-card";
 import { SearchBar } from "@/components/search-bar";
 import { TrustStrip } from "@/components/trust-strip";
-import { EXPERIENCES, SERVICES } from "@/lib/catalog";
 import { usePreferences } from "@/lib/preferences";
 import { useAmeena } from "@/lib/store";
+import { usePublishedOffers } from "@/lib/use-offers";
 import type { Listing } from "@/lib/types";
 
 export default function HomePage() {
   const { state } = useAmeena();
+  const { offers } = usePublishedOffers();
   const { t } = usePreferences();
-  const listings = state.listings.filter(
-    (listing) => !listing.publicationStatus || listing.publicationStatus === "published",
-  );
+  const listings = state.listings.filter((listing) => listing.publicationStatus === "published");
+  const experiences = offers.filter((offer) => offer.kind === "experience");
+  const services = offers.filter((offer) => offer.kind === "service");
   const shops = state.settings.ads.filter((ad) => ad.active && ad.placement === "boutique");
   const destinations = [...new Map(listings.map((listing) => [listing.city, listing])).values()].slice(0, 6);
   const cities = [...new Set(listings.map((listing) => listing.city))].slice(0, 4);
@@ -59,6 +60,13 @@ export default function HomePage() {
           />
         ))}
       </div>
+      {listings.length === 0 && (
+        <section className="px-4 py-12 text-center md:px-10 xl:px-16">
+          <h2 className="text-2xl font-semibold">Les premières annonces vérifiées arrivent</h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-[#6a6a6a]">Le catalogue public affiche uniquement les biens validés par l’équipe.</p>
+          <Link href="/compte" className="mt-5 inline-block font-semibold underline">Proposer un bien</Link>
+        </section>
+      )}
 
       <div className="mx-4 my-8 md:mx-10 xl:mx-16">
         <AdSlot placement="accueil-bandeau" />
@@ -72,7 +80,7 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="mobile-rail -mx-4 px-4 pb-2 md:mx-0 md:px-0">
-          {EXPERIENCES.map((offer) => (
+          {experiences.map((offer) => (
             <div key={offer.id}>
               <OfferCard offer={offer} />
             </div>
@@ -98,7 +106,7 @@ export default function HomePage() {
           <ArrowRight className="ml-auto h-5 w-5 shrink-0" />
         </Link>
         <div className="mobile-rail -mx-4 px-4 pb-2 md:mx-0 md:px-0">
-          {SERVICES.map((offer) => (
+          {services.map((offer) => (
             <div key={offer.id}>
               <OfferCard offer={offer} />
             </div>

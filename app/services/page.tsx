@@ -4,17 +4,19 @@ import Link from "next/link";
 import { CarFront, ChevronRight, Plane, ShieldCheck } from "lucide-react";
 import { DiscoveryHeader } from "@/components/discovery-header";
 import { OfferCard } from "@/components/offer-card";
-import { SERVICES } from "@/lib/catalog";
+import type { Offer } from "@/lib/catalog";
 import { usePreferences } from "@/lib/preferences";
 import { useTitle } from "@/lib/use-title";
+import { usePublishedOffers } from "@/lib/use-offers";
 
 export default function ServicesPage() {
   useTitle("Services · Se Loger au Sénégal");
   const { t } = usePreferences();
-  const mobility = SERVICES.filter((service) =>
+  const { offers, loading, error } = usePublishedOffers("service");
+  const mobility = offers.filter((service) =>
     ["chauffeur-aeroport", "taxi-aibd-saly", "van-aeroport", "location-voiture"].includes(service.id),
   );
-  const stayServices = SERVICES.filter((service) => !mobility.includes(service));
+  const stayServices = offers.filter((service) => !mobility.includes(service));
 
   return (
     <div className="app-surface mobile-page">
@@ -46,12 +48,15 @@ export default function ServicesPage() {
 
         <ServiceRail id="mobilite" title={t("transportTitle")} offers={mobility} />
         <ServiceRail title={t("duringStay")} offers={stayServices} />
+        {loading && <p className="mt-8 text-sm text-[#6a6a6a]">Chargement des services…</p>}
+        {error && <p role="alert" className="mt-8 text-sm text-[#a52a12]">{error}</p>}
+        {!loading && !error && offers.length === 0 && <p className="mt-8 rounded-2xl border border-dashed border-[#cccccc] p-6 text-sm text-[#6a6a6a]">Aucun service vérifié n’est publié pour le moment.</p>}
       </div>
     </div>
   );
 }
 
-function ServiceRail({ title, offers, id }: { title: string; offers: typeof SERVICES; id?: string }) {
+function ServiceRail({ title, offers, id }: { title: string; offers: Offer[]; id?: string }) {
   return (
     <section id={id} className="pt-10">
       <h2 className="premium-title text-[24px] md:text-[30px]">{title}</h2>

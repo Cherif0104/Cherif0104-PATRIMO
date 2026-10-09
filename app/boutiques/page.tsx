@@ -8,7 +8,7 @@ import { useTitle } from "@/lib/use-title";
 export default function BoutiquesPage() {
   const { state } = useAmeena();
   const shops = state.settings.ads.filter((ad) => ad.active && (ad.placement === "boutique" || ad.offer));
-  useTitle("Boutiques · Ameena");
+  useTitle("Boutiques · Se Loger au Sénégal");
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 md:px-8">

@@ -17,7 +17,7 @@ export function QuoteView({ quote }: { quote: Quote }) {
       <div className="mt-4 space-y-3 border-t border-[#ebebeb] pt-4 text-[15px]">
         <Row label="Le client paie" value={formatMoney(quote.guestPays, quote.currency)} strong />
         <Row label="Le propriétaire reçoit" value={formatMoney(quote.ownerReceives, quote.currency)} />
-        <Row label="Ameena perçoit" value={formatMoney(quote.platformReceives, quote.currency)} />
+        <Row label="Se Loger au Sénégal perçoit" value={formatMoney(quote.platformReceives, quote.currency)} />
       </div>
       <p className="mt-3 text-xs leading-5 text-[#6a6a6a]">Règle appliquée : {quote.ruleLabel}.</p>
       {quote.warning && <p className="mt-2 text-sm text-[#c13515]">{quote.warning}</p>}

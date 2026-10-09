@@ -38,7 +38,7 @@ export function InspectionForm({ presetListing }: { presetListing?: string }) {
       listingId,
       kind,
       date,
-      author: author.trim() || "Ameena",
+      author: author.trim() || "Se Loger au Sénégal",
       rooms,
       meters: [
         { kind: "eau", index: water, unit: "m³", photo: waterPhoto || undefined },

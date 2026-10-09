@@ -14,7 +14,7 @@ function AuthForm() {
   const router = useRouter();
   const params = useSearchParams();
   const { user, loading, configured } = useAuth();
-  const [mode, setMode] = useState<"connexion" | "inscription">("connexion");
+  const [mode, setMode] = useState<"connexion" | "inscription" | "oubli" | "nouveau">("connexion");
   const [fullName, setFullName] = useState("");
   const [accountType, setAccountType] = useState<AccountType>("voyageur");
   const [email, setEmail] = useState("");
@@ -22,14 +22,18 @@ function AuthForm() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  useTitle("Connexion · Ameena");
+  useTitle("Connexion · Se Loger au Sénégal");
 
   const requested = params.get("retour") ?? "/compte";
   const returnTo = requested.startsWith("/") && !requested.startsWith("//") ? requested : "/compte";
 
   useEffect(() => {
+    if (params.get("reinitialiser") === "1") {
+      setMode("nouveau");
+      return;
+    }
     if (!loading && user) router.replace(returnTo);
-  }, [loading, returnTo, router, user]);
+  }, [loading, params, returnTo, router, user]);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -42,7 +46,7 @@ function AuthForm() {
         const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
         if (authError) throw authError;
         router.replace(returnTo);
-      } else {
+      } else if (mode === "inscription") {
         const { data, error: authError } = await supabase.auth.signUp({
           email,
           password,
@@ -54,6 +58,17 @@ function AuthForm() {
         if (authError) throw authError;
         if (data.session) router.replace(returnTo);
         else setMessage("Compte créé. Ouvrez l’e-mail de confirmation pour activer votre accès.");
+      } else if (mode === "oubli") {
+        const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/connexion?reinitialiser=1`,
+        });
+        if (authError) throw authError;
+        setMessage("Un lien de réinitialisation vient d’être envoyé si ce compte existe.");
+      } else {
+        const { error: authError } = await supabase.auth.updateUser({ password });
+        if (authError) throw authError;
+        setMessage("Votre mot de passe a été modifié. Vous pouvez continuer.");
+        router.replace(returnTo);
       }
     } catch (cause) {
       const detail = cause instanceof Error ? cause.message : "Connexion impossible.";
@@ -81,7 +96,7 @@ function AuthForm() {
   return (
     <div className="grid min-h-[calc(100vh-5rem)] lg:grid-cols-[1.05fr_.95fr]">
       <section className="hidden bg-[#143f3b] p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <Link href="/" className="logo-word text-4xl">Ameena</Link>
+        <Link href="/" className="logo-word text-4xl">Se Loger au Sénégal</Link>
         <div className="max-w-xl">
           <p className="text-sm uppercase tracking-[0.18em] text-white/60">La confiance, avant la transaction</p>
           <h1 className="mt-4 text-5xl font-semibold leading-[1.08] tracking-tight">
@@ -93,17 +108,17 @@ function AuthForm() {
             <li className="flex gap-3"><LockKeyhole className="mt-0.5 h-5 w-5" />Accès protégé par Supabase Auth et les politiques RLS.</li>
           </ul>
         </div>
-        <p className="text-sm text-white/55">Ameena · Sénégal, puis international</p>
+        <p className="text-sm text-white/55">Se Loger au Sénégal · Sénégal, puis international</p>
       </section>
 
       <section className="flex items-center justify-center bg-[#f2f2f2] px-0 pt-8 lg:bg-white lg:px-4 lg:py-12">
         <div className="min-h-[calc(100dvh-2rem)] w-full max-w-md rounded-t-[30px] bg-white px-7 py-7 lg:min-h-0 lg:rounded-none lg:px-0 lg:py-0">
           <div className="flex items-center justify-between lg:hidden">
             <Link href="/" aria-label="Fermer" className="grid h-10 w-10 place-items-center rounded-full hover:bg-[#f2f2f2]"><X className="h-5 w-5" /></Link>
-            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[#D4AF37] text-[#000000]"><Home className="h-7 w-7" /></span>
+            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[#FF385C] text-[#000000]"><Home className="h-7 w-7" /></span>
             <span className="h-10 w-10" />
           </div>
-          <div className="mt-8 grid grid-cols-2 rounded-full bg-[#f2f2f2] p-1 text-sm lg:mt-0">
+          {(mode === "connexion" || mode === "inscription") && <div className="mt-8 grid grid-cols-2 rounded-full bg-[#f2f2f2] p-1 text-sm lg:mt-0">
             {(["connexion", "inscription"] as const).map((item) => (
               <button
                 key={item}
@@ -117,15 +132,25 @@ function AuthForm() {
                 {item}
               </button>
             ))}
-          </div>
+          </div>}
 
           <h2 className="mt-8 text-center text-[28px] font-semibold tracking-tight lg:text-left lg:text-3xl">
-            {mode === "connexion" ? "Connexion ou inscription" : "Créer votre compte"}
+            {mode === "connexion"
+              ? "Bienvenue"
+              : mode === "inscription"
+                ? "Créer votre compte"
+                : mode === "oubli"
+                  ? "Mot de passe oublié"
+                  : "Nouveau mot de passe"}
           </h2>
           <p className="mt-2 text-sm leading-6 text-[#6a6a6a]">
             {mode === "connexion"
               ? "Retrouvez vos demandes et votre espace de gestion."
-              : "Commencez comme voyageur ou préparez un espace professionnel."}
+              : mode === "inscription"
+                ? "Commencez comme voyageur ou préparez un espace professionnel."
+                : mode === "oubli"
+                  ? "Saisissez votre e-mail pour recevoir un lien sécurisé."
+                  : "Choisissez un mot de passe d’au moins huit caractères."}
           </p>
 
           <form className="mt-7 grid gap-4" onSubmit={submit}>
@@ -149,7 +174,7 @@ function AuthForm() {
                         onClick={() => setAccountType(value)}
                         className={cx(
                           "rounded-xl border px-3 py-3 text-sm",
-                          accountType === value ? "border-[#D4AF37] bg-[#f8f1d3] font-semibold text-[#7C5C24]" : "border-[#dddddd]",
+                          accountType === value ? "border-[#FF385C] bg-[#fff1f3] font-semibold text-[#C13515]" : "border-[#dddddd]",
                         )}
                       >
                         {label}
@@ -159,22 +184,44 @@ function AuthForm() {
                 </fieldset>
               </>
             )}
-            <label className="text-sm font-medium">
-              E-mail
-              <input className={`${fieldClass} mt-1`} required type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" />
-            </label>
-            <label className="text-sm font-medium">
-              Mot de passe
-              <input className={`${fieldClass} mt-1`} required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === "connexion" ? "current-password" : "new-password"} />
-            </label>
+            {mode !== "nouveau" && (
+              <label className="text-sm font-medium">
+                E-mail
+                <input className={`${fieldClass} mt-1`} required type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" />
+              </label>
+            )}
+            {mode !== "oubli" && (
+              <label className="text-sm font-medium">
+                Mot de passe
+                <input className={`${fieldClass} mt-1`} required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === "connexion" ? "current-password" : "new-password"} />
+              </label>
+            )}
             {error && <p role="alert" className="rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
             {message && <p className="rounded-xl bg-[#e7f4f2] px-4 py-3 text-sm text-[#145e57]">{message}</p>}
             <button className={`${btnPrimary} mt-2 w-full py-3`} disabled={busy || loading}>
-              {busy ? "Un instant…" : mode === "connexion" ? "Se connecter" : "Créer mon compte"}
+              {busy
+                ? "Un instant…"
+                : mode === "connexion"
+                  ? "Se connecter"
+                  : mode === "inscription"
+                    ? "Créer mon compte"
+                    : mode === "oubli"
+                      ? "Envoyer le lien"
+                      : "Enregistrer le mot de passe"}
             </button>
+            {mode === "connexion" && (
+              <button type="button" className="text-sm font-medium underline" onClick={() => setMode("oubli")}>
+                Mot de passe oublié ?
+              </button>
+            )}
+            {(mode === "oubli" || mode === "nouveau") && (
+              <button type="button" className="text-sm font-medium underline" onClick={() => setMode("connexion")}>
+                Revenir à la connexion
+              </button>
+            )}
           </form>
           <p className="mt-5 text-xs leading-5 text-[#6a6a6a]">
-            En continuant, vous acceptez les conditions d’utilisation et la politique de confidentialité d’Ameena.
+            En continuant, vous acceptez les conditions d’utilisation et la politique de confidentialité d’Se Loger au Sénégal.
           </p>
         </div>
       </section>

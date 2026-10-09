@@ -10,10 +10,9 @@ import { createMarketBooking, isListingAvailable } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import type { Listing } from "@/lib/types";
 import { QuoteView } from "./quote-view";
-import { uid } from "@/lib/format";
 
 export function BookingCard({ listing }: { listing: Listing }) {
-  const { state, dispatch } = useAmeena();
+  const { state } = useAmeena();
   const { user, profile } = useAuth();
   const pathname = usePathname();
   const [from, setFrom] = useState("");
@@ -68,6 +67,9 @@ export function BookingCard({ listing }: { listing: Listing }) {
     const start = from || addDaysISO(5);
     const end = listing.mode === "sejour" ? to || addDaysISO(8) : addDaysISO(370);
     try {
+      if (!listing.databaseId) {
+        throw new Error("listing_demo");
+      }
       if (listing.databaseId && listing.mode === "sejour") {
         const available = await isListingAvailable(listing.databaseId, start, end);
         if (!available) {
@@ -84,28 +86,14 @@ export function BookingCard({ listing }: { listing: Listing }) {
         to: end,
         quote,
       });
-      dispatch({
-        type: "add-reservation",
-        reservation: {
-          id: uid("res"),
-          listingId: listing.id,
-          guestName: name.trim(),
-          mode: listing.mode,
-          from: start,
-          to: end,
-          status: "demande",
-          subtotal: quote.subtotal,
-          commission: quote.commission,
-          guestPays: quote.guestPays,
-          currency: quote.currency,
-        },
-      });
       setSent(true);
     } catch (cause) {
       setError(
         cause instanceof Error && cause.message === "dates_blocked"
           ? "Ces dates ne sont plus disponibles. Choisissez un autre séjour."
-          : "La demande n’a pas pu être enregistrée. Vérifiez votre connexion puis réessayez.",
+          : cause instanceof Error && cause.message === "listing_demo"
+            ? "Cette annonce illustre le catalogue. Les demandes sont ouvertes sur les annonces publiées par des propriétaires vérifiés."
+            : "La demande n’a pas pu être enregistrée. Vérifiez votre connexion puis réessayez.",
       );
     } finally {
       setBusy(false);
@@ -163,11 +151,16 @@ export function BookingCard({ listing }: { listing: Listing }) {
           Se connecter pour demander
         </Link>
       ) : (
-        <button className={`${btnPrimary} mt-5 w-full py-3`} disabled={busy || availability === "checking" || availability === "blocked" || !name.trim() || invalid} onClick={() => void reserve()}>
-          {busy ? "Enregistrement…" : listing.mode === "sejour" ? "Demander le séjour" : "Demander à visiter"}
+        <button className={`${btnPrimary} mt-5 w-full py-3`} disabled={!listing.databaseId || busy || availability === "checking" || availability === "blocked" || !name.trim() || invalid} onClick={() => void reserve()}>
+          {!listing.databaseId ? "Bientôt réservable" : busy ? "Enregistrement…" : listing.mode === "sejour" ? "Demander le séjour" : "Demander à visiter"}
         </button>
       )}
       <p className="mt-3 text-center text-xs text-[#6a6a6a]">Aucun débit à cette étape.</p>
+      {!listing.databaseId && (
+        <p className="mt-3 rounded-xl bg-[#fff1f3] px-3 py-2 text-center text-xs leading-5 text-[#9f1239]">
+          Aperçu du catalogue : demande désactivée tant que cette annonce n’est pas reliée à un propriétaire vérifié.
+        </p>
+      )}
     </aside>
   );
 }

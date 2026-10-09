@@ -10,7 +10,7 @@ import { useTitle } from "@/lib/use-title";
 export default function ServicePage() {
   const { id } = useParams<{ id: string }>();
   const offer = serviceById(id);
-  useTitle(offer ? `${offer.title} · Ameena` : "Service · Ameena");
+  useTitle(offer ? `${offer.title} · Se Loger au Sénégal` : "Service · Se Loger au Sénégal");
 
   if (!offer) {
     return (

@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { Heart, Star } from "lucide-react";
 import { cx, formatMoney } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
 import { TYPE_LABEL } from "@/lib/labels";
+import { setFavorite } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import type { Listing } from "@/lib/types";
 import { MediaCarousel } from "./media-carousel";
@@ -20,11 +22,12 @@ export function PropertyCard({
   stayNights?: number;
 }) {
   const { state, dispatch } = useAmeena();
+  const { user } = useAuth();
   const saved = state.saved.includes(listing.id);
   const badges = [
     listing.rating >= 4.95 ? "Coup de cœur" : null,
     listing.mode === "location" ? "Location" : null,
-    listing.managedByPlatform ? "Géré par Ameena" : null,
+    listing.managedByPlatform ? "Géré par Se Loger au Sénégal" : null,
   ].filter((item): item is string => Boolean(item)).slice(0, 2);
 
   return (
@@ -53,7 +56,14 @@ export function PropertyCard({
           type="button"
           aria-label={saved ? "Retirer des favoris" : "Enregistrer"}
           className="absolute right-3 top-3 z-20 grid h-8 w-8 place-items-center"
-          onClick={() => dispatch({ type: "toggle-save", id: listing.id })}
+          onClick={() => {
+            dispatch({ type: "toggle-save", id: listing.id });
+            if (user) {
+              void setFavorite(user.id, listing.id, !saved).catch(() => {
+                dispatch({ type: "toggle-save", id: listing.id });
+              });
+            }
+          }}
         >
           <Heart className={cx("h-[26px] w-[26px] drop-shadow", saved ? "fill-[#c13515] text-[#c13515]" : "fill-black/40 text-white")} />
         </button>

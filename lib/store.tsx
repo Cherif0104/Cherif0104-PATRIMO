@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
 import { createInitial, hostById, hostIdForRole } from "./seed";
-import { loadPlatformSettings, loadPublishedListings } from "./supabase";
+import { loadFavorites, loadPlatformSettings, loadPublishedListings, setFavorite } from "./supabase";
 import type {
   Ad,
   AppState,
@@ -28,6 +28,7 @@ type Action =
   | { type: "reset" }
   | { type: "set-role"; role: Role }
   | { type: "toggle-save"; id: string }
+  | { type: "replace-saved"; ids: string[] }
   | { type: "add-listing"; listing: Listing }
   | { type: "add-reservation"; reservation: Reservation }
   | { type: "set-reservation-status"; id: string; status: Reservation["status"] }
@@ -64,6 +65,8 @@ function reducer(state: AppState, action: Action): AppState {
         : [...state.saved, action.id];
       return { ...state, saved };
     }
+    case "replace-saved":
+      return { ...state, saved: action.ids };
     case "add-listing":
       return { ...state, listings: [action.listing, ...state.listings] };
     case "add-reservation":
@@ -218,7 +221,7 @@ function invoicesForReservation(reservation: Reservation, state: AppState): Invo
       id: uid("fac"),
       listingId: reservation.listingId,
       clientName: listing ? hostById(listing.hostId)?.name ?? "Propriétaire" : "Propriétaire",
-      label: "Commission Ameena",
+      label: "Commission Se Loger au Sénégal",
       amount: reservation.commission,
       currency: reservation.currency,
       status: "due",
@@ -302,6 +305,7 @@ type Store = {
 const Ctx = createContext<Store | null>(null);
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [state, dispatch] = useReducer(reducer, undefined, createInitial);
   const [ready, setReady] = useState(false);
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
@@ -348,6 +352,30 @@ export function Providers({ children }: { children: React.ReactNode }) {
     // Demo preferences stay local. Market data is written table-by-table through RLS.
   }, [state, ready]);
 
+  useEffect(() => {
+    if (!ready || !user) return;
+    let active = true;
+    const localSaved = state.saved;
+    loadFavorites()
+      .then(async (remoteSaved) => {
+        const merged = [...new Set([...remoteSaved, ...localSaved])];
+        await Promise.all(
+          merged
+            .filter((listingKey) => !remoteSaved.includes(listingKey))
+            .map((listingKey) => setFavorite(user.id, listingKey, true)),
+        );
+        if (active) dispatch({ type: "replace-saved", ids: merged });
+      })
+      .catch(() => {
+        if (active) setStorageWarning("Vos favoris en ligne n’ont pas pu être synchronisés.");
+      });
+    return () => {
+      active = false;
+    };
+    // Synchronize once after hydration or when the authenticated identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, user?.id]);
+
   const value = useMemo(
     () => ({ state, ready, storageWarning, dispatch }),
     [state, ready, storageWarning],
@@ -358,7 +386,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 export function useAmeena() {
   const store = useContext(Ctx);
-  if (!store) throw new Error("Ameena store absent");
+  if (!store) throw new Error("Se Loger au Sénégal store absent");
   return store;
 }
 

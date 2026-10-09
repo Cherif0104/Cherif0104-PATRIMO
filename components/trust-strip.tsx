@@ -25,7 +25,7 @@ const items = [
 
 export function TrustStrip() {
   return (
-    <section className="border-y border-[#ebebeb] bg-[#fafafa] px-4 py-7 md:px-10 xl:px-16" aria-label="Engagements Ameena">
+    <section className="border-y border-[#ebebeb] bg-[#fafafa] px-4 py-7 md:px-10 xl:px-16" aria-label="Engagements Se Loger au Sénégal">
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
         {items.map((item) => {
           const Icon = item.icon;

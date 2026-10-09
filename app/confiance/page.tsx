@@ -4,7 +4,7 @@ const blocks = [
   {
     icon: BadgeCheck,
     title: "Annonce contrôlée avant publication",
-    text: "Un propriétaire peut préparer son bien, mais il ne peut pas le rendre public lui-même. Le statut publié relève d’un contrôle Ameena.",
+    text: "Un propriétaire peut préparer son bien, mais il ne peut pas le rendre public lui-même. Le statut publié relève d’un contrôle Se Loger au Sénégal.",
   },
   {
     icon: ShieldCheck,
@@ -37,7 +37,7 @@ export default function TrustPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 md:px-8">
       <p className="text-sm font-medium text-[#1F6F66]">Centre de confiance</p>
-      <h1 className="mt-2 max-w-3xl text-4xl font-semibold tracking-tight md:text-5xl">Ce qu’Ameena protège, et ce qu’elle ne prétend pas encore faire.</h1>
+      <h1 className="mt-2 max-w-3xl text-4xl font-semibold tracking-tight md:text-5xl">Ce qu’Se Loger au Sénégal protège, et ce qu’elle ne prétend pas encore faire.</h1>
       <p className="mt-5 max-w-3xl text-[16px] leading-7 text-[#6a6a6a]">
         La confiance ne vient pas d’un badge décoratif. Elle vient d’un contrôle d’identité, de règles d’accès, d’un calendrier cohérent et d’un paiement traçable.
       </p>

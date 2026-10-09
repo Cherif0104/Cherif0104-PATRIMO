@@ -9,7 +9,7 @@ import { useTitle } from "@/lib/use-title";
 export default function InspectionsPage() {
   const { state } = useAmeena();
   const scope = useScope();
-  useTitle("États des lieux · Ameena");
+  useTitle("États des lieux · Se Loger au Sénégal");
   const pairs = scope.listings.filter((listing) => {
     const kinds = scope.inspections.filter((item) => item.listingId === listing.id).map((item) => item.kind);
     return kinds.includes("entree") && kinds.includes("sortie");

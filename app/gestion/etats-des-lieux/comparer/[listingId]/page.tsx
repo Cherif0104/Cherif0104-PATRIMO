@@ -16,7 +16,7 @@ export default function ComparePage() {
   const listing = state.listings.find((item) => item.id === listingId);
   const entry = state.inspections.find((item) => item.listingId === listingId && item.kind === "entree");
   const exit = state.inspections.find((item) => item.listingId === listingId && item.kind === "sortie");
-  useTitle("Comparaison · Ameena");
+  useTitle("Comparaison · Se Loger au Sénégal");
 
   if (!listing || !entry || !exit) {
     return (

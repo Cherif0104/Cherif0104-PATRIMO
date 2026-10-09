@@ -8,7 +8,7 @@ import { useTitle } from "@/lib/use-title";
 export default function ClientsPage() {
   const { state } = useAmeena();
   const scope = useScope();
-  useTitle("Clientèle · Ameena");
+  useTitle("Clientèle · Se Loger au Sénégal");
 
   return (
     <div>

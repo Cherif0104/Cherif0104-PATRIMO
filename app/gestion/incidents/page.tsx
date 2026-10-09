@@ -10,7 +10,7 @@ import { useTitle } from "@/lib/use-title";
 export default function IncidentsPage() {
   const { state } = useAmeena();
   const scope = useScope();
-  useTitle("Incidents · Ameena");
+  useTitle("Incidents · Se Loger au Sénégal");
 
   return (
     <div>

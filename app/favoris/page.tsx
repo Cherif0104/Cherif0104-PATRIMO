@@ -9,7 +9,7 @@ import { useTitle } from "@/lib/use-title";
 
 export default function FavoritesPage() {
   const { state } = useAmeena();
-  useTitle("Favoris · Ameena");
+  useTitle("Favoris · Se Loger au Sénégal");
   const listings = state.listings.filter((listing) => state.saved.includes(listing.id));
 
   return (
@@ -20,12 +20,12 @@ export default function FavoritesPage() {
       </div>
 
       {listings.length > 0 ? (
-        <div className="mt-7 grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="mt-7 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {listings.map((listing) => <PropertyCard key={listing.id} listing={listing} />)}
         </div>
       ) : (
         <section className="mx-auto flex max-w-lg flex-col items-center py-24 text-center">
-          <span className="grid h-24 w-24 place-items-center rounded-full bg-[#f8f1d3] text-[#A77D12]">
+          <span className="grid h-24 w-24 place-items-center rounded-full bg-[#fff1f3] text-[#C13515]">
             <Heart className="h-11 w-11" strokeWidth={1.5} />
           </span>
           <h2 className="mt-6 text-2xl font-semibold">Créez votre première sélection</h2>

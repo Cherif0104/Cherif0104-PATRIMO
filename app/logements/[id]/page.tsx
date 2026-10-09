@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, BadgeCheck, Bath, BedDouble, Heart, MapPin, Ruler, Share2, Star, X } from "lucide-react";
 import { AdSlot } from "@/components/ad-slot";
@@ -10,17 +10,23 @@ import { MapView } from "@/components/map";
 import { MediaCarousel } from "@/components/media-carousel";
 import { Photo } from "@/components/photo";
 import { btnSecondary, formatDate, formatMoney } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
 import { hostById } from "@/lib/seed";
+import { getOrCreateConversation, setFavorite } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
 import { TYPE_LABEL } from "@/lib/labels";
 
 export default function ListingPage() {
   const { id } = useParams<{ id: string }>();
-  const { state } = useAmeena();
+  const router = useRouter();
+  const { state, dispatch } = useAmeena();
+  const { user } = useAuth();
   const listing = state.listings.find((item) => item.id === id);
   const [lightbox, setLightbox] = useState<number | null>(null);
-  useTitle(listing ? `${listing.title} · Ameena` : "Logement · Ameena");
+  const [contactError, setContactError] = useState("");
+  const [contactBusy, setContactBusy] = useState(false);
+  useTitle(listing ? `${listing.title} · Se Loger au Sénégal` : "Logement · Se Loger au Sénégal");
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -47,8 +53,37 @@ export default function ListingPage() {
   }
 
   const host = hostById(listing.hostId);
-  const hostName = host?.name ?? "Hôte Ameena";
+  const hostName = host?.name ?? "Hôte Se Loger au Sénégal";
   const images = listing.images.slice(0, 5);
+  const saved = state.saved.includes(listing.id);
+  const currentListing = listing;
+
+  async function contactHost() {
+    if (!user) {
+      router.push(`/connexion?retour=${encodeURIComponent(`/logements/${currentListing.id}`)}`);
+      return;
+    }
+    setContactBusy(true);
+    setContactError("");
+    try {
+      const conversation = await getOrCreateConversation(currentListing, user.id);
+      router.push(`/messages?conversation=${conversation.id}`);
+    } catch (cause) {
+      setContactError(cause instanceof Error ? cause.message : "Impossible d’ouvrir la conversation.");
+    } finally {
+      setContactBusy(false);
+    }
+  }
+
+  async function toggleSaved() {
+    dispatch({ type: "toggle-save", id: currentListing.id });
+    if (!user) return;
+    try {
+      await setFavorite(user.id, currentListing.id, !saved);
+    } catch {
+      dispatch({ type: "toggle-save", id: currentListing.id });
+    }
+  }
 
   return (
     <article className="mx-auto max-w-[1120px] px-0 pb-36 pt-4 md:px-6 md:py-6 lg:pb-10">
@@ -90,8 +125,8 @@ export default function ListingPage() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="absolute right-4 top-4 z-20 flex gap-3">
-          <button aria-label="Partager" className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm"><Share2 className="h-5 w-5" /></button>
-          <button aria-label="Enregistrer" className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm"><Heart className="h-5 w-5" /></button>
+          <button aria-label="Partager" onClick={() => void navigator.share?.({ title: listing.title, url: window.location.href })} className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm"><Share2 className="h-5 w-5" /></button>
+          <button aria-label={saved ? "Retirer des favoris" : "Enregistrer"} onClick={() => void toggleSaved()} className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm"><Heart className={saved ? "h-5 w-5 fill-[#FF385C] text-[#FF385C]" : "h-5 w-5"} /></button>
         </div>
       </div>
       <section className="relative z-10 -mt-3 rounded-t-[30px] bg-white px-6 pb-2 pt-9 text-center md:hidden">
@@ -143,11 +178,20 @@ export default function ListingPage() {
               {hostName.slice(0, 1)}
             </div>
           </div>
+          {listing.ownerUserId !== user?.id && (
+            <div className="border-b border-[#ebebeb] py-5">
+              <button onClick={() => void contactHost()} disabled={contactBusy} className={btnSecondary}>
+                {contactBusy ? "Ouverture…" : user ? "Contacter le propriétaire" : "Se connecter pour écrire"}
+              </button>
+              {!listing.databaseId && <p className="mt-2 text-xs text-[#6a6a6a]">La messagerie s’active sur les annonces publiées par les propriétaires.</p>}
+              {contactError && <p role="alert" className="mt-2 text-sm text-[#a52a12]">{contactError}</p>}
+            </div>
+          )}
 
           <ul className="grid gap-4 border-b border-[#ebebeb] py-6 sm:grid-cols-3">
             <Fact icon={<BedDouble className="h-5 w-5" />} title={`${listing.bedrooms} chambres`} text={`${listing.surface} m²`} />
             <Fact icon={<Bath className="h-5 w-5" />} title={`${listing.baths} salles d'eau`} text="Comptées dans l'état des lieux" />
-            <Fact icon={<Ruler className="h-5 w-5" />} title={listing.managedByPlatform ? "Géré par Ameena" : "En direct"} text={listing.managedByPlatform ? "Accueil, linge, incidents" : host?.kind === "agence" ? "Agence identifiée" : "Propriétaire identifié"} />
+            <Fact icon={<Ruler className="h-5 w-5" />} title={listing.managedByPlatform ? "Géré par Se Loger au Sénégal" : "En direct"} text={listing.managedByPlatform ? "Accueil, linge, incidents" : host?.kind === "agence" ? "Agence identifiée" : "Propriétaire identifié"} />
           </ul>
 
           <div className="border-b border-[#ebebeb] py-6">
@@ -202,7 +246,7 @@ export default function ListingPage() {
             <p className="text-[15px] font-semibold">{formatMoney(listing.price, listing.currency)}</p>
             <p className="text-xs text-[#6a6a6a]">{listing.mode === "sejour" ? "par nuit" : "par mois"}</p>
           </div>
-          <a href="#reservation" className="inline-flex items-center justify-center rounded-full bg-[#D4AF37] px-7 py-3 text-sm font-semibold text-[#000000]">
+          <a href="#reservation" className="inline-flex items-center justify-center rounded-full bg-[#FF385C] px-7 py-3 text-sm font-semibold text-[#000000]">
             {listing.mode === "sejour" ? "Réserver" : "Demander"}
           </a>
         </div>

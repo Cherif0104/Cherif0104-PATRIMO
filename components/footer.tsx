@@ -2,7 +2,7 @@ import Link from "next/link";
 
 const columns = [
   {
-    title: "Ameena",
+    title: "Se Loger au Sénégal",
     links: [
       ["Mon compte", "/compte"],
       ["Centre de confiance", "/confiance"],
@@ -18,9 +18,9 @@ const columns = [
       ["Dakar", "/explorer?q=Dakar"],
       ["Saly", "/explorer?q=Saly"],
       ["Saint-Louis", "/explorer?q=Saint-Louis"],
-      ["Abidjan", "/explorer?q=Abidjan"],
-      ["Marrakech", "/explorer?q=Marrakech"],
-      ["Paris", "/explorer?q=Paris"],
+      ["Somone", "/explorer?q=Somone"],
+      ["Mbour", "/explorer?q=Mbour"],
+      ["Cap Skirring", "/explorer?q=Cap%20Skirring"],
     ],
   },
   {
@@ -55,7 +55,7 @@ export function Footer() {
         ))}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#ebebeb] px-6 py-6 text-sm text-[#6a6a6a] md:px-10 xl:px-16">
-        <p>© 2026 Ameena · L'immobilier, en direct.</p>
+        <p>© 2026 Se Loger au Sénégal · L'immobilier, en direct.</p>
         <p>Séjourner. Louer. Gérer.</p>
       </div>
     </footer>

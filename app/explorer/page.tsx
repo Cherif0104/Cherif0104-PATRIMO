@@ -47,7 +47,7 @@ function Explorer() {
   const [managedOnly, setManagedOnly] = useState(params.get("gere") === "1");
   const [mode, setMode] = useState(params.get("mode") ?? "");
   const [blockedIds, setBlockedIds] = useState<string[]>([]);
-  useTitle("Explorer · Ameena");
+  useTitle("Explorer · Se Loger au Sénégal");
 
   const arrival = params.get("arrivee") ?? "";
   const departure = params.get("depart") ?? "";
@@ -103,7 +103,7 @@ function Explorer() {
         />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={managedOnly} onChange={(event) => setManagedOnly(event.target.checked)} />
-          Géré par Ameena
+          Géré par Se Loger au Sénégal
         </label>
         {arrival && (
           <span className="rounded-full border border-[#dddddd] px-3 py-2 text-xs font-medium">

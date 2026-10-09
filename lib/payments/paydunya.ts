@@ -51,7 +51,7 @@ export async function createPayDunyaCheckout(
             quantity: 1,
             unit_price: input.amount,
             total_price: input.amount,
-            description: `Réservation Ameena ${input.bookingId}`,
+            description: `Réservation Se Loger au Sénégal ${input.bookingId}`,
           },
         },
         customer: {
@@ -62,7 +62,7 @@ export async function createPayDunyaCheckout(
         total_amount: input.amount,
         description: `Réservation ${input.title}`,
       },
-      store: { name: "Ameena" },
+      store: { name: "Se Loger au Sénégal" },
       custom_data: {
         payment_order_id: input.orderId,
         booking_id: input.bookingId,

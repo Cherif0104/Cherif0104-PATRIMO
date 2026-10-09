@@ -88,7 +88,7 @@ export default function HomePage() {
           </Link>
         </div>
         <Link href="/services#mobilite" className="mb-5 flex items-center gap-4 rounded-[24px] border border-[#e5e5e5] bg-white p-5 shadow-[0_6px_20px_rgba(0,0,0,.08)]">
-          <span className="gold-ring grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#f8f1d3] text-[#A77D12]">
+          <span className="gold-ring grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#fff1f3] text-[#C13515]">
             <CarFront className="h-8 w-8" />
           </span>
           <span className="min-w-0">

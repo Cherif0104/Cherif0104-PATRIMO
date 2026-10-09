@@ -2,13 +2,13 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Ameena — Voyager au Sénégal",
-    short_name: "Ameena",
+    name: "Se Loger au Sénégal — Voyager au Sénégal",
+    short_name: "Se Loger au Sénégal",
     description: "Logements, expériences, services et transferts au Sénégal.",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#D4AF37",
+    theme_color: "#FF385C",
     orientation: "portrait-primary",
     lang: "fr",
     categories: ["travel", "lifestyle"],

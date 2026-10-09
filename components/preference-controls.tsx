@@ -45,7 +45,7 @@ export function PreferencesPanel() {
   return (
     <section className="app-card rounded-[24px] border border-[#e5e5e5] p-5 shadow-[0_6px_20px_rgba(0,0,0,.07)] theme-border">
       <label className="block text-sm font-semibold">
-        <span className="flex items-center gap-2"><Globe2 className="h-4 w-4 text-[#D4AF37]" />{t("language")}</span>
+        <span className="flex items-center gap-2"><Globe2 className="h-4 w-4 text-[#FF385C]" />{t("language")}</span>
         <select
           value={language}
           onChange={(event) => setLanguage(event.target.value as typeof language)}
@@ -65,7 +65,7 @@ export function PreferencesPanel() {
                 onClick={() => setTheme(item.value)}
                 className={cx(
                   "flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-xs theme-border",
-                  theme === item.value ? "border-[#D4AF37] bg-[#f8f1d3] font-semibold text-[#000000]" : "border-[#dddddd]",
+                  theme === item.value ? "border-[#FF385C] bg-[#fff1f3] font-semibold text-[#000000]" : "border-[#dddddd]",
                 )}
               >
                 <Icon className="h-4 w-4" />{t(item.key)}

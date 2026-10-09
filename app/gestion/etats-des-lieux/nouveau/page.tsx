@@ -8,7 +8,7 @@ import { useTitle } from "@/lib/use-title";
 
 function NewInspection() {
   const params = useSearchParams();
-  useTitle("Nouvel état des lieux · Ameena");
+  useTitle("Nouvel état des lieux · Se Loger au Sénégal");
   return (
     <div>
       <PageHead

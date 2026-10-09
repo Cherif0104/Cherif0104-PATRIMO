@@ -22,7 +22,7 @@ export default function ReservationsPage() {
   const [marketBookings, setMarketBookings] = useState<MarketBooking[]>([]);
   const [busyId, setBusyId] = useState("");
   const [error, setError] = useState("");
-  useTitle("Réservations · Ameena");
+  useTitle("Réservations · Se Loger au Sénégal");
 
   const ownerListingIdsKey = scope.listings
     .map((listing) => listing.databaseId)

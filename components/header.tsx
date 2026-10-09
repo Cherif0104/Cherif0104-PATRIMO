@@ -54,17 +54,20 @@ export function Header() {
 
   return (
     <header className="app-surface theme-border no-print sticky top-0 z-[1100] hidden h-20 border-b border-[#ebebeb] lg:block">
-      <div className="flex h-full items-center gap-3 px-4 md:gap-6 md:px-10 xl:px-16">
-        <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Ameena, accueil">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#D4AF37] text-[#000000]">
+      <div className="grid h-full grid-cols-[minmax(190px,1fr)_auto_minmax(190px,1fr)] items-center gap-5 px-6 xl:px-12 2xl:px-16">
+        <Link href="/" className="flex min-w-0 items-center gap-2.5" aria-label="Se Loger au Sénégal, accueil">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#FF385C] text-white">
             <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
               <path fill="currentColor" d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-5.4h-5.6V21H4a1 1 0 0 1-1-1v-8.8Z" />
             </svg>
           </span>
-          <span className="logo-word text-[28px] leading-none text-[#1a1a1a]">Ameena</span>
+          <span className="min-w-0 leading-none">
+            <span className="block truncate text-[18px] font-extrabold tracking-[-0.04em] text-[#1a1a1a]">Se Loger</span>
+            <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[#FF385C]">au Sénégal</span>
+          </span>
         </Link>
 
-        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-end gap-8 lg:flex" aria-label="Offres">
+        <nav className="hidden items-end justify-self-center gap-8 xl:flex" aria-label="Offres">
           {[
             {
               href: "/",
@@ -102,8 +105,8 @@ export function Header() {
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-1 md:gap-2">
-          <nav className="mr-1 hidden items-center gap-1 xl:flex">
+        <div className="flex items-center justify-self-end gap-1 md:gap-2">
+          <nav className="mr-1 hidden items-center gap-1 2xl:flex">
             {links.map((link) => {
               const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
               return (
@@ -178,7 +181,7 @@ export function Header() {
               aria-label="Mon compte"
             >
               <span className="hidden max-w-[120px] truncate sm:block">{profile?.full_name || "Mon compte"}</span>
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#D4AF37] text-[10px] font-semibold text-[#000000]">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#FF385C] text-[10px] font-semibold text-[#000000]">
                 {(profile?.full_name || user.email || "A").slice(0, 1).toUpperCase()}
               </span>
             </Link>

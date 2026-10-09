@@ -21,17 +21,17 @@ const display = Fraunces({
 
 export const metadata: Metadata = {
   title: {
-    default: "Ameena — Séjourner, louer, gérer",
-    template: "%s · Ameena",
+    default: "Se Loger au Sénégal — Séjourner, louer, gérer",
+    template: "%s · Se Loger au Sénégal",
   },
   description:
     "Marketplace immobilière et outil de gestion. Séjours, locations longue durée, finances, incidents et états des lieux.",
   manifest: "/manifest.webmanifest",
-  applicationName: "Ameena",
+  applicationName: "Se Loger au Sénégal",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Ameena",
+    title: "Se Loger au Sénégal",
   },
   icons: {
     icon: [

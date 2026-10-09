@@ -39,11 +39,11 @@ export function InstallAppCard() {
   return (
     <section className="rounded-[24px] border border-[#e5e5e5] bg-white p-5 shadow-[0_6px_20px_rgba(0,0,0,.07)]">
       <div className="flex gap-4">
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#f8f1d3] text-[#A77D12]">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#fff1f3] text-[#C13515]">
           <Smartphone className="h-6 w-6" />
         </span>
         <div>
-          <h2 className="font-semibold">Installer Ameena</h2>
+          <h2 className="font-semibold">Installer Se Loger au Sénégal</h2>
           <p className="mt-1 text-sm leading-5 text-[#6a6a6a]">
             Accédez à vos voyages comme dans une application Android ou iOS.
           </p>

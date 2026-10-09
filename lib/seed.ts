@@ -128,7 +128,7 @@ export function createInitial(): AppState {
         lat: 14.7458,
         lng: -17.5192,
         description:
-          "La villa regarde l'Atlantique depuis les Almadies. Le séjour s'ouvre sur la terrasse, la piscine reste dans le vent du soir, et les chambres sont tenues à l'écart de la route.\n\nAmeena s'occupe de l'accueil, du linge et du ménage. Vous entrez sans passer par un intermédiaire.",
+          "La villa regarde l'Atlantique depuis les Almadies. Le séjour s'ouvre sur la terrasse, la piscine reste dans le vent du soir, et les chambres sont tenues à l'écart de la route.\n\nSe Loger au Sénégal s'occupe de l'accueil, du linge et du ménage. Vous entrez sans passer par un intermédiaire.",
         amenities: ["Vue mer", "Piscine", "Wifi", "Climatisation", "Groupe électrogène", "Gardien", "Cuisine", "Stationnement"],
         hostId: "h-aminata",
         managedByPlatform: true,
@@ -158,7 +158,7 @@ export function createInitial(): AppState {
         lat: 14.7489,
         lng: -17.5128,
         description:
-          "Deux chambres, une cuisine équipée, et une fenêtre qui prend l'île de Ngor. L'immeuble est calme, le gardien connaît les hôtes d'Ameena.\n\nIdéal pour un séjour de travail ou une semaine en famille proche, sans frais cachés à l'arrivée.",
+          "Deux chambres, une cuisine équipée, et une fenêtre qui prend l'île de Ngor. L'immeuble est calme, le gardien connaît les hôtes d'Se Loger au Sénégal.\n\nIdéal pour un séjour de travail ou une semaine en famille proche, sans frais cachés à l'arrivée.",
         amenities: ["Vue mer", "Wifi", "Climatisation", "Cuisine", "Espace de travail", "Gardien"],
         hostId: "h-aminata",
         managedByPlatform: false,
@@ -187,7 +187,7 @@ export function createInitial(): AppState {
         lat: 14.4486,
         lng: -17.0155,
         description:
-          "Une maison basse, ouverte sur la plage de Saly. Les chambres restent fraîches, la terrasse sert de salle à manger, et le soir le bruit est celui de l'eau.\n\nLe bien est géré par Ameena : remise des clés, ménage, et signalement des pannes au même endroit.",
+          "Une maison basse, ouverte sur la plage de Saly. Les chambres restent fraîches, la terrasse sert de salle à manger, et le soir le bruit est celui de l'eau.\n\nLe bien est géré par Se Loger au Sénégal : remise des clés, ménage, et signalement des pannes au même endroit.",
         amenities: ["Vue mer", "Wifi", "Climatisation", "Cuisine", "Terrasse", "Stationnement"],
         hostId: "h-moussa",
         managedByPlatform: true,
@@ -274,7 +274,7 @@ export function createInitial(): AppState {
         lat: 14.6676,
         lng: -17.4295,
         description:
-          "Un loft au Plateau, à dix minutes à pied des bureaux et du marché. Grande hauteur sous plafond, cuisine fermée, deux chambres.\n\nLocation longue durée : deux mois d'avance, propriétaire identifié, visite demandée dans Ameena. Pas de mois d'agence à verser à un courtier.",
+          "Un loft au Plateau, à dix minutes à pied des bureaux et du marché. Grande hauteur sous plafond, cuisine fermée, deux chambres.\n\nLocation longue durée : deux mois d'avance, propriétaire identifié, visite demandée dans Se Loger au Sénégal. Pas de mois d'agence à verser à un courtier.",
         amenities: ["Wifi", "Climatisation", "Cuisine", "Espace de travail", "Gardien", "Ascenseur"],
         hostId: "h-moussa",
         managedByPlatform: false,
@@ -332,7 +332,7 @@ export function createInitial(): AppState {
         lat: 14.7234,
         lng: -17.4922,
         description:
-          "Une villa avec cour, pour une famille qui s'installe. Quatre chambres, un bureau, un groupe électrogène, et une cuisine qui peut recevoir.\n\nGérée par Ameena pour le compte de Ndar Immobilier : loyers, charges, et incidents avec photo arrivent au même endroit.",
+          "Une villa avec cour, pour une famille qui s'installe. Quatre chambres, un bureau, un groupe électrogène, et une cuisine qui peut recevoir.\n\nGérée par Se Loger au Sénégal pour le compte de Ndar Immobilier : loyers, charges, et incidents avec photo arrivent au même endroit.",
         amenities: ["Wifi", "Climatisation", "Groupe électrogène", "Gardien", "Cuisine", "Stationnement", "Cour"],
         hostId: "h-ndar",
         managedByPlatform: true,
@@ -390,7 +390,7 @@ export function createInitial(): AppState {
         lat: 5.3599,
         lng: -3.9866,
         description:
-          "À Cocody, un appartement en étage avec vue dégagée et deux chambres climatisées. Ameena s'ouvre ici hors du Sénégal, avec la même fiche, la même carte, le même prix affiché.\n\nNdar Immobilier assure la remise des clés sur place.",
+          "À Cocody, un appartement en étage avec vue dégagée et deux chambres climatisées. Se Loger au Sénégal s'ouvre ici hors du Sénégal, avec la même fiche, la même carte, le même prix affiché.\n\nNdar Immobilier assure la remise des clés sur place.",
         amenities: ["Wifi", "Climatisation", "Cuisine", "Gardien", "Ascenseur", "Stationnement"],
         hostId: "h-ndar",
         managedByPlatform: false,
@@ -733,7 +733,7 @@ export function createInitial(): AppState {
         },
         {
           id: "rule-gestion",
-          label: "Gestion Ameena",
+          label: "Gestion Se Loger au Sénégal",
           mode: "gestion",
           active: true,
           kind: "percent",
@@ -769,7 +769,7 @@ export function createInitial(): AppState {
           placement: "accueil-bandeau",
           partner: "Sahel Assurances",
           title: "Le logement assuré dès la remise des clés",
-          subtitle: "Une offre partenaire pour les baux signés sur Ameena. L'image, le lien et la période se règlent dans l'administration.",
+          subtitle: "Une offre partenaire pour les baux signés sur Se Loger au Sénégal. L'image, le lien et la période se règlent dans l'administration.",
           image: photo("photo-1560518883-ce09059eeffa"),
           href: "/boutiques",
           active: true,

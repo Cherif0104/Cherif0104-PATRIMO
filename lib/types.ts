@@ -272,6 +272,32 @@ export type MarketBooking = {
   created_at: string;
 };
 
+export type Conversation = {
+  id: string;
+  listing_id: string;
+  guest_id: string;
+  host_id: string;
+  created_at: string;
+  updated_at: string;
+  listing?: {
+    title: string;
+    city: string;
+    neighborhood: string;
+    data: { images?: string[] };
+  } | null;
+  guest?: Pick<Profile, "id" | "full_name" | "avatar_url"> | null;
+  host?: Pick<Profile, "id" | "full_name" | "avatar_url"> | null;
+};
+
+export type ConversationMessage = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  body: string;
+  read_at: string | null;
+  created_at: string;
+};
+
 export type PaymentOrder = {
   id: string;
   booking_id: string;

@@ -12,7 +12,7 @@ import { useTitle } from "@/lib/use-title";
 export default function DashboardPage() {
   const { state } = useAmeena();
   const scope = useScope();
-  useTitle("Tableau de bord · Ameena");
+  useTitle("Tableau de bord · Se Loger au Sénégal");
   const openIncidents = scope.incidents.filter((item) => item.status !== "resolu");
   const upcoming = scope.reservations.filter((item) => item.status === "confirmee" || item.status === "en-cours");
 

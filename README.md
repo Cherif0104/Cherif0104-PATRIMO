@@ -1,4 +1,4 @@
-# Ameena
+# Se Loger au Sénégal
 
 Marketplace immobilière et outil de gestion. Séjours, locations longue durée, expériences, services, commissions réglables, finances, incidents et états des lieux.
 
@@ -20,7 +20,7 @@ npm run dev
 
 Le changement de rôle de la démonstration a été retiré. Les accès affichés dépendent maintenant du compte authentifié.
 
-Le projet Supabase dédié est **Ameena** (`https://isqcndswkzlfjangjcpv.supabase.co`, région Paris). Copiez `.env.example` vers `.env.local` et renseignez l’URL et la clé publiable. Sans ces variables, l’authentification et les écritures de marché sont désactivées ; le catalogue d’exemple reste consultable.
+Le projet Supabase dédié est **Se Loger au Sénégal** (`https://isqcndswkzlfjangjcpv.supabase.co`, région Paris). Copiez `.env.example` vers `.env.local` et renseignez l’URL et la clé publiable. Sans ces variables, l’authentification et les écritures de marché sont désactivées ; le catalogue d’exemple reste consultable.
 
 Le checkout requiert aussi, côté serveur uniquement, `SUPABASE_SERVICE_ROLE_KEY`, `APP_URL` et les clés PayDunya. Si une seule valeur manque, l’API répond `PAYMENTS_NOT_CONFIGURED` et ne simule jamais un succès. Le webhook PayDunya vérifie le hash SHA-512 puis revalide la facture auprès de l’API PayDunya avant de confirmer la réservation.
 

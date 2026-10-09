@@ -1,10 +1,10 @@
 import type { Listing, Payer, Quote, QuoteLine, Settings } from "./types";
 import { formatMoney } from "./format";
 
-/** Devis Ameena.
+/** Devis Se Loger au Sénégal.
  * Séjour : le pourcentage s'applique au montant du séjour.
  * Location : un mois de loyer, l'avance, ou le montant encaissé, selon la règle.
- * Un bien géré par Ameena utilise la règle Gestion lorsqu'elle est active.
+ * Un bien géré par Se Loger au Sénégal utilise la règle Gestion lorsqu'elle est active.
  * Le payeur, le taux et les gestes commerciaux viennent des réglages.
  */
 export function buildQuote(listing: Listing, nights: number, settings: Settings): Quote {

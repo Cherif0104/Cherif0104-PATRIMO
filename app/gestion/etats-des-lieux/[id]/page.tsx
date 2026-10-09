@@ -16,7 +16,7 @@ export default function InspectionPage() {
   const twin = state.inspections.find(
     (item) => item.listingId === inspection?.listingId && item.kind !== inspection?.kind && item.id !== inspection?.id,
   );
-  useTitle("État des lieux · Ameena");
+  useTitle("État des lieux · Se Loger au Sénégal");
 
   if (!inspection || !listing) return <p>Document introuvable.</p>;
 

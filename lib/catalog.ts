@@ -191,7 +191,7 @@ export const SERVICES: Offer[] = [
     description:
       "Une équipe passe après le départ des voyageurs : sols, sanitaires, cuisine, lits défaits. Le propriétaire reçoit une photo de chaque pièce.\n\nLe créneau se cale sur l'heure de check-out du logement.",
     includes: ["Produits inclus", "Photos de contrôle", "Cuisine et sanitaires", "Créneau le jour du départ"],
-    host: "Ameena Services",
+    host: "Se Loger au Sénégal Services",
   },
   {
     id: "accueil-cles",
@@ -214,7 +214,7 @@ export const SERVICES: Offer[] = [
     description:
       "Quelqu'un attend le voyageur, ouvre, montre l'eau, l'électricité, le wifi et les clés. Utile quand le propriétaire n'est pas sur place.\n\nL'arrivée se confirme la veille. En cas de retard de vol, l'accueil décale d'une heure sans frais.",
     includes: ["Présence à l'arrivée", "Explication du logement", "Photo des compteurs", "Numéro d'astreinte"],
-    host: "Ameena Services",
+    host: "Se Loger au Sénégal Services",
   },
   {
     id: "chef-domicile",
@@ -237,7 +237,7 @@ export const SERVICES: Offer[] = [
     description:
       "Un cuisinier fait les courses, prépare et sert dans le logement, puis laisse la cuisine rangée. Le menu se choisit la veille : poisson grillé, yassa ou un repas plus simple.\n\nLes courses sont en plus, sur ticket.",
     includes: ["Courses sur ticket", "Préparation", "Service", "Cuisine rangée"],
-    host: "Table Ameena",
+    host: "Table Se Loger au Sénégal",
   },
   {
     id: "photo-bien",
@@ -259,7 +259,7 @@ export const SERVICES: Offer[] = [
     ],
     description:
       "Un photographe prépare les pièces, shoot en lumière du jour et livre une série prête à publier : façade, pièces, détails, vue.\n\nLes fichiers arrivent sous 48 heures. Ils remplacent les photos du téléphone sur la fiche.",
-    includes: ["20 photos retouchées", "Lumière du jour", "Livraison 48 h", "Usage sur Ameena"],
+    includes: ["20 photos retouchées", "Lumière du jour", "Livraison 48 h", "Usage sur Se Loger au Sénégal"],
     host: "Studio Cayar",
   },
   {
@@ -306,7 +306,7 @@ export const SERVICES: Offer[] = [
     description:
       "Prise en charge à l'aéroport Blaise Diagne ou départ du logement vers le vol. Le chauffeur suit le numéro de vol et attend en cas de retard court.\n\nBerline climatisée, quatre passagers et bagages de cabine plus deux valises.",
     includes: ["Suivi du vol", "Attente 45 min", "Eau", "Trajet direct"],
-    host: "Ameena Rides",
+    host: "Se Loger au Sénégal Rides",
   },
   {
     id: "taxi-aibd-saly",
@@ -352,7 +352,7 @@ export const SERVICES: Offer[] = [
     description:
       "Un van climatisé pour les familles, groupes et voyageurs avec beaucoup de bagages. Le chauffeur ajuste l'heure d'arrivée grâce au numéro de vol.\n\nSièges enfant disponibles sur demande.",
     includes: ["Jusqu'à 8 places", "Climatisation", "Suivi du vol", "Siège enfant sur demande"],
-    host: "Ameena Rides",
+    host: "Se Loger au Sénégal Rides",
   },
   {
     id: "location-voiture",

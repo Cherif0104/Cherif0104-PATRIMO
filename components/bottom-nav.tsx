@@ -27,8 +27,8 @@ export function BottomNav() {
           return (
             <li key={item.label}>
               <Link href={item.href} className="flex min-h-12 flex-col items-center justify-center gap-1 py-1">
-                <Icon className={cx("h-[23px] w-[23px]", item.active ? "text-[#D4AF37]" : "theme-muted text-[#6a6a6a]")} strokeWidth={item.active ? 2.35 : 1.75} />
-                <span className={cx("text-[10px] leading-tight", item.active ? "font-semibold text-[#D4AF37]" : "theme-muted text-[#6a6a6a]")}>
+                <Icon className={cx("h-[23px] w-[23px]", item.active ? "text-[#FF385C]" : "theme-muted text-[#6a6a6a]")} strokeWidth={item.active ? 2.35 : 1.75} />
+                <span className={cx("text-[10px] leading-tight", item.active ? "font-semibold text-[#FF385C]" : "theme-muted text-[#6a6a6a]")}>
                   {item.label}
                 </span>
               </Link>

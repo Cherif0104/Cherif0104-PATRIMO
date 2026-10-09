@@ -14,7 +14,7 @@ export default function IncidentDetailPage() {
   const { state, dispatch } = useAmeena();
   const incident = state.incidents.find((item) => item.id === id);
   const listing = state.listings.find((item) => item.id === incident?.listingId);
-  useTitle(incident ? `${incident.title} · Ameena` : "Incident · Ameena");
+  useTitle(incident ? `${incident.title} · Se Loger au Sénégal` : "Incident · Se Loger au Sénégal");
 
   if (!incident) {
     return <p className="text-sm text-[#6a6a6a]">Signalement introuvable.</p>;

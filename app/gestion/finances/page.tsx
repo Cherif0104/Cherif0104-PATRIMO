@@ -22,7 +22,7 @@ export default function FinancesPage() {
   const [refunds, setRefunds] = useState<Refund[]>([]);
   const [onlineLoading, setOnlineLoading] = useState(true);
   const [onlineError, setOnlineError] = useState("");
-  useTitle("Finances · Ameena");
+  useTitle("Finances · Se Loger au Sénégal");
 
   useEffect(() => {
     Promise.all([loadPaymentOrders(), loadPayouts(), loadRefunds()])

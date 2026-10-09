@@ -10,7 +10,7 @@ import { useTitle } from "@/lib/use-title";
 
 export default function BiensPage() {
   const scope = useScope();
-  useTitle("Biens · Ameena");
+  useTitle("Biens · Se Loger au Sénégal");
 
   return (
     <div>
@@ -34,7 +34,7 @@ export default function BiensPage() {
                 <div>
                   <div className="flex flex-wrap gap-2">
                     <Pill>{MODE_LABEL[listing.mode]}</Pill>
-                    {listing.managedByPlatform && <Pill tone="good">Géré par Ameena</Pill>}
+                    {listing.managedByPlatform && <Pill tone="good">Géré par Se Loger au Sénégal</Pill>}
                   </div>
                   <h2 className="mt-2 text-lg font-semibold">{listing.title}</h2>
                   <p className="text-sm text-[#6a6a6a]">{listing.neighborhood}, {listing.city}</p>

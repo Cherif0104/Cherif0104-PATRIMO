@@ -10,7 +10,7 @@ import { useTitle } from "@/lib/use-title";
 export default function ExperiencePage() {
   const { id } = useParams<{ id: string }>();
   const offer = experienceById(id);
-  useTitle(offer ? `${offer.title} · Ameena` : "Expérience · Ameena");
+  useTitle(offer ? `${offer.title} · Se Loger au Sénégal` : "Expérience · Se Loger au Sénégal");
 
   if (!offer) {
     return (

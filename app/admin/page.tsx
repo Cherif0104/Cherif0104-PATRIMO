@@ -21,7 +21,7 @@ export default function AdminPage() {
   const { settings, listings } = state;
   const villa = listings.find((item) => item.id === "villa-almadies") ?? listings.find((item) => item.mode === "sejour");
   const flat = listings.find((item) => item.id === "mermoz") ?? listings.find((item) => item.mode === "location");
-  useTitle("Réglages · Ameena");
+  useTitle("Réglages · Se Loger au Sénégal");
 
   useEffect(() => {
     if (!ready || !user) return;
@@ -230,10 +230,10 @@ function RuleCard({ rule, onChange }: { rule: CommissionRule; onChange: (partial
       </div>
       <p className="mt-1 text-xs leading-5 text-[#6a6a6a]">
         {rule.mode === "gestion"
-          ? "S'applique à tous les biens marqués « Géré par Ameena », à la place de la règle Séjour ou Location. En séjour, le pourcentage porte sur le montant du séjour. En location, il suit la base choisie."
+          ? "S'applique à tous les biens marqués « Géré par Se Loger au Sénégal », à la place de la règle Séjour ou Location. En séjour, le pourcentage porte sur le montant du séjour. En location, il suit la base choisie."
           : rule.mode === "sejour"
-            ? "Pour les séjours que le propriétaire gère lui-même. Un bien géré par Ameena suit la règle Gestion, pas celle-ci."
-            : "Pour les locations que le propriétaire gère lui-même. Un bien géré par Ameena suit la règle Gestion."}
+            ? "Pour les séjours que le propriétaire gère lui-même. Un bien géré par Se Loger au Sénégal suit la règle Gestion, pas celle-ci."
+            : "Pour les locations que le propriétaire gère lui-même. Un bien géré par Se Loger au Sénégal suit la règle Gestion."}
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="text-sm">

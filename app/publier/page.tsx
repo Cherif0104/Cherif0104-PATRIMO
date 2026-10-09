@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PickMap } from "@/components/map";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { PageHead } from "@/components/ui";
 import { btnPrimary, fieldClass, uid } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
@@ -12,22 +13,21 @@ import { useAmeena } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
 import type { Currency, Mode, PropertyType } from "@/lib/types";
 
-const places = [
-  { label: "Dakar · Almadies", city: "Dakar", country: "Sénégal", neighborhood: "Almadies", lat: 14.745, lng: -17.52 },
-  { label: "Dakar · Plateau", city: "Dakar", country: "Sénégal", neighborhood: "Plateau", lat: 14.668, lng: -17.43 },
-  { label: "Saly", city: "Saly", country: "Sénégal", neighborhood: "Saly", lat: 14.449, lng: -17.02 },
-  { label: "Saint-Louis", city: "Saint-Louis", country: "Sénégal", neighborhood: "Île", lat: 16.025, lng: -16.505 },
-  { label: "Abidjan", city: "Abidjan", country: "Côte d'Ivoire", neighborhood: "Cocody", lat: 5.36, lng: -3.987 },
-  { label: "Marrakech", city: "Marrakech", country: "Maroc", neighborhood: "Médina", lat: 31.63, lng: -7.981 },
-  { label: "Paris", city: "Paris", country: "France", neighborhood: "11e", lat: 48.863, lng: 2.378 },
-];
+const defaultPlace = {
+  label: "Almadies, Dakar, Sénégal",
+  city: "Dakar",
+  country: "Sénégal",
+  neighborhood: "Almadies",
+  lat: 14.745,
+  lng: -17.52,
+};
 
 export default function PublishPage() {
   const { dispatch } = useAmeena();
   const { user, profile, loading } = useAuth();
   const router = useRouter();
   const [title, setTitle] = useState("");
-  const [place, setPlace] = useState(places[0]);
+  const [place, setPlace] = useState(defaultPlace);
   const [mode, setMode] = useState<Mode>("sejour");
   const [type, setType] = useState<PropertyType>("appartement");
   const [price, setPrice] = useState(50000);
@@ -40,9 +40,9 @@ export default function PublishPage() {
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [lat, setLat] = useState(places[0].lat);
-  const [lng, setLng] = useState(places[0].lng);
-  useTitle("Publier un bien · Ameena");
+  const [lat, setLat] = useState(defaultPlace.lat);
+  const [lng, setLng] = useState(defaultPlace.lng);
+  useTitle("Publier un bien · Se Loger au Sénégal");
 
   const professional = profile?.account_type === "proprietaire" || profile?.account_type === "agence" || user?.app_metadata?.role === "admin";
 
@@ -65,7 +65,7 @@ export default function PublishPage() {
   }
 
   async function publish() {
-    if (!user || !professional || !title.trim() || images.length < 3) return;
+    if (!user || !professional || title.trim().length < 10 || price <= 0 || images.length < 3) return;
     setSubmitting(true);
     setError("");
     const id = uid("bien");
@@ -91,7 +91,7 @@ export default function PublishPage() {
         images,
         lat,
         lng,
-        description: description.trim() || "Bien publié en direct sur Ameena.",
+        description: description.trim() || "Bien publié en direct sur Se Loger au Sénégal.",
         amenities: ["Wifi"],
         hostId: `user-${user.id}`,
         managedByPlatform: managed,
@@ -146,22 +146,18 @@ export default function PublishPage() {
           <input className={`${fieldClass} mt-1`} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Appartement lumineux à ..." />
         </label>
         <label className="text-sm font-medium">
-          Lieu
-          <select
-            className={`${fieldClass} mt-1`}
-            value={place.label}
-            onChange={(event) => {
-              const next = places.find((item) => item.label === event.target.value) ?? places[0];
-              setPlace(next);
-              setLat(next.lat);
-              setLng(next.lng);
-              setCurrency(next.country === "France" || next.country === "Maroc" ? "EUR" : "XOF");
-            }}
-          >
-            {places.map((item) => (
-              <option key={item.label}>{item.label}</option>
-            ))}
-          </select>
+          Adresse ou point de repère
+          <div className="mt-1">
+            <AddressAutocomplete
+              value={place.label}
+              onSelect={(next) => {
+                setPlace(next);
+                setLat(next.lat);
+                setLng(next.lng);
+                setCurrency("XOF");
+              }}
+            />
+          </div>
         </label>
         <PickMap lat={lat} lng={lng} onChange={(nextLat, nextLng) => { setLat(nextLat); setLng(nextLng); }} />
         <p className="text-xs text-[#6a6a6a]">Cliquez sur la carte pour placer le bien. {lat}, {lng}</p>
@@ -186,7 +182,7 @@ export default function PublishPage() {
           </label>
           <label className="text-sm font-medium">
             Prix {mode === "sejour" ? "par nuit" : "par mois"}
-            <input className={`${fieldClass} mt-1`} type="number" min={0} value={price} onChange={(event) => setPrice(Number(event.target.value))} />
+            <input className={`${fieldClass} mt-1`} type="number" min={1} value={price} onChange={(event) => setPrice(Number(event.target.value))} />
           </label>
           <label className="text-sm font-medium">
             Devise
@@ -210,7 +206,7 @@ export default function PublishPage() {
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={managed} onChange={(event) => setManaged(event.target.checked)} />
-          Géré par Ameena — la règle Gestion s&apos;applique
+          Géré par Se Loger au Sénégal — la règle Gestion s&apos;applique
         </label>
         <label className="text-sm font-medium">
           Photos <span className="font-normal text-[#6a6a6a]">· 3 minimum, 5 maximum</span>
@@ -225,7 +221,7 @@ export default function PublishPage() {
           </div>
         )}
         {error && <p role="alert" className="rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
-        <button className={`${btnPrimary} mt-2`} disabled={submitting || uploading || !title.trim() || images.length < 3} onClick={() => void publish()}>
+        <button className={`${btnPrimary} mt-2`} disabled={submitting || uploading || title.trim().length < 10 || price <= 0 || images.length < 3} onClick={() => void publish()}>
           {submitting ? "Envoi en validation…" : "Envoyer en validation"}
         </button>
       </div>

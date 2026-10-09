@@ -32,7 +32,7 @@ export default function AccountPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [paymentBusy, setPaymentBusy] = useState("");
-  useTitle("Mon compte · Ameena");
+  useTitle("Mon compte · Se Loger au Sénégal");
 
   useEffect(() => {
     if (!profile) return;
@@ -58,10 +58,10 @@ export default function AccountPage() {
     return (
       <div className="mx-auto max-w-xl px-4 py-16">
         <div className="text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#f8f1d3] text-[#A77D12]">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#fff1f3] text-[#C13515]">
             <UserRound />
           </div>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight">Votre espace Ameena</h1>
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight">Votre espace Se Loger au Sénégal</h1>
           <p className="mt-3 text-[#6a6a6a]">Connectez-vous pour retrouver vos demandes, publier ou gérer un bien.</p>
           <Link href="/connexion?retour=/compte" className={`${btnPrimary} mt-7`}>Se connecter</Link>
         </div>

@@ -13,7 +13,7 @@ const cities = ["Toutes", ...Array.from(new Set(EXPERIENCES.map((item) => item.c
 export default function ExperiencesPage() {
   const [city, setCity] = useState("Toutes");
   const { t } = usePreferences();
-  useTitle("Expériences · Ameena");
+  useTitle("Expériences · Se Loger au Sénégal");
   const items = EXPERIENCES.filter((item) => city === "Toutes" || item.city === city);
 
   return (
@@ -31,7 +31,7 @@ export default function ExperiencesPage() {
             onClick={() => setCity(item)}
             className={cx(
               "shrink-0 rounded-full border px-4 py-2 text-sm",
-              city === item ? "border-[#D4AF37] bg-[#D4AF37] text-[#000000]" : "theme-border app-card border-[#dddddd]",
+              city === item ? "border-[#FF385C] bg-[#FF385C] text-[#000000]" : "theme-border app-card border-[#dddddd]",
             )}
           >
             {item}

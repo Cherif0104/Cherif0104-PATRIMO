@@ -25,11 +25,11 @@ function Form() {
   const [reporter, setReporter] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [sent, setSent] = useState<string | null>(null);
-  useTitle("Signaler un incident · Ameena");
+  useTitle("Signaler un incident · Se Loger au Sénégal");
 
   const listing = scope.listings.find((item) => item.id === listingId);
   const host = listing ? hostById(listing.hostId) : undefined;
-  const notifiedName = listing?.managedByPlatform ? `${host?.name ?? "Le propriétaire"} et Ameena` : host?.name ?? "Le gestionnaire";
+  const notifiedName = listing?.managedByPlatform ? `${host?.name ?? "Le propriétaire"} et Se Loger au Sénégal` : host?.name ?? "Le gestionnaire";
 
   async function addFiles(files: FileList | null) {
     if (!files) return;

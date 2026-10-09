@@ -37,6 +37,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ code: "INVALID_REQUEST" }, { status: 400 });
   }
 
+  const { data: booking, error: bookingError } = await admin
+    .from("booking_requests")
+    .select("id, listing_title, guest_name, guest_phone, total, currency")
+    .eq("id", body.bookingId)
+    .eq("guest_id", authData.user.id)
+    .single();
+  if (bookingError || !booking) {
+    return NextResponse.json({ code: "BOOKING_NOT_PAYABLE" }, { status: 409 });
+  }
+  if (booking.currency !== "XOF") {
+    return NextResponse.json(
+      { code: "CURRENCY_NOT_SUPPORTED", message: "Ce moyen de paiement accepte actuellement le XOF." },
+      { status: 422 },
+    );
+  }
+
   const suppliedKey = request.headers.get("idempotency-key");
   const idempotencyKey = suppliedKey?.match(/^[A-Za-z0-9:_-]{8,120}$/)
     ? suppliedKey
@@ -72,20 +88,6 @@ export async function POST(request: Request) {
       checkoutUrl: paymentOrder.checkout_url,
       orderId: paymentOrder.id,
     });
-  }
-
-  const { data: booking, error: bookingError } = await admin
-    .from("booking_requests")
-    .select("id, listing_title, guest_name, guest_phone, total, currency")
-    .eq("id", body.bookingId)
-    .eq("guest_id", authData.user.id)
-    .single();
-
-  if (bookingError || !booking || booking.currency !== "XOF") {
-    return NextResponse.json(
-      { code: "CURRENCY_NOT_SUPPORTED", message: "Ce moyen de paiement accepte actuellement le XOF." },
-      { status: 422 },
-    );
   }
 
   try {

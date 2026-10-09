@@ -39,7 +39,7 @@ export default function TripsPage() {
                   <h2 className="font-semibold">{booking.listing_title}</h2>
                   <p className="mt-1 text-sm text-[#6a6a6a]">{formatDate(booking.start_date)} → {formatDate(booking.end_date)}</p>
                 </div>
-                <CalendarDays className="h-5 w-5 text-[#E21D5A]" />
+                <CalendarDays className="h-5 w-5 text-[#A77F39]" />
               </div>
               <p className="mt-5 border-t border-[#eeeeee] pt-4 text-sm font-semibold">{formatMoney(booking.total, booking.currency)}</p>
             </article>
@@ -49,7 +49,7 @@ export default function TripsPage() {
         <section className="relative mx-auto mt-8 min-h-[520px] max-w-2xl overflow-hidden rounded-[30px] bg-[#f4f7f7] px-6 py-14 text-center">
           <MapPinned className="absolute left-1/2 top-16 h-64 w-64 -translate-x-1/2 text-[#d5dfde]" strokeWidth={0.7} />
           <div className="relative mx-auto mt-14 grid h-28 w-28 place-items-center rounded-full bg-white shadow-[0_12px_30px_rgba(0,0,0,.1)]">
-            <Plane className="h-12 w-12 -rotate-12 text-[#E21D5A]" />
+            <Plane className="h-12 w-12 -rotate-12 text-[#A77F39]" />
           </div>
           <div className="relative mt-12">
             <h2 className="text-2xl font-semibold">Préparez votre prochain voyage</h2>

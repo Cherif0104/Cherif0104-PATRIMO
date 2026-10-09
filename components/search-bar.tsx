@@ -138,7 +138,7 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
           />
         </label>
         <button
-          className="ml-auto mr-1 grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#E21D5A] text-white sm:mr-2"
+          className="ml-auto mr-1 grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#C7A05A] text-[#151515] sm:mr-2"
           aria-label="Rechercher"
         >
           <Search className="h-5 w-5" />

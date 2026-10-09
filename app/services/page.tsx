@@ -5,45 +5,47 @@ import { CarFront, ChevronRight, Plane, ShieldCheck } from "lucide-react";
 import { DiscoveryHeader } from "@/components/discovery-header";
 import { OfferCard } from "@/components/offer-card";
 import { SERVICES } from "@/lib/catalog";
+import { usePreferences } from "@/lib/preferences";
 import { useTitle } from "@/lib/use-title";
 
 export default function ServicesPage() {
   useTitle("Services · Ameena");
+  const { t } = usePreferences();
   const mobility = SERVICES.filter((service) =>
     ["chauffeur-aeroport", "taxi-aibd-saly", "van-aeroport", "location-voiture"].includes(service.id),
   );
   const stayServices = SERVICES.filter((service) => !mobility.includes(service));
 
   return (
-    <div className="mobile-page">
+    <div className="app-surface mobile-page">
       <DiscoveryHeader active="services" />
       <div className="px-4 pb-12 pt-4 md:px-10 lg:pt-10 xl:px-16">
-        <section className="mx-auto max-w-5xl overflow-hidden rounded-[28px] border border-[#e7e7e7] bg-gradient-to-br from-[#fff6f8] via-white to-[#f2f8f7] p-6 shadow-[0_8px_24px_rgba(0,0,0,.08)] md:p-10">
+        <section className="section-champagne theme-border mx-auto max-w-5xl overflow-hidden rounded-[28px] border border-[#e7e7e7] p-6 shadow-[0_8px_24px_rgba(0,0,0,.08)] md:p-10">
           <div className="grid items-center gap-8 md:grid-cols-[1.2fr_.8fr]">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold shadow-sm">
-                <ShieldCheck className="h-4 w-4 text-[#1F6F66]" /> Chauffeurs et partenaires vérifiés
+              <span className="app-card inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm">
+                <ShieldCheck className="h-4 w-4 text-[#A77F39]" /> {t("verifiedDrivers")}
               </span>
               <h1 className="mt-5 text-[30px] font-semibold leading-[1.08] tracking-[-0.04em] md:text-5xl">
-                Votre arrivée au Sénégal, déjà organisée.
+                {t("arrivalTitle")}
               </h1>
               <p className="mt-4 max-w-xl text-[15px] leading-6 text-[#6a6a6a] md:text-base">
-                Taxi AIBD, van familial, transfert vers la Petite Côte ou voiture de location. Prix annoncé avant le départ.
+                {t("arrivalText")}
               </p>
-              <Link href="#mobilite" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#E21D5A] px-5 py-3 text-sm font-semibold text-white">
-                Voir les transports <ChevronRight className="h-4 w-4" />
+              <Link href="#mobilite" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#C7A05A] px-5 py-3 text-sm font-semibold text-[#151515]">
+                {t("seeTransport")} <ChevronRight className="h-4 w-4" />
               </Link>
             </div>
-            <div className="relative mx-auto grid h-52 w-full max-w-sm place-items-center rounded-[26px] bg-white shadow-[0_12px_32px_rgba(0,0,0,.09)]">
-              <Plane className="absolute left-8 top-8 h-10 w-10 -rotate-12 text-[#E21D5A]" />
+            <div className="app-card relative mx-auto grid h-52 w-full max-w-sm place-items-center rounded-[26px] shadow-[0_12px_32px_rgba(0,0,0,.09)]">
+              <Plane className="absolute left-8 top-8 h-10 w-10 -rotate-12 text-[#A77F39]" />
               <CarFront className="h-24 w-24 text-[#222]" strokeWidth={1.25} />
               <span className="absolute bottom-6 rounded-full bg-[#f2f2f2] px-4 py-2 text-sm font-semibold">AIBD → votre logement</span>
             </div>
           </div>
         </section>
 
-        <ServiceRail id="mobilite" title="Taxis, transferts et voitures" offers={mobility} />
-        <ServiceRail title="Services pendant votre séjour" offers={stayServices} />
+        <ServiceRail id="mobilite" title={t("transportTitle")} offers={mobility} />
+        <ServiceRail title={t("duringStay")} offers={stayServices} />
       </div>
     </div>
   );

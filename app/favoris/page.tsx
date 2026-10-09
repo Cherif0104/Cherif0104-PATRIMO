@@ -25,7 +25,7 @@ export default function FavoritesPage() {
         </div>
       ) : (
         <section className="mx-auto flex max-w-lg flex-col items-center py-24 text-center">
-          <span className="grid h-24 w-24 place-items-center rounded-full bg-[#fff0f5] text-[#E21D5A]">
+          <span className="grid h-24 w-24 place-items-center rounded-full bg-[#f7f0e2] text-[#A77F39]">
             <Heart className="h-11 w-11" strokeWidth={1.5} />
           </span>
           <h2 className="mt-6 text-2xl font-semibold">Créez votre première sélection</h2>

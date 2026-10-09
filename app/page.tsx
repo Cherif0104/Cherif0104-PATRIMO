@@ -9,11 +9,13 @@ import { PropertyCard } from "@/components/property-card";
 import { SearchBar } from "@/components/search-bar";
 import { TrustStrip } from "@/components/trust-strip";
 import { EXPERIENCES, SERVICES } from "@/lib/catalog";
+import { usePreferences } from "@/lib/preferences";
 import { useAmeena } from "@/lib/store";
 import type { Listing } from "@/lib/types";
 
 export default function HomePage() {
   const { state } = useAmeena();
+  const { t } = usePreferences();
   const listings = state.listings.filter(
     (listing) => !listing.publicationStatus || listing.publicationStatus === "published",
   );
@@ -22,7 +24,7 @@ export default function HomePage() {
   const cities = [...new Set(listings.map((listing) => listing.city))].slice(0, 4);
 
   return (
-    <div className="mobile-page">
+    <div className="app-surface mobile-page">
       <DiscoveryHeader />
       <section className="hidden px-4 pb-4 pt-8 md:px-10 lg:block xl:px-16">
         <SearchBar />
@@ -30,8 +32,8 @@ export default function HomePage() {
 
       <div className="hidden lg:block"><TrustStrip /></div>
 
-      <section className="px-4 pb-4 pt-5 md:px-10 lg:pt-9 xl:px-16">
-        <h1 className="text-[22px] font-semibold tracking-[-0.025em] md:text-[28px]">Destinations pour vous</h1>
+      <section className="section-ivory px-4 pb-8 pt-5 md:px-10 lg:pt-9 xl:px-16">
+        <h1 className="text-[22px] font-semibold tracking-[-0.025em] md:text-[28px]">{t("destinations")}</h1>
         <div className="no-scrollbar -mx-4 mt-4 flex gap-3 overflow-x-auto px-4 md:mx-0 md:px-0">
           {destinations.map((listing) => (
             <Link key={listing.city} href={`/explorer?q=${encodeURIComponent(listing.city)}`} className="w-[132px] shrink-0 md:w-[164px]">
@@ -51,8 +53,9 @@ export default function HomePage() {
         {cities.map((city, index) => (
           <ListingRail
             key={city}
-            title={index === 0 ? `Logements populaires · ${city}` : index === 1 ? `Disponibles ce week-end · ${city}` : `Logements · ${city}`}
+            title={index === 0 ? `${t("popular")} · ${city}` : index === 1 ? `${t("weekend")} · ${city}` : `${t("stays")} · ${city}`}
             listings={listings.filter((listing) => listing.city === city)}
+            tone={index % 2 === 0 ? "section-pearl" : "section-ivory"}
           />
         ))}
       </div>
@@ -61,9 +64,9 @@ export default function HomePage() {
         <AdSlot placement="accueil-bandeau" />
       </div>
 
-      <section className="px-4 py-7 md:px-10 xl:px-16">
+      <section className="section-champagne px-4 py-10 md:px-10 xl:px-16">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="text-[22px] font-semibold tracking-[-0.025em] md:text-2xl">Expériences ce week-end</h2>
+          <h2 className="text-[22px] font-semibold tracking-[-0.025em] md:text-2xl">{t("experienceWeekend")}</h2>
           <Link href="/experiences" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f2f2f2]" aria-label="Voir les expériences">
             <ChevronRight className="h-5 w-5" />
           </Link>
@@ -77,20 +80,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="px-4 py-7 md:px-10 xl:px-16">
+      <section className="section-pearl px-4 py-10 md:px-10 xl:px-16">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="text-[22px] font-semibold tracking-[-0.025em] md:text-2xl">Services pour votre séjour</h2>
+          <h2 className="text-[22px] font-semibold tracking-[-0.025em] md:text-2xl">{t("stayServices")}</h2>
           <Link href="/services" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f2f2f2]" aria-label="Voir les services">
             <ChevronRight className="h-5 w-5" />
           </Link>
         </div>
         <Link href="/services#mobilite" className="mb-5 flex items-center gap-4 rounded-[24px] border border-[#e5e5e5] bg-white p-5 shadow-[0_6px_20px_rgba(0,0,0,.08)]">
-          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#fff0f5] text-[#E21D5A]">
+          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#f7f0e2] text-[#A77F39]">
             <CarFront className="h-8 w-8" />
           </span>
           <span className="min-w-0">
-            <span className="block text-lg font-semibold">Taxi, transfert aéroport et location</span>
-            <span className="mt-1 block text-sm text-[#6a6a6a]">AIBD, Dakar, Petite Côte · chauffeurs vérifiés</span>
+            <span className="block text-lg font-semibold">{t("mobility")}</span>
+            <span className="theme-muted mt-1 block text-sm text-[#6a6a6a]">AIBD, Dakar, Petite Côte · {t("verifiedDrivers")}</span>
           </span>
           <ArrowRight className="ml-auto h-5 w-5 shrink-0" />
         </Link>
@@ -131,10 +134,10 @@ export default function HomePage() {
   );
 }
 
-function ListingRail({ title, listings }: { title: string; listings: Listing[] }) {
+function ListingRail({ title, listings, tone }: { title: string; listings: Listing[]; tone: string }) {
   if (listings.length === 0) return null;
   return (
-    <section className="px-4 py-7 md:px-10 xl:px-16">
+    <section className={`${tone} px-4 py-9 md:px-10 xl:px-16`}>
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="text-[22px] font-semibold tracking-[-0.025em] md:text-2xl">{title}</h2>
         <Link

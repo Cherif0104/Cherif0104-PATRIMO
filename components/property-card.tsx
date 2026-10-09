@@ -62,7 +62,7 @@ export function PropertyCard({
         <h2 className="line-clamp-2 min-h-[40px] text-[15px] font-semibold leading-5">
           {TYPE_LABEL[listing.type]} · {listing.neighborhood}
         </h2>
-        <p className="mt-1 flex flex-wrap items-center gap-x-1 text-[14px] text-[#6a6a6a]">
+        <p className="theme-muted mt-1 flex flex-wrap items-center gap-x-1 text-[14px] text-[#6a6a6a]">
           <span className="font-semibold">
             {formatMoney(
               listing.mode === "sejour" && stayNights && stayNights > 1
@@ -79,7 +79,7 @@ export function PropertyCard({
                 : " par mois"}
           </span>
           <span>·</span>
-          <span className="inline-flex items-center gap-0.5 text-[#222]">
+          <span className="inline-flex items-center gap-0.5 text-current">
             <Star className="h-3 w-3 fill-current" />
             {listing.rating.toFixed(2).replace(".", ",")}
           </span>

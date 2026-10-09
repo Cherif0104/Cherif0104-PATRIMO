@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BadgeCheck, Bell, CalendarDays, CreditCard, Home, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { InstallAppCard } from "@/components/install-app-card";
+import { PreferencesPanel } from "@/components/preference-controls";
 import { useAuth } from "@/lib/auth";
 import { btnPrimary, btnSecondary, cx, fieldClass, formatDate, formatMoney } from "@/lib/format";
 import { loadMyBookings, supabase, updateProfile } from "@/lib/supabase";
@@ -55,13 +56,16 @@ export default function AccountPage() {
 
   if (!user) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-24 text-center">
-        <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#e7f4f2] text-[#1F6F66]">
-          <UserRound />
+      <div className="mx-auto max-w-xl px-4 py-16">
+        <div className="text-center">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#f7f0e2] text-[#A77F39]">
+            <UserRound />
+          </div>
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight">Votre espace Ameena</h1>
+          <p className="mt-3 text-[#6a6a6a]">Connectez-vous pour retrouver vos demandes, publier ou gérer un bien.</p>
+          <Link href="/connexion?retour=/compte" className={`${btnPrimary} mt-7`}>Se connecter</Link>
         </div>
-        <h1 className="mt-5 text-3xl font-semibold tracking-tight">Votre espace Ameena</h1>
-        <p className="mt-3 text-[#6a6a6a]">Connectez-vous pour retrouver vos demandes, publier ou gérer un bien.</p>
-        <Link href="/connexion?retour=/compte" className={`${btnPrimary} mt-7`}>Se connecter</Link>
+        <div className="mt-10 text-left"><PreferencesPanel /></div>
       </div>
     );
   }
@@ -241,7 +245,10 @@ export default function AccountPage() {
         </aside>
       </div>
       <div className="mt-6 lg:ml-auto lg:w-[380px]">
-        <InstallAppCard />
+        <div className="grid gap-4">
+          <PreferencesPanel />
+          <InstallAppCard />
+        </div>
       </div>
     </div>
   );

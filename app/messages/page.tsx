@@ -25,7 +25,7 @@ export default function MessagesPage() {
           </div>
         </aside>
         <section className="flex min-h-[430px] flex-col items-center justify-center rounded-[24px] border border-[#e5e5e5] p-8 text-center">
-          <span className="grid h-20 w-20 place-items-center rounded-full bg-[#fff0f5] text-[#E21D5A]">
+          <span className="grid h-20 w-20 place-items-center rounded-full bg-[#f7f0e2] text-[#A77F39]">
             <MessageCircle className="h-9 w-9" />
           </span>
           <h2 className="mt-5 text-xl font-semibold">Vos échanges restent au même endroit</h2>

@@ -100,7 +100,7 @@ function AuthForm() {
         <div className="min-h-[calc(100dvh-2rem)] w-full max-w-md rounded-t-[30px] bg-white px-7 py-7 lg:min-h-0 lg:rounded-none lg:px-0 lg:py-0">
           <div className="flex items-center justify-between lg:hidden">
             <Link href="/" aria-label="Fermer" className="grid h-10 w-10 place-items-center rounded-full hover:bg-[#f2f2f2]"><X className="h-5 w-5" /></Link>
-            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[#E21D5A] text-white"><Home className="h-7 w-7" /></span>
+            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[#C7A05A] text-[#151515]"><Home className="h-7 w-7" /></span>
             <span className="h-10 w-10" />
           </div>
           <div className="mt-8 grid grid-cols-2 rounded-full bg-[#f2f2f2] p-1 text-sm lg:mt-0">
@@ -149,7 +149,7 @@ function AuthForm() {
                         onClick={() => setAccountType(value)}
                         className={cx(
                           "rounded-xl border px-3 py-3 text-sm",
-                          accountType === value ? "border-[#E21D5A] bg-[#fff0f5] font-semibold text-[#C9144C]" : "border-[#dddddd]",
+                          accountType === value ? "border-[#C7A05A] bg-[#f7f0e2] font-semibold text-[#7C5C24]" : "border-[#dddddd]",
                         )}
                       >
                         {label}

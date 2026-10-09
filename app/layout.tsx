@@ -4,6 +4,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { FooterGate } from "@/components/footer-gate";
 import { Header } from "@/components/header";
 import { AuthProvider } from "@/lib/auth";
+import { PreferencesProvider } from "@/lib/preferences";
 import { Providers } from "@/lib/store";
 import "./globals.css";
 
@@ -43,7 +44,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#101010" },
+  ],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -51,16 +55,25 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={display.variable}>
+    <html lang="fr" className={display.variable} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{const t=localStorage.getItem("ameena-theme")||"system";const d=t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme:dark)").matches);document.documentElement.dataset.theme=d?"dark":"light";document.documentElement.style.colorScheme=d?"dark":"light"}catch(e){}`,
+          }}
+        />
+      </head>
       <body className={`${sans.className} antialiased`}>
-        <AuthProvider>
-          <Providers>
-            <Header />
-            <main>{children}</main>
-            <FooterGate />
-            <BottomNav />
-          </Providers>
-        </AuthProvider>
+        <PreferencesProvider>
+          <AuthProvider>
+            <Providers>
+              <Header />
+              <main>{children}</main>
+              <FooterGate />
+              <BottomNav />
+            </Providers>
+          </AuthProvider>
+        </PreferencesProvider>
       </body>
     </html>
   );

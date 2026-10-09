@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import { Bell, Compass, ConciergeBell, Home, UserRound } from "lucide-react";
 import { btnGhost, cx, formatDateTime } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
+import { CompactPreferences } from "@/components/preference-controls";
+import { usePreferences } from "@/lib/preferences";
 import { useAmeena, visibleNotification } from "@/lib/store";
 import type { Role } from "@/lib/types";
 
@@ -13,6 +15,7 @@ export function Header() {
   const pathname = usePathname();
   const { state, dispatch } = useAmeena();
   const { user, profile } = useAuth();
+  const { t } = usePreferences();
   const [openNotes, setOpenNotes] = useState(false);
   const noteRef = useRef<HTMLDivElement>(null);
   const notes = state.notifications.filter((note) => visibleNotification(state, note));
@@ -43,17 +46,17 @@ export function Header() {
   }, [dispatch, profile?.account_type, state.role, user]);
 
   const links = [
-    { href: "/explorer", label: "Explorer" },
+    { href: "/explorer", label: t("explore") },
     { href: "/boutiques", label: "Boutiques" },
     { href: "/gestion", label: "Gestion" },
     ...(state.role === "admin" ? [{ href: "/admin", label: "Réglages" }] : []),
   ];
 
   return (
-    <header className="no-print sticky top-0 z-[1100] hidden h-20 border-b border-[#ebebeb] bg-white lg:block">
+    <header className="app-surface theme-border no-print sticky top-0 z-[1100] hidden h-20 border-b border-[#ebebeb] lg:block">
       <div className="flex h-full items-center gap-3 px-4 md:gap-6 md:px-10 xl:px-16">
         <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Ameena, accueil">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#E21D5A] text-white">
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#C7A05A] text-[#151515]">
             <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
               <path fill="currentColor" d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-5.4h-5.6V21H4a1 1 0 0 1-1-1v-8.8Z" />
             </svg>
@@ -65,19 +68,19 @@ export function Header() {
           {[
             {
               href: "/",
-              label: "Logements",
+              label: t("stays"),
               icon: Home,
               active: pathname === "/" || pathname.startsWith("/logements") || pathname.startsWith("/explorer"),
             },
             {
               href: "/experiences",
-              label: "Expériences",
+              label: t("experiences"),
               icon: Compass,
               active: pathname.startsWith("/experiences"),
             },
             {
               href: "/services",
-              label: "Services",
+              label: t("services"),
               icon: ConciergeBell,
               active: pathname.startsWith("/services"),
             },
@@ -117,8 +120,9 @@ export function Header() {
               );
             })}
           </nav>
+          <CompactPreferences />
           <Link href="/publier" className={`${btnGhost} hidden sm:inline-flex`}>
-            Publier un bien
+            {t("publish")}
           </Link>
 
           {state.role !== "voyageur" && (
@@ -174,7 +178,7 @@ export function Header() {
               aria-label="Mon compte"
             >
               <span className="hidden max-w-[120px] truncate sm:block">{profile?.full_name || "Mon compte"}</span>
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#E21D5A] text-[10px] font-semibold text-white">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#C7A05A] text-[10px] font-semibold text-[#151515]">
                 {(profile?.full_name || user.email || "A").slice(0, 1).toUpperCase()}
               </span>
             </Link>
@@ -184,7 +188,7 @@ export function Header() {
               className="flex items-center gap-2 rounded-full border border-[#dddddd] px-3 py-2 text-sm font-medium hover:shadow-sm"
             >
               <UserRound className="h-4 w-4" />
-              <span className="hidden sm:inline">Connexion</span>
+              <span className="hidden sm:inline">{t("login")}</span>
             </Link>
           )}
         </div>

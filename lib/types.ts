@@ -262,13 +262,57 @@ export type MarketBooking = {
     | "confirmed"
     | "declined"
     | "cancelled"
-    | "completed";
+    | "completed"
+    | "expired";
   subtotal: number;
   commission: number;
   total: number;
   currency: Currency;
   quote_snapshot: Quote;
   created_at: string;
+};
+
+export type PaymentOrder = {
+  id: string;
+  booking_id: string;
+  payer_id: string;
+  payment_method: "hosted_checkout" | "wave" | "orange_money" | "card" | "manual";
+  provider: "paydunya" | "flutterwave" | "sandbox";
+  provider_reference: string | null;
+  status: "created" | "pending" | "paid" | "failed" | "refunded" | "cancelled";
+  amount: number;
+  currency: Currency;
+  checkout_url: string | null;
+  expires_at: string | null;
+  created_at: string;
+  paid_at: string | null;
+};
+
+export type Refund = {
+  id: string;
+  payment_order_id: string;
+  booking_id: string;
+  status: "requested" | "processing" | "succeeded" | "failed" | "cancelled";
+  amount_minor: number;
+  currency: Currency;
+  reason: string;
+  created_at: string;
+  processed_at: string | null;
+};
+
+export type Payout = {
+  id: string;
+  owner_id: string;
+  booking_id: string | null;
+  status: "scheduled" | "processing" | "succeeded" | "failed" | "held" | "cancelled";
+  amount_minor: number;
+  currency: Currency;
+  provider: "paydunya" | "flutterwave" | "sandbox";
+  destination_type: "wave" | "orange_money" | "bank";
+  destination_masked: string;
+  available_at: string;
+  created_at: string;
+  processed_at: string | null;
 };
 
 export type QuoteLine = { label: string; amount: number };

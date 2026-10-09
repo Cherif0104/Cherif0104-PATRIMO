@@ -1,5 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Listing, MarketBooking, Profile, Quote, Settings } from "./types";
+import type {
+  Listing,
+  MarketBooking,
+  PaymentOrder,
+  Payout,
+  Profile,
+  Quote,
+  Refund,
+  Settings,
+} from "./types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -168,7 +177,8 @@ export async function loadBlockedListingIds(
     .select("listing_id")
     .in("listing_id", listingIds)
     .lt("start_date", to)
-    .gt("end_date", from);
+    .gt("end_date", from)
+    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
   if (error) throw error;
   return [...new Set((data ?? []).map((row) => row.listing_id as string))];
 }
@@ -180,7 +190,7 @@ export async function isListingAvailable(listingId: string, from: string, to: st
 
 export async function updateMarketBookingStatus(
   id: string,
-  status: "preapproved" | "declined" | "cancelled",
+  status: "declined" | "cancelled",
 ) {
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
   const { data, error } = await supabase
@@ -193,18 +203,48 @@ export async function updateMarketBookingStatus(
   return data as MarketBooking;
 }
 
-export async function confirmMarketBooking(id: string) {
+export async function preapproveMarketBooking(id: string) {
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
-  const { data, error } = await supabase.rpc("confirm_booking_request", {
+  const { data, error } = await supabase.rpc("preapprove_booking_request", {
     p_booking_id: id,
   });
   if (error) {
     if (error.code === "23P01") {
-      throw new Error("Ces dates viennent d’être réservées. Actualisez avant de confirmer.");
+      throw new Error("Ces dates viennent d’être préapprouvées pour une autre demande.");
     }
     throw error;
   }
   return data as MarketBooking;
+}
+
+export async function loadPaymentOrders(): Promise<PaymentOrder[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("payment_orders")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as PaymentOrder[];
+}
+
+export async function loadPayouts(): Promise<Payout[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("payouts")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Payout[];
+}
+
+export async function loadRefunds(): Promise<Refund[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("refunds")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Refund[];
 }
 
 export async function updateProfile(profile: Pick<Profile, "id" | "full_name" | "phone" | "account_type">) {

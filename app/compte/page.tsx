@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BadgeCheck, CalendarDays, Home, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { BadgeCheck, CalendarDays, CreditCard, Home, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { btnPrimary, btnSecondary, cx, fieldClass, formatDate, formatMoney } from "@/lib/format";
-import { loadMyBookings, updateProfile } from "@/lib/supabase";
+import { loadMyBookings, supabase, updateProfile } from "@/lib/supabase";
 import type { AccountType, MarketBooking } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
@@ -17,6 +17,7 @@ const STATUS: Record<MarketBooking["status"], string> = {
   declined: "Refusée",
   cancelled: "Annulée",
   completed: "Terminée",
+  expired: "Délai de paiement expiré",
 };
 
 export default function AccountPage() {
@@ -28,6 +29,7 @@ export default function AccountPage() {
   const [accountType, setAccountType] = useState<AccountType>("voyageur");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [paymentBusy, setPaymentBusy] = useState("");
   useTitle("Mon compte · Ameena");
 
   useEffect(() => {
@@ -79,6 +81,37 @@ export default function AccountPage() {
       setSaved(true);
     } catch {
       setError("Le profil n’a pas pu être enregistré.");
+    }
+  }
+
+  async function startPayment(booking: MarketBooking) {
+    if (!supabase || !user) return;
+    setPaymentBusy(booking.id);
+    setError("");
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error("Votre session a expiré. Reconnectez-vous.");
+      const response = await fetch("/api/payments/create", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Idempotency-Key": `checkout:${booking.id}:${user.id}`,
+        },
+        body: JSON.stringify({
+          bookingId: booking.id,
+          paymentMethod: "hosted_checkout",
+        }),
+      });
+      const result = await response.json() as { checkoutUrl?: string; message?: string };
+      if (!response.ok || !result.checkoutUrl) {
+        throw new Error(result.message || "Le paiement ne peut pas être ouvert.");
+      }
+      window.location.assign(result.checkoutUrl);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Le paiement ne peut pas être ouvert.");
+      setPaymentBusy("");
     }
   }
 
@@ -134,9 +167,19 @@ export default function AccountPage() {
                     {STATUS[booking.status]}
                   </span>
                 </div>
-                <div className="mt-4 flex items-center justify-between border-t border-[#eeeeee] pt-4 text-sm">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#eeeeee] pt-4 text-sm">
                   <span className="text-[#6a6a6a]">Total voyageur</span>
                   <strong>{formatMoney(booking.total, booking.currency)}</strong>
+                  {(booking.status === "preapproved" || booking.status === "awaiting_payment") && (
+                    <button
+                      className={btnPrimary}
+                      disabled={paymentBusy === booking.id}
+                      onClick={() => void startPayment(booking)}
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      {paymentBusy === booking.id ? "Ouverture…" : "Payer de façon sécurisée"}
+                    </button>
+                  )}
                 </div>
               </article>
             ))}

@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { PageHead, Pill } from "@/components/ui";
-import { btnPrimary, btnSecondary, formatDate, formatMoney } from "@/lib/format";
+import { btnSecondary, formatDate, formatMoney } from "@/lib/format";
 import { RESERVATION_STATUS } from "@/lib/labels";
-import { confirmMarketBooking, loadMyBookings, updateMarketBookingStatus } from "@/lib/supabase";
+import { loadMyBookings, preapproveMarketBooking, updateMarketBookingStatus } from "@/lib/supabase";
 import { useAmeena, useScope } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
 import type { MarketBooking, ReservationStatus } from "@/lib/types";
@@ -37,14 +37,13 @@ export default function ReservationsPage() {
       .catch(() => setError("Les demandes en ligne ne peuvent pas être chargées."));
   }, [ownerListingIdsKey]);
 
-  async function changeStatus(booking: MarketBooking, status: "preapproved" | "confirmed" | "declined") {
+  async function changeStatus(booking: MarketBooking, status: "preapproved" | "declined") {
     setBusyId(booking.id);
     setError("");
     try {
-      const updated =
-        status === "confirmed"
-          ? await confirmMarketBooking(booking.id)
-          : await updateMarketBookingStatus(booking.id, status);
+      const updated = status === "preapproved"
+        ? await preapproveMarketBooking(booking.id)
+        : await updateMarketBookingStatus(booking.id, status);
       setMarketBookings((rows) => rows.map((row) => (row.id === booking.id ? updated : row)));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Le statut n’a pas pu être modifié.");
@@ -55,7 +54,7 @@ export default function ReservationsPage() {
 
   return (
     <div>
-      <PageHead title="Réservations" text="Une confirmation bloque les dates dans la même transaction : deux voyageurs ne peuvent pas prendre le même créneau." />
+      <PageHead title="Réservations" text="La préapprobation réserve le créneau pendant 30 minutes. Seul un paiement vérifié par le prestataire confirme ensuite le séjour." />
       {error && <p role="alert" className="mb-4 rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
 
       {marketBookings.length > 0 && (
@@ -72,20 +71,15 @@ export default function ReservationsPage() {
                   </div>
                   <div className="text-right">
                     <Pill tone={booking.status === "confirmed" ? "good" : booking.status === "declined" ? "neutral" : "warn"}>
-                      {booking.status === "requested" ? "Demande" : booking.status === "preapproved" ? "Préapprouvée" : booking.status === "confirmed" ? "Confirmée" : booking.status === "declined" ? "Refusée" : booking.status}
+                      {booking.status === "requested" ? "Demande" : booking.status === "preapproved" ? "Paiement attendu (30 min)" : booking.status === "awaiting_payment" ? "Paiement en cours" : booking.status === "confirmed" ? "Confirmée et payée" : booking.status === "declined" ? "Refusée" : booking.status}
                     </Pill>
                     <p className="mt-2 text-sm font-semibold">{formatMoney(booking.total, booking.currency)}</p>
                   </div>
                 </div>
-                {(booking.status === "requested" || booking.status === "preapproved") && (
+                {booking.status === "requested" && (
                   <div className="mt-4 flex flex-wrap gap-2 border-t border-[#eeeeee] pt-4">
-                    {booking.status === "requested" && (
-                      <button className={btnSecondary} disabled={busyId === booking.id} onClick={() => void changeStatus(booking, "preapproved")}>
-                        Préapprouver
-                      </button>
-                    )}
-                    <button className={btnPrimary} disabled={busyId === booking.id} onClick={() => void changeStatus(booking, "confirmed")}>
-                      Confirmer et bloquer les dates
+                    <button className={btnSecondary} disabled={busyId === booking.id} onClick={() => void changeStatus(booking, "preapproved")}>
+                      Préapprouver pendant 30 min
                     </button>
                     <button className={btnSecondary} disabled={busyId === booking.id} onClick={() => void changeStatus(booking, "declined")}>
                       Refuser
@@ -98,7 +92,8 @@ export default function ReservationsPage() {
         </section>
       )}
 
-      <h2 className="mb-3 text-lg font-semibold">Données de démonstration locales</h2>
+      <h2 className="mb-1 text-lg font-semibold">Simulation locale</h2>
+      <p className="mb-3 text-sm text-[#6a6a6a]">Ces exemples ne créent ni réservation, ni paiement, ni écriture comptable réelle.</p>
       <div className="overflow-x-auto rounded-3xl border border-[#ebebeb]">
         <table className="w-full text-left text-sm">
           <thead className="bg-[#fafafa] text-[#6a6a6a]">

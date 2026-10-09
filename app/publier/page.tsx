@@ -11,7 +11,17 @@ import { useAuth } from "@/lib/auth";
 import { loadOrganizations, submitListing, uploadListingPhoto } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
-import type { Currency, Mode, Organization, PropertyType } from "@/lib/types";
+import type {
+  Currency,
+  Furnishing,
+  ListingPurpose,
+  ManagementMandate,
+  Mode,
+  Organization,
+  PropertyType,
+  RentalTerm,
+  Standing,
+} from "@/lib/types";
 
 const defaultPlace = {
   label: "Almadies, Dakar, Sénégal",
@@ -30,12 +40,16 @@ export default function PublishPage() {
   const [place, setPlace] = useState(defaultPlace);
   const [mode, setMode] = useState<Mode>("sejour");
   const [type, setType] = useState<PropertyType>("appartement");
+  const [purpose, setPurpose] = useState<ListingPurpose>("location");
+  const [rentalTerm, setRentalTerm] = useState<RentalTerm>("courte_duree");
+  const [furnishing, setFurnishing] = useState<Furnishing>("meuble");
+  const [standing, setStanding] = useState<Standing>("standard");
+  const [managementMandate, setManagementMandate] = useState<ManagementMandate>("direct_proprietaire");
   const [price, setPrice] = useState(50000);
   const [currency, setCurrency] = useState<Currency>("XOF");
   const [guests, setGuests] = useState(2);
   const [bedrooms, setBedrooms] = useState(1);
   const [description, setDescription] = useState("");
-  const [managed, setManaged] = useState(false);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [organizationId, setOrganizationId] = useState("");
   const [images, setImages] = useState<string[]>([]);
@@ -90,6 +104,11 @@ export default function PublishPage() {
         neighborhood: place.neighborhood,
         mode,
         type,
+        purpose,
+        rentalTerm: purpose === "location" ? rentalTerm : undefined,
+        furnishing,
+        standing,
+        managementMandate,
         price: Number(price) || 0,
         currency,
         guests,
@@ -105,7 +124,7 @@ export default function PublishPage() {
         description: description.trim() || "Bien publié en direct sur Se Loger au Sénégal.",
         amenities: ["Wifi"],
         hostId: `user-${user.id}`,
-        managedByPlatform: managed,
+        managedByPlatform: managementMandate === "plateforme",
         reviews: [],
       };
     try {
@@ -138,8 +157,11 @@ export default function PublishPage() {
     return (
       <div className="mx-auto max-w-xl px-4 py-24 text-center">
         <h1 className="text-3xl font-semibold">Activez votre profil propriétaire</h1>
-        <p className="mt-3 text-[#6a6a6a]">Choisissez « Propriétaire » ou « Agence » dans votre compte avant d’envoyer un bien en validation.</p>
-        <Link href="/compte" className={`${btnPrimary} mt-7`}>Ouvrir mon compte</Link>
+        <p className="mt-3 text-[#6a6a6a]">Les propriétaires passent par la vérification documentaire. Les agences sont créées et activées uniquement par notre équipe.</p>
+        <div className="mt-7 flex flex-wrap justify-center gap-2">
+          <Link href="/compte" className={btnPrimary}>Demander la vérification</Link>
+          <a href="https://wa.me/221788324069?text=Bonjour%2C%20je%20souhaite%20inscrire%20mon%20agence%20sur%20Se%20Loger%20au%20S%C3%A9n%C3%A9gal." target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-full border border-[#dddddd] px-5 py-2.5 text-sm font-semibold">Contacter l’équipe sur WhatsApp</a>
+        </div>
       </div>
     );
   }
@@ -174,12 +196,29 @@ export default function PublishPage() {
         <p className="text-xs text-[#6a6a6a]">Cliquez sur la carte pour placer le bien. {lat}, {lng}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm font-medium">
-            Type d&apos;offre
+            Marché
+            <select className={`${fieldClass} mt-1`} value={purpose} onChange={(event) => setPurpose(event.target.value as ListingPurpose)}>
+              <option value="location">Location</option>
+              <option value="vente">Vente</option>
+            </select>
+          </label>
+          <label className="text-sm font-medium">
+            Rythme de location
             <select className={`${fieldClass} mt-1`} value={mode} onChange={(event) => setMode(event.target.value as Mode)}>
               <option value="sejour">Séjour</option>
               <option value="location">Location longue durée</option>
             </select>
           </label>
+          {purpose === "location" && (
+            <label className="text-sm font-medium">
+              Durée
+              <select className={`${fieldClass} mt-1`} value={rentalTerm} onChange={(event) => setRentalTerm(event.target.value as RentalTerm)}>
+                <option value="journalier">Journalier</option>
+                <option value="courte_duree">Courte durée</option>
+                <option value="longue_duree">Longue durée</option>
+              </select>
+            </label>
+          )}
           <label className="text-sm font-medium">
             Type de bien
             <select className={`${fieldClass} mt-1`} value={type} onChange={(event) => setType(event.target.value as PropertyType)}>
@@ -189,6 +228,39 @@ export default function PublishPage() {
               <option value="studio">Studio</option>
               <option value="riad">Riad</option>
               <option value="ecolodge">Écolodge</option>
+              <option value="duplex">Duplex</option>
+              <option value="rooftop">Rooftop</option>
+              <option value="hotel">Hôtel</option>
+              <option value="terrain">Terrain</option>
+              <option value="immeuble">Immeuble</option>
+              <option value="bureau">Bureau</option>
+              <option value="commerce">Commerce</option>
+            </select>
+          </label>
+          <label className="text-sm font-medium">
+            Ameublement
+            <select className={`${fieldClass} mt-1`} value={furnishing} onChange={(event) => setFurnishing(event.target.value as Furnishing)}>
+              <option value="meuble">Meublé</option>
+              <option value="semi_meuble">Semi-meublé</option>
+              <option value="non_meuble">Non meublé</option>
+            </select>
+          </label>
+          <label className="text-sm font-medium">
+            Standing
+            <select className={`${fieldClass} mt-1`} value={standing} onChange={(event) => setStanding(event.target.value as Standing)}>
+              <option value="essentiel">Essentiel</option>
+              <option value="standard">Standard</option>
+              <option value="premium">Premium</option>
+              <option value="luxe">Luxe</option>
+              <option value="presidentiel">Présidentiel</option>
+            </select>
+          </label>
+          <label className="text-sm font-medium">
+            Gestion du bien
+            <select className={`${fieldClass} mt-1`} value={managementMandate} onChange={(event) => setManagementMandate(event.target.value as ManagementMandate)}>
+              <option value="direct_proprietaire">Directement par le propriétaire</option>
+              <option value="agence">Confiée à une agence</option>
+              <option value="plateforme">Confiée à Se Loger au Sénégal</option>
             </select>
           </label>
           <label className="text-sm font-medium">
@@ -214,10 +286,6 @@ export default function PublishPage() {
         <label className="text-sm font-medium">
           Description
           <textarea className={`${fieldClass} mt-1 min-h-28`} value={description} onChange={(event) => setDescription(event.target.value)} />
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={managed} onChange={(event) => setManaged(event.target.checked)} />
-          Géré par Se Loger au Sénégal — la règle Gestion s&apos;applique
         </label>
         {organizations.length > 0 && (
           <label className="text-sm font-medium">

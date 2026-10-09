@@ -11,6 +11,7 @@ const columns = [
       ["Explorer la carte", "/explorer"],
       ["Boutiques partenaires", "/boutiques"],
       ["Publier un bien", "/publier"],
+      ["Inscrire une agence", "/agences"],
     ],
   },
   {

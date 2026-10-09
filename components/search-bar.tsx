@@ -1,18 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { addDaysISO } from "@/lib/format";
-import { useAmeena } from "@/lib/store";
+import { LocationSearchInput } from "@/components/location-search-input";
 import type { Mode } from "@/lib/types";
 
 export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
   const router = useRouter();
-  const { state } = useAmeena();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
   const [guests, setGuests] = useState(1);
   const [from, setFrom] = useState(addDaysISO(5));
   const [to, setTo] = useState(addDaysISO(8));
@@ -22,20 +20,13 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
   const [maxPrice, setMaxPrice] = useState("");
   const [bedrooms, setBedrooms] = useState("");
   const [verified, setVerified] = useState(false);
-
-  const cities = useMemo(() => {
-    const set = new Map<string, string>();
-    state.listings.forEach((listing) => {
-      set.set(listing.city, listing.country);
-    });
-    return [...set.entries()];
-  }, [state.listings]);
-
-  const matches = cities.filter(([city]) => city.toLowerCase().includes(query.toLowerCase().trim()));
+  const [purpose, setPurpose] = useState("");
+  const [furnishing, setFurnishing] = useState("");
+  const [standing, setStanding] = useState("");
 
   function go(city?: string) {
     const params = new URLSearchParams();
-    params.set("mode", mode);
+    if (purpose !== "vente") params.set("mode", mode);
     const destination = city ?? query.trim();
     if (destination) params.set("q", destination);
     if (guests > 1) params.set("voyageurs", String(guests));
@@ -46,8 +37,10 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
     if (maxPrice) params.set("prix_max", maxPrice);
     if (bedrooms) params.set("chambres", bedrooms);
     if (verified) params.set("certifie", "1");
+    if (purpose) params.set("marche", purpose);
+    if (furnishing) params.set("ameublement", furnishing);
+    if (standing) params.set("standing", standing);
     router.push(`/explorer?${params.toString()}`);
-    setOpen(false);
   }
 
   return (
@@ -74,38 +67,13 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
       >
         <label className="relative min-w-0 basis-full px-5 py-3 text-left sm:basis-auto">
           <span className="block text-xs font-semibold">Destination</span>
-          <input
+          <LocationSearchInput
             className="w-full bg-transparent text-sm outline-none placeholder:text-[#8a8a8a]"
             placeholder="Appartement à Dakar, villa à Saly…"
             value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setOpen(true);
-            }}
-            onFocus={() => setOpen(true)}
+            onChange={setQuery}
+            onSelect={(result) => go(result.label)}
           />
-          {open && (
-            <div className="absolute left-0 right-0 top-[calc(100%+12px)] z-20 overflow-hidden rounded-3xl border border-[#ebebeb] bg-white py-2 text-left shadow-[0_8px_28px_rgba(0,0,0,0.12)]">
-              {(query.trim() ? matches : cities).map(([city, country]) => (
-                <button
-                  type="button"
-                  key={city}
-                  className="block w-full px-5 py-3 text-left hover:bg-[#f7f7f7]"
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                    setQuery(city);
-                    go(city);
-                  }}
-                >
-                  <span className="block text-sm font-medium">{city}</span>
-                  <span className="block text-xs text-[#6a6a6a]">{country}</span>
-                </button>
-              ))}
-              {query.trim() && matches.length === 0 && (
-                <p className="px-5 py-3 text-sm text-[#6a6a6a]">Chercher « {query} » quand même.</p>
-              )}
-            </div>
-          )}
         </label>
         <div className="hidden h-8 w-px bg-[#dddddd] sm:block" />
         <label className="min-w-0 flex-1 border-t border-[#eeeeee] px-4 py-2.5 sm:border-t-0 sm:px-4 sm:py-3">
@@ -165,7 +133,15 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
         </button>
       </form>
       {filtersOpen && (
-        <div className="theme-border app-card mx-auto mt-3 grid max-w-4xl grid-cols-2 gap-3 rounded-[24px] border border-[#ebebeb] p-4 shadow-[0_10px_30px_rgba(24,42,57,.1)] md:grid-cols-5">
+        <div className="theme-border app-card mx-auto mt-3 grid max-w-5xl grid-cols-2 gap-3 rounded-[24px] border border-[#ebebeb] p-4 shadow-[0_10px_30px_rgba(24,42,57,.1)] md:grid-cols-4">
+          <label className="text-xs font-semibold">
+            Marché
+            <select value={purpose} onChange={(event) => setPurpose(event.target.value)} className="mt-1.5 w-full rounded-xl border border-[#dddddd] bg-transparent px-3 py-2.5 text-sm font-normal">
+              <option value="">Location et vente</option>
+              <option value="location">Location</option>
+              <option value="vente">Vente</option>
+            </select>
+          </label>
           <label className="text-xs font-semibold">
             Type de bien
             <select value={type} onChange={(event) => setType(event.target.value)} className="mt-1.5 w-full rounded-xl border border-[#dddddd] bg-transparent px-3 py-2.5 text-sm font-normal">
@@ -175,6 +151,31 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
               <option value="maison">Maison</option>
               <option value="studio">Studio</option>
               <option value="ecolodge">Écolodge</option>
+              <option value="duplex">Duplex</option>
+              <option value="rooftop">Rooftop</option>
+              <option value="hotel">Hôtel</option>
+              <option value="terrain">Terrain</option>
+              <option value="bureau">Bureau</option>
+            </select>
+          </label>
+          <label className="text-xs font-semibold">
+            Ameublement
+            <select value={furnishing} onChange={(event) => setFurnishing(event.target.value)} className="mt-1.5 w-full rounded-xl border border-[#dddddd] bg-transparent px-3 py-2.5 text-sm font-normal">
+              <option value="">Tous</option>
+              <option value="meuble">Meublé</option>
+              <option value="semi_meuble">Semi-meublé</option>
+              <option value="non_meuble">Non meublé</option>
+            </select>
+          </label>
+          <label className="text-xs font-semibold">
+            Standing
+            <select value={standing} onChange={(event) => setStanding(event.target.value)} className="mt-1.5 w-full rounded-xl border border-[#dddddd] bg-transparent px-3 py-2.5 text-sm font-normal">
+              <option value="">Tous niveaux</option>
+              <option value="essentiel">Essentiel</option>
+              <option value="standard">Standard</option>
+              <option value="premium">Premium</option>
+              <option value="luxe">Luxe</option>
+              <option value="presidentiel">Présidentiel</option>
             </select>
           </label>
           <label className="text-xs font-semibold">

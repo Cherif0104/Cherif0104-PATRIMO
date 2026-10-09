@@ -247,7 +247,8 @@ export default function AccountPage() {
           </div>
           <p className="mt-4 text-3xl font-semibold">{profile?.full_name || user.email}</p>
           <p className="mt-1 text-[#6a6a6a]">{profile?.account_type === "voyageur" ? "Voyageur" : profile?.account_type === "agence" ? "Agence" : "Propriétaire"}</p>
-          <button className={`${btnSecondary} mt-5 w-full`} onClick={() => void signOut()}>
+          <Link href="/portefeuille" className={`${btnSecondary} mt-5 w-full`}>Mon portefeuille</Link>
+          <button className={`${btnSecondary} mt-2 w-full`} onClick={() => void signOut()}>
             <LogOut className="h-4 w-4" /> Se déconnecter
           </button>
         </div>
@@ -259,9 +260,12 @@ export default function AccountPage() {
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">Bonjour {profile?.full_name || user.email}</h1>
           <p className="mt-2 text-sm text-[#6a6a6a]">{user.email}</p>
         </div>
-        <button className={btnSecondary} onClick={() => void signOut()}>
-          <LogOut className="h-4 w-4" /> Se déconnecter
-        </button>
+        <div className="flex gap-2">
+          <Link href="/portefeuille" className={btnSecondary}>Mon portefeuille</Link>
+          <button className={btnSecondary} onClick={() => void signOut()}>
+            <LogOut className="h-4 w-4" /> Se déconnecter
+          </button>
+        </div>
       </div>
 
       <div className="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,1.3fr)_380px]">
@@ -368,9 +372,20 @@ export default function AccountPage() {
               <select className={`${fieldClass} mt-1`} value={accountType} onChange={(event) => setAccountType(event.target.value as AccountType)}>
                 <option value="voyageur">Voyageur</option>
                 <option value="proprietaire">Propriétaire</option>
-                <option value="agence">Agence</option>
+                {(accountType === "agence" || profile?.account_type === "agence" || profile?.requested_account_type === "agence") && (
+                  <option value="agence">Agence</option>
+                )}
               </select>
             </label>
+            {accountType !== "agence" && (
+              <div className="rounded-2xl bg-[#FFF8ED] p-4 text-sm">
+                <p className="font-semibold text-[#182A39]">Vous représentez une agence immobilière ?</p>
+                <p className="mt-1 leading-5 text-[#6a6a6a]">Les comptes agences sont ouverts par notre équipe après contrôle des documents professionnels.</p>
+                <a href="https://wa.me/221788324069?text=Bonjour%2C%20je%20souhaite%20inscrire%20mon%20agence%20sur%20Se%20Loger%20au%20S%C3%A9n%C3%A9gal." target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex font-semibold text-[#16836f] underline">
+                  WhatsApp : +221 78 832 40 69
+                </a>
+              </div>
+            )}
             {saved && <p className="text-sm text-[#145e57]">Profil enregistré.</p>}
             {error && <p role="alert" className="text-sm text-[#a52a12]">{error}</p>}
             <button className={`${btnPrimary} w-full`}>Enregistrer</button>

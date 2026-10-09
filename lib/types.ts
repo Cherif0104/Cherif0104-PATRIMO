@@ -3,7 +3,25 @@ export type Role = "voyageur" | "proprietaire" | "agence" | "admin";
 export type Currency = "XOF" | "EUR";
 export type Payer = "proprietaire" | "client" | "partage";
 export type CommissionBase = "sejour" | "mois" | "avance" | "encaisse";
-export type PropertyType = "villa" | "appartement" | "maison" | "riad" | "studio" | "ecolodge";
+export type PropertyType =
+  | "villa"
+  | "appartement"
+  | "maison"
+  | "riad"
+  | "studio"
+  | "ecolodge"
+  | "duplex"
+  | "rooftop"
+  | "hotel"
+  | "terrain"
+  | "immeuble"
+  | "bureau"
+  | "commerce";
+export type ListingPurpose = "location" | "vente";
+export type RentalTerm = "journalier" | "courte_duree" | "longue_duree";
+export type Furnishing = "meuble" | "non_meuble" | "semi_meuble";
+export type Standing = "essentiel" | "standard" | "premium" | "luxe" | "presidentiel";
+export type ManagementMandate = "direct_proprietaire" | "agence" | "plateforme";
 
 export type Listing = {
   id: string;
@@ -18,6 +36,11 @@ export type Listing = {
   neighborhood: string;
   mode: Mode;
   type: PropertyType;
+  purpose?: ListingPurpose;
+  rentalTerm?: RentalTerm;
+  furnishing?: Furnishing;
+  standing?: Standing;
+  managementMandate?: ManagementMandate;
   price: number;
   currency: Currency;
   guests: number;
@@ -47,6 +70,41 @@ export type AvailabilityBlock = {
   note: string | null;
   created_by: string;
   expires_at: string | null;
+};
+
+export type PropertyContract = {
+  id: string;
+  listing_id: string;
+  booking_id: string | null;
+  tenant_id: string | null;
+  owner_id: string | null;
+  organization_id: string | null;
+  title: string;
+  contract_kind: "bail_habitation" | "location_meublee" | "mandat_gestion" | "reservation" | "vente";
+  status: "draft" | "sent" | "signed" | "active" | "ended" | "cancelled";
+  start_date: string | null;
+  end_date: string | null;
+  monthly_amount: number | null;
+  currency: Currency;
+  storage_path: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PropertyStakeholder = {
+  id: string;
+  listing_id: string;
+  user_id: string;
+  role: "proprietaire" | "investisseur" | "locataire" | "observateur";
+  share_percent: number | null;
+  created_by: string;
+  created_at: string;
+};
+
+export type PortfolioHolding = {
+  stakeholder: PropertyStakeholder;
+  listing: Listing;
 };
 
 export type Review = {

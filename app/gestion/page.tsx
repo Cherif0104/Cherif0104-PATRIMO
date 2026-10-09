@@ -7,15 +7,17 @@ import { Photo } from "@/components/photo";
 import { PageHead, Pill } from "@/components/ui";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
-import { loadMyBookings } from "@/lib/supabase";
+import { loadMyBookings, loadPropertyContracts, loadPropertyIncidents } from "@/lib/supabase";
 import { useScope } from "@/lib/store";
-import type { MarketBooking } from "@/lib/types";
+import type { MarketBooking, PropertyContract, PropertyIncident } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
 export default function DashboardPage() {
   const { profile } = useAuth();
   const scope = useScope();
   const [bookings, setBookings] = useState<MarketBooking[]>([]);
+  const [contracts, setContracts] = useState<PropertyContract[]>([]);
+  const [incidents, setIncidents] = useState<PropertyIncident[]>([]);
   const [error, setError] = useState("");
   useTitle("Tableau de bord · Se Loger au Sénégal");
   const listingIds = new Set(scope.listings.flatMap((listing) => listing.databaseId ? [listing.databaseId] : []));
@@ -23,8 +25,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const allowed = new Set(listingIdsKey ? listingIdsKey.split(",") : []);
-    loadMyBookings()
-      .then((rows) => setBookings(rows.filter((booking) => booking.listing_id && allowed.has(booking.listing_id))))
+    Promise.all([loadMyBookings(), loadPropertyContracts(), loadPropertyIncidents()])
+      .then(([rows, contractRows, incidentRows]) => {
+        setBookings(rows.filter((booking) => booking.listing_id && allowed.has(booking.listing_id)));
+        setContracts(contractRows.filter((contract) => allowed.has(contract.listing_id)));
+        setIncidents(incidentRows.filter((incident) => allowed.has(incident.listing_id)));
+      })
       .catch(() => setError("Les indicateurs de réservation ne peuvent pas être chargés."));
   }, [listingIdsKey]);
 
@@ -42,9 +48,11 @@ export default function DashboardPage() {
       <div className="mb-8">
         <AdSlot placement="gestion" compact />
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="Biens" value={String(scope.listings.length)} href="/gestion/biens" />
         <Stat label="Demandes actives" value={String(activeBookings.length)} href="/gestion/reservations" />
+        <Stat label="Contrats actifs" value={String(contracts.filter((contract) => ["signed", "active"].includes(contract.status)).length)} href="/gestion/contrats" />
+        <Stat label="Incidents ouverts" value={String(incidents.filter((incident) => incident.status !== "resolu").length)} href="/gestion/incidents" />
       </div>
 
       <h2 className="mb-4 mt-10 text-xl font-semibold">Biens</h2>

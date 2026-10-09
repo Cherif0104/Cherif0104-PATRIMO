@@ -6,6 +6,7 @@ import { Map, SlidersHorizontal } from "lucide-react";
 import { AdSlot } from "@/components/ad-slot";
 import { MapView } from "@/components/map";
 import { PropertyCard } from "@/components/property-card";
+import { LocationSearchInput } from "@/components/location-search-input";
 import { fieldClass, nightsBetween } from "@/lib/format";
 import { loadBlockedListingIds } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
@@ -31,6 +32,9 @@ function match(listing: Listing, params: URLSearchParams) {
   if (params.get("certifie") === "1" && !listing.managedByPlatform) return false;
   if (params.get("type") && listing.type !== params.get("type")) return false;
   if (Number(params.get("chambres") ?? 0) > listing.bedrooms) return false;
+  if (params.get("marche") && (listing.purpose ?? "location") !== params.get("marche")) return false;
+  if (params.get("ameublement") && listing.furnishing !== params.get("ameublement")) return false;
+  if (params.get("standing") && listing.standing !== params.get("standing")) return false;
   if (category === "mer" && !listing.amenities.includes("Vue mer")) return false;
   if (category === "location" && listing.mode !== "location") return false;
   if (category === "gere" && !listing.managedByPlatform) return false;
@@ -53,6 +57,9 @@ function Explorer() {
   const [type, setType] = useState(params.get("type") ?? "");
   const [bedrooms, setBedrooms] = useState(params.get("chambres") ?? "");
   const [verifiedOnly, setVerifiedOnly] = useState(params.get("certifie") === "1");
+  const [purpose, setPurpose] = useState(params.get("marche") ?? "");
+  const [furnishing, setFurnishing] = useState(params.get("ameublement") ?? "");
+  const [standing, setStanding] = useState(params.get("standing") ?? "");
   const [managedOnly, setManagedOnly] = useState(params.get("gere") === "1");
   const [mode, setMode] = useState(params.get("mode") ?? "");
   const [blockedIds, setBlockedIds] = useState<string[]>([]);
@@ -91,6 +98,12 @@ function Explorer() {
     else next.delete("chambres");
     if (verifiedOnly) next.set("certifie", "1");
     else next.delete("certifie");
+    if (purpose) next.set("marche", purpose);
+    else next.delete("marche");
+    if (furnishing) next.set("ameublement", furnishing);
+    else next.delete("ameublement");
+    if (standing) next.set("standing", standing);
+    else next.delete("standing");
     return state.listings.filter((listing) => {
       if (listing.publicationStatus && listing.publicationStatus !== "published") return false;
       if (listing.databaseId && blockedIds.includes(listing.databaseId)) return false;
@@ -99,7 +112,7 @@ function Explorer() {
       if (maxPrice && listing.price > Number(maxPrice)) return false;
       return true;
     });
-  }, [state.listings, params, mode, managedOnly, query, type, bedrooms, verifiedOnly, minPrice, maxPrice, blockedIds]);
+  }, [state.listings, params, mode, managedOnly, query, type, bedrooms, verifiedOnly, purpose, furnishing, standing, minPrice, maxPrice, blockedIds]);
 
   const activeListing = listings.find((listing) => listing.id === active) ?? null;
 
@@ -109,10 +122,10 @@ function Explorer() {
         <SlidersHorizontal className="h-4 w-4 text-[#6a6a6a]" />
         <label className="relative min-w-[220px] flex-1 lg:max-w-sm">
           <span className="sr-only">Destination ou logement</span>
-          <input
+          <LocationSearchInput
             className={`${fieldClass} w-full pl-9`}
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={setQuery}
             placeholder="Appartement à Dakar…"
           />
           <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm">⌕</span>
@@ -122,6 +135,11 @@ function Explorer() {
           <option value="sejour">Séjours</option>
           <option value="location">Locations</option>
         </select>
+        <select className={`${fieldClass} w-auto`} value={purpose} onChange={(event) => setPurpose(event.target.value)}>
+          <option value="">Location et vente</option>
+          <option value="location">Location</option>
+          <option value="vente">Vente</option>
+        </select>
         <select className={`${fieldClass} w-auto`} value={type} onChange={(event) => setType(event.target.value)}>
           <option value="">Tous les types</option>
           <option value="appartement">Appartement</option>
@@ -129,6 +147,25 @@ function Explorer() {
           <option value="maison">Maison</option>
           <option value="studio">Studio</option>
           <option value="ecolodge">Écolodge</option>
+          <option value="duplex">Duplex</option>
+          <option value="rooftop">Rooftop</option>
+          <option value="hotel">Hôtel</option>
+          <option value="terrain">Terrain</option>
+          <option value="bureau">Bureau</option>
+        </select>
+        <select className={`${fieldClass} w-auto`} value={furnishing} onChange={(event) => setFurnishing(event.target.value)}>
+          <option value="">Ameublement</option>
+          <option value="meuble">Meublé</option>
+          <option value="semi_meuble">Semi-meublé</option>
+          <option value="non_meuble">Non meublé</option>
+        </select>
+        <select className={`${fieldClass} w-auto`} value={standing} onChange={(event) => setStanding(event.target.value)}>
+          <option value="">Standing</option>
+          <option value="essentiel">Essentiel</option>
+          <option value="standard">Standard</option>
+          <option value="premium">Premium</option>
+          <option value="luxe">Luxe</option>
+          <option value="presidentiel">Présidentiel</option>
         </select>
         <input
           className={`${fieldClass} w-32`}

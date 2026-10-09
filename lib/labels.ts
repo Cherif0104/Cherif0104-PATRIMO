@@ -21,6 +21,13 @@ export const TYPE_LABEL: Record<PropertyType, string> = {
   riad: "Riad",
   studio: "Studio",
   ecolodge: "Écolodge",
+  duplex: "Duplex",
+  rooftop: "Rooftop",
+  hotel: "Hôtel",
+  terrain: "Terrain",
+  immeuble: "Immeuble",
+  bureau: "Bureau",
+  commerce: "Commerce",
 };
 
 export const ROOM_LABEL: Record<RoomState, string> = {

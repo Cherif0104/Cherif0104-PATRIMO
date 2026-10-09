@@ -184,7 +184,7 @@ export default function ListingPage() {
           <div className="flex items-start justify-between gap-4 border-b border-[#ebebeb] pb-6">
             <div>
               <p className="text-xl font-semibold">
-                {TYPE_LABEL[listing.type]} {listing.mode === "sejour" ? "entier" : "à louer"} · proposé par {hostName}
+                {TYPE_LABEL[listing.type]} {listing.purpose === "vente" ? "à vendre" : listing.mode === "sejour" ? "entier" : "à louer"} · proposé par {hostName}
               </p>
               {publicHost?.certified && <p className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-[#16836f]"><BadgeCheck className="h-4 w-4" /> Profil certifié</p>}
               <p className="mt-1 text-sm text-[#6a6a6a]">
@@ -267,17 +267,29 @@ export default function ListingPage() {
           </div>
           <AdSlot placement="fiche" />
         </div>
-        <BookingCard listing={listing} />
+        {listing.purpose === "vente" ? (
+          <aside id="reservation" className="rounded-[24px] border border-[#dddddd] p-6 shadow-[0_8px_28px_rgba(0,0,0,.08)]">
+            <p className="text-sm text-[#6a6a6a]">Prix de vente</p>
+            <p className="mt-1 text-2xl font-semibold">{formatMoney(listing.price, listing.currency)}</p>
+            <p className="mt-3 text-sm leading-6 text-[#6a6a6a]">Demandez le dossier du bien, les informations foncières et une visite. Aucun paiement de vente n’est encaissé en ligne.</p>
+            <button onClick={() => void contactHost()} disabled={contactBusy || !listing.databaseId} className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-[#FF4845] px-5 py-3 text-sm font-semibold text-white">
+              {contactBusy ? "Ouverture…" : "Demander le dossier"}
+            </button>
+            <a href="https://wa.me/221788324069?text=Bonjour%2C%20je%20souhaite%20des%20informations%20sur%20un%20bien%20%C3%A0%20vendre." target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#dddddd] px-5 py-3 text-sm font-semibold">
+              <MessageCircle className="h-4 w-4" /> Assistance WhatsApp
+            </a>
+          </aside>
+        ) : <BookingCard listing={listing} />}
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#ebebeb] bg-white px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 lg:hidden">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[15px] font-semibold">{formatMoney(listing.price, listing.currency)}</p>
-            <p className="text-xs text-[#6a6a6a]">{listing.mode === "sejour" ? "par nuit" : "par mois"}</p>
+            <p className="text-xs text-[#6a6a6a]">{listing.purpose === "vente" ? "prix de vente" : listing.mode === "sejour" ? "par nuit" : "par mois"}</p>
           </div>
           <a href="#reservation" className="inline-flex items-center justify-center rounded-full bg-[#FF385C] px-7 py-3 text-sm font-semibold text-white">
-            {!listing.databaseId ? "Voir les détails" : listing.mode === "sejour" ? "Réserver" : "Demander"}
+            {!listing.databaseId ? "Voir les détails" : listing.purpose === "vente" ? "Contacter" : listing.mode === "sejour" ? "Réserver" : "Demander"}
           </a>
         </div>
       </div>

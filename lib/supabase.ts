@@ -11,11 +11,14 @@ import type {
   OrganizationInvitation,
   OrganizationMember,
   PaymentOrder,
+  PortfolioHolding,
   Payout,
   Profile,
+  PropertyContract,
   PropertyExpense,
   PropertyIncident,
   PropertyInspection,
+  PropertyStakeholder,
   Quote,
   Refund,
   RoomCheck,
@@ -351,6 +354,139 @@ export async function createPropertyExpense(input: {
     .single();
   if (error) throw error;
   return data as PropertyExpense;
+}
+
+export async function loadPropertyContracts(): Promise<PropertyContract[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("property_contracts")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as PropertyContract[];
+}
+
+export async function startAgencyOnboarding(email: string, businessName: string) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase.schema("private").rpc("start_agency_onboarding", {
+    p_email: email.trim(),
+    p_business_name: businessName.trim(),
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+export async function createPropertyContract(input: {
+  listingId: string;
+  userId: string;
+  title: string;
+  kind: PropertyContract["contract_kind"];
+  startDate?: string;
+  endDate?: string;
+  amount?: number;
+  currency: PropertyContract["currency"];
+  tenantId?: string;
+  ownerId?: string;
+  organizationId?: string;
+  bookingId?: string;
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("property_contracts")
+    .insert({
+      listing_id: input.listingId,
+      booking_id: input.bookingId || null,
+      tenant_id: input.tenantId || null,
+      owner_id: input.ownerId || null,
+      organization_id: input.organizationId || null,
+      title: input.title.trim(),
+      contract_kind: input.kind,
+      start_date: input.startDate || null,
+      end_date: input.endDate || null,
+      monthly_amount: input.amount || null,
+      currency: input.currency,
+      created_by: input.userId,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as PropertyContract;
+}
+
+export async function updatePropertyContractStatus(id: string, status: PropertyContract["status"]) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("property_contracts")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as PropertyContract;
+}
+
+export async function loadPropertyStakeholders(): Promise<PropertyStakeholder[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("property_stakeholders")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as PropertyStakeholder[];
+}
+
+export async function addPropertyStakeholderByEmail(input: {
+  listingId: string;
+  email: string;
+  role: PropertyStakeholder["role"];
+  sharePercent?: number;
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase.rpc("add_property_stakeholder_by_email", {
+    p_listing_id: input.listingId,
+    p_email: input.email.trim(),
+    p_role: input.role,
+    p_share_percent: input.sharePercent ?? null,
+  });
+  if (error) throw error;
+  return data as PropertyStakeholder;
+}
+
+export async function loadMyPortfolio(): Promise<PortfolioHolding[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("property_stakeholders")
+    .select("*, marketplace_listings!inner(id, owner_id, organization_id, status, data)")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((row) => {
+    const relation = row.marketplace_listings as unknown as {
+      id: string;
+      owner_id: string;
+      organization_id: string | null;
+      status: Listing["publicationStatus"];
+      data: Listing;
+    };
+    return {
+      stakeholder: {
+        id: row.id,
+        listing_id: row.listing_id,
+        user_id: row.user_id,
+        role: row.role,
+        share_percent: row.share_percent,
+        created_by: row.created_by,
+        created_at: row.created_at,
+      } as PropertyStakeholder,
+      listing: {
+        ...relation.data,
+        databaseId: relation.id,
+        ownerUserId: relation.owner_id,
+        organizationId: relation.organization_id ?? undefined,
+        publicationStatus: relation.status,
+        manageable: false,
+      } as Listing,
+    };
+  });
 }
 
 export async function loadPropertyInspections(): Promise<PropertyInspection[]> {
@@ -883,7 +1019,7 @@ export async function loadListingsForReview(): Promise<Listing[]> {
   const { data, error } = await supabase
     .from("marketplace_listings")
     .select("id, owner_id, status, data")
-    .in("status", ["pending_review", "suspended"])
+    .in("status", ["pending_review", "published", "suspended"])
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []).map((row) => ({
@@ -894,7 +1030,7 @@ export async function loadListingsForReview(): Promise<Listing[]> {
   }));
 }
 
-export async function reviewListing(id: string, status: "published" | "suspended") {
+export async function reviewListing(id: string, status: "published" | "suspended" | "archived") {
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
   const { error } = await supabase
     .from("marketplace_listings")

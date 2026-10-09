@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
+import { LocationSearchInput } from "@/components/location-search-input";
 import { cx } from "@/lib/format";
 import { usePreferences } from "@/lib/preferences";
 
@@ -28,6 +29,8 @@ export function DiscoveryHeader({
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [verified, setVerified] = useState(false);
+  const [purpose, setPurpose] = useState("");
+  const [standing, setStanding] = useState("");
 
   function search() {
     const params = new URLSearchParams();
@@ -36,6 +39,8 @@ export function DiscoveryHeader({
     if (minPrice) params.set("prix_min", minPrice);
     if (maxPrice) params.set("prix_max", maxPrice);
     if (verified) params.set("certifie", "1");
+    if (purpose) params.set("marche", purpose);
+    if (standing) params.set("standing", standing);
     router.push(`/explorer?${params.toString()}`);
   }
 
@@ -50,15 +55,17 @@ export function DiscoveryHeader({
         }}
       >
         <Search className="h-[18px] w-[18px] shrink-0" strokeWidth={2.4} />
-        <label className="min-w-0 flex-1">
-          <span className="sr-only">Rechercher un logement</span>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Appartement à Dakar…"
-            className="w-full bg-transparent text-[14px] font-medium outline-none placeholder:text-[#6a6a6a]"
-          />
-        </label>
+        <LocationSearchInput
+          value={query}
+          onChange={setQuery}
+          onSelect={(result) => {
+            setQuery(result.label);
+            const params = new URLSearchParams({ q: result.label });
+            router.push(`/explorer?${params.toString()}`);
+          }}
+          placeholder="Appartement à Dakar…"
+          className="w-full bg-transparent text-[14px] font-medium outline-none placeholder:text-[#6a6a6a]"
+        />
         <button
           type="button"
           onClick={() => setFiltersOpen((value) => !value)}
@@ -77,12 +84,28 @@ export function DiscoveryHeader({
       </form>
       {filtersOpen && (
         <div className="theme-border app-card mx-auto mt-2 grid max-w-md grid-cols-2 gap-2 rounded-[22px] border border-[#ebebeb] p-3 shadow-lg">
+          <select value={purpose} onChange={(event) => setPurpose(event.target.value)} className="rounded-xl border border-[#dddddd] bg-transparent px-3 py-2.5 text-sm">
+            <option value="">Location et vente</option>
+            <option value="location">Location</option>
+            <option value="vente">Vente</option>
+          </select>
+          <select value={standing} onChange={(event) => setStanding(event.target.value)} className="rounded-xl border border-[#dddddd] bg-transparent px-3 py-2.5 text-sm">
+            <option value="">Tous standings</option>
+            <option value="standard">Standard</option>
+            <option value="premium">Premium</option>
+            <option value="luxe">Luxe</option>
+            <option value="presidentiel">Présidentiel</option>
+          </select>
           <select value={type} onChange={(event) => setType(event.target.value)} className="col-span-2 rounded-xl border border-[#dddddd] bg-transparent px-3 py-2.5 text-sm">
             <option value="">Tous les logements</option>
             <option value="appartement">Appartement</option>
             <option value="villa">Villa</option>
             <option value="maison">Maison</option>
             <option value="studio">Studio</option>
+            <option value="duplex">Duplex</option>
+            <option value="rooftop">Rooftop</option>
+            <option value="hotel">Hôtel</option>
+            <option value="terrain">Terrain</option>
           </select>
           <input value={minPrice} onChange={(event) => setMinPrice(event.target.value.replace(/\D/g, ""))} inputMode="numeric" placeholder="Budget min." className="rounded-xl border border-[#dddddd] bg-transparent px-3 py-2.5 text-sm" />
           <input value={maxPrice} onChange={(event) => setMaxPrice(event.target.value.replace(/\D/g, ""))} inputMode="numeric" placeholder="Budget max." className="rounded-xl border border-[#dddddd] bg-transparent px-3 py-2.5 text-sm" />

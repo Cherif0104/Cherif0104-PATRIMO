@@ -26,7 +26,10 @@ export function PropertyCard({
   const saved = state.saved.includes(listing.id);
   const badges = [
     listing.rating >= 4.95 ? "Coup de cœur" : null,
-    listing.mode === "location" ? "Location" : null,
+    listing.purpose === "vente" ? "À vendre" : listing.mode === "location" ? "Location" : null,
+    listing.standing === "premium" || listing.standing === "luxe" || listing.standing === "presidentiel"
+      ? listing.standing[0].toUpperCase() + listing.standing.slice(1)
+      : null,
     listing.managedByPlatform ? "Géré par Se Loger au Sénégal" : null,
   ].filter((item): item is string => Boolean(item)).slice(0, 2);
 
@@ -82,7 +85,9 @@ export function PropertyCard({
             )}
           </span>
           <span>
-            {listing.mode === "sejour" && stayNights && stayNights > 1
+            {listing.purpose === "vente"
+              ? " prix de vente"
+              : listing.mode === "sejour" && stayNights && stayNights > 1
               ? ` pour ${stayNights} nuits`
               : listing.mode === "sejour"
                 ? " par nuit"

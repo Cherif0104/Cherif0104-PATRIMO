@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CalendarDays, CreditCard, MapPinned, Plane } from "lucide-react";
+import { CalendarDays, CreditCard, FileText, MapPinned, Plane } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { btnPrimary, btnSecondary, formatDate, formatMoney } from "@/lib/format";
-import { loadMyBookings, loadMyOfferRequests, supabase } from "@/lib/supabase";
-import type { MarketBooking, OfferRequest } from "@/lib/types";
+import { loadMyBookings, loadMyOfferRequests, loadPropertyContracts, supabase } from "@/lib/supabase";
+import type { MarketBooking, OfferRequest, PropertyContract } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
 export default function TripsPage() {
   const { user, loading } = useAuth();
   const [bookings, setBookings] = useState<MarketBooking[]>([]);
   const [offerRequests, setOfferRequests] = useState<OfferRequest[]>([]);
+  const [contracts, setContracts] = useState<PropertyContract[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [paymentBusy, setPaymentBusy] = useState("");
   const [error, setError] = useState("");
@@ -23,10 +24,11 @@ export default function TripsPage() {
       setLoaded(true);
       return;
     }
-    Promise.all([loadMyBookings(), loadMyOfferRequests()])
-      .then(([bookingRows, offerRows]) => {
+    Promise.all([loadMyBookings(), loadMyOfferRequests(), loadPropertyContracts()])
+      .then(([bookingRows, offerRows, contractRows]) => {
         setBookings(bookingRows.filter((booking) => !["declined", "cancelled", "expired"].includes(booking.status)));
         setOfferRequests(offerRows.filter((request) => !["declined", "cancelled"].includes(request.status)));
+        setContracts(contractRows);
       })
       .finally(() => setLoaded(true));
   }, [user]);
@@ -63,7 +65,26 @@ export default function TripsPage() {
     <main className="mobile-page px-4 py-7 md:px-10 lg:py-12 xl:px-16">
       <h1 className="text-[30px] font-semibold tracking-[-0.04em]">Voyages</h1>
       {error && <p role="alert" className="mt-4 rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
-      {bookings.length > 0 || offerRequests.length > 0 ? (
+      {contracts.length > 0 && (
+        <section className="mt-7">
+          <h2 className="flex items-center gap-2 text-lg font-bold"><FileText className="h-5 w-5 text-[#FF4845]" /> Mes contrats</h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {contracts.map((contract) => (
+              <article key={contract.id} className="rounded-[20px] border border-[#e5e5e5] bg-[#FFFDF7] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold">{contract.title}</p>
+                    <p className="mt-1 text-sm text-[#6a6a6a]">{contract.start_date ? formatDate(contract.start_date) : "Date à confirmer"}{contract.end_date ? ` → ${formatDate(contract.end_date)}` : ""}</p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold">{contract.status}</span>
+                </div>
+                {contract.monthly_amount && <p className="mt-3 text-sm font-semibold">{formatMoney(contract.monthly_amount, contract.currency)}</p>}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+      {bookings.length > 0 || offerRequests.length > 0 || contracts.length > 0 ? (
         <div className="mt-7 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {bookings.map((booking) => (
             <article key={booking.id} className="rounded-[24px] border border-[#e5e5e5] p-5 shadow-sm">

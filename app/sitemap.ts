@@ -4,7 +4,7 @@ import { createServerSupabaseClient } from "@/lib/supabase-server-client";
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://cherif0104-patrimo.vercel.app";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticRoutes = ["", "/explorer", "/experiences", "/services", "/confiance", "/conditions", "/confidentialite"];
+  const staticRoutes = ["", "/explorer", "/experiences", "/services", "/agences", "/confiance", "/conditions", "/confidentialite"];
   const supabase = await createServerSupabaseClient();
   if (!supabase) return staticRoutes.map((route) => ({ url: `${baseUrl}${route}`, changeFrequency: "weekly" }));
 

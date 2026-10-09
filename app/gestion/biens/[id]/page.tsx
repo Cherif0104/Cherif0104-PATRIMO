@@ -3,19 +3,21 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarOff, Save, Trash2 } from "lucide-react";
+import { CalendarOff, Save, Trash2, UserPlus } from "lucide-react";
 import { PageHead, Pill } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { btnPrimary, btnSecondary, fieldClass, formatDate } from "@/lib/format";
 import {
   createAvailabilityBlock,
+  addPropertyStakeholderByEmail,
   deleteAvailabilityBlock,
   loadAvailabilityBlocks,
+  loadPropertyStakeholders,
   setOwnedListingStatus,
   updateOwnedListing,
 } from "@/lib/supabase";
 import { useAmeena, useScope } from "@/lib/store";
-import type { AvailabilityBlock } from "@/lib/types";
+import type { AvailabilityBlock, PropertyStakeholder } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
 export default function ManageListingPage() {
@@ -34,6 +36,10 @@ export default function ManageListingPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [stakeholders, setStakeholders] = useState<PropertyStakeholder[]>([]);
+  const [stakeholderEmail, setStakeholderEmail] = useState("");
+  const [stakeholderRole, setStakeholderRole] = useState<PropertyStakeholder["role"]>("proprietaire");
+  const [stakeholderShare, setStakeholderShare] = useState("");
   useTitle("Gérer le bien · Se Loger au Sénégal");
 
   useEffect(() => {
@@ -45,6 +51,9 @@ export default function ManageListingPage() {
       loadAvailabilityBlocks(listing.databaseId)
         .then(setBlocks)
         .catch(() => setError("Le calendrier ne peut pas être chargé."));
+      loadPropertyStakeholders()
+        .then((rows) => setStakeholders(rows.filter((row) => row.listing_id === listing.databaseId)))
+        .catch(() => setStakeholders([]));
     }
   }, [listing]);
 
@@ -140,6 +149,30 @@ export default function ManageListingPage() {
     }
   }
 
+  async function addStakeholder(event: React.FormEvent) {
+    event.preventDefault();
+    if (!stakeholderEmail.trim()) return;
+    setBusy(true);
+    setError("");
+    try {
+      const stakeholder = await addPropertyStakeholderByEmail({
+        listingId: listing!.databaseId!,
+        email: stakeholderEmail,
+        role: stakeholderRole,
+        sharePercent: Number(stakeholderShare) || undefined,
+      });
+      setStakeholders((rows) => [stakeholder, ...rows.filter((row) => row.id !== stakeholder.id)]);
+      setStakeholderEmail("");
+      setStakeholderShare("");
+      setMessage("Accès au suivi du bien ajouté.");
+    } catch (cause) {
+      const text = cause instanceof Error ? cause.message : "";
+      setError(text.includes("account_not_found") ? "Aucun compte ne correspond à cet e-mail." : "L’accès au bien n’a pas pu être ajouté.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div>
       <PageHead
@@ -213,6 +246,33 @@ export default function ManageListingPage() {
           </div>
         </section>
       </div>
+
+      <section className="mt-8 rounded-3xl border border-[#ebebeb] p-5">
+        <div className="flex items-center gap-2">
+          <UserPlus className="h-5 w-5 text-[#FF4845]" />
+          <h2 className="text-xl font-semibold">Propriétaires, investisseurs et observateurs</h2>
+        </div>
+        <p className="mt-2 text-sm text-[#6a6a6a]">Donnez un accès de suivi à une personne qui possède déjà un compte. Cet accès ne lui permet pas de modifier l’annonce.</p>
+        <form onSubmit={addStakeholder} className="mt-5 grid gap-3 md:grid-cols-[1fr_180px_130px_auto]">
+          <input className={fieldClass} type="email" value={stakeholderEmail} onChange={(event) => setStakeholderEmail(event.target.value)} placeholder="E-mail du compte" required />
+          <select className={fieldClass} value={stakeholderRole} onChange={(event) => setStakeholderRole(event.target.value as PropertyStakeholder["role"])}>
+            <option value="proprietaire">Propriétaire</option>
+            <option value="investisseur">Investisseur</option>
+            <option value="locataire">Locataire</option>
+            <option value="observateur">Observateur</option>
+          </select>
+          <input className={fieldClass} inputMode="decimal" value={stakeholderShare} onChange={(event) => setStakeholderShare(event.target.value.replace(/[^\d.,]/g, ""))} placeholder="Quote-part %" />
+          <button className={btnSecondary} disabled={busy || !stakeholderEmail.trim()}>Ajouter</button>
+        </form>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {stakeholders.map((stakeholder) => (
+            <span key={stakeholder.id} className="rounded-full bg-[#FFF8ED] px-3 py-2 text-xs font-semibold">
+              {stakeholder.role}{stakeholder.share_percent ? ` · ${stakeholder.share_percent} %` : ""}
+            </span>
+          ))}
+          {stakeholders.length === 0 && <span className="text-sm text-[#6a6a6a]">Aucun accès de suivi externe.</span>}
+        </div>
+      </section>
     </div>
   );
 }

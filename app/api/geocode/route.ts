@@ -22,8 +22,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results: [] });
   }
 
+  const mapQuery = query
+    .replace(/\b(appartement|appart|villa|maison|studio|duplex|rooftop|hôtel|hotel|terrain|logement)\b/gi, " ")
+    .replace(/\b(à vendre|à louer|meublé|meublee?|non meublé|premium|luxe)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   const endpoint = new URL("https://photon.komoot.io/api/");
-  endpoint.searchParams.set("q", query);
+  endpoint.searchParams.set("q", `${mapQuery || query}, Sénégal`);
   endpoint.searchParams.set("lang", "fr");
   endpoint.searchParams.set("limit", "6");
   endpoint.searchParams.set("bbox", "-17.75,12.25,-11.25,16.75");
@@ -36,8 +41,10 @@ export async function GET(request: NextRequest) {
     });
     if (!response.ok) throw new Error("geocoder_unavailable");
     const payload = (await response.json()) as { features?: PhotonFeature[] };
+    const seen = new Set<string>();
     const results = (payload.features ?? [])
       .filter((feature) => feature.geometry?.coordinates?.length === 2)
+      .filter((feature) => !feature.properties?.countrycode || feature.properties.countrycode.toUpperCase() === "SN")
       .map((feature) => {
         const properties = feature.properties ?? {};
         const coordinates = feature.geometry!.coordinates!;
@@ -57,7 +64,14 @@ export async function GET(request: NextRequest) {
           countryCode: properties.countrycode?.toUpperCase() || "SN",
           lat: coordinates[1],
           lng: coordinates[0],
+          source: "OpenStreetMap",
         };
+      })
+      .filter((result) => {
+        const key = `${result.label.toLowerCase()}-${result.lat.toFixed(4)}-${result.lng.toFixed(4)}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
       });
     return NextResponse.json(
       { results },

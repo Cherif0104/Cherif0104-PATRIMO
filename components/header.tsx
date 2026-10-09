@@ -47,7 +47,8 @@ export function Header() {
   }, [dispatch, profile?.account_type, state.role, user]);
 
   useEffect(() => {
-    if (!user || !supabase) {
+    const client = supabase;
+    if (!user || !client) {
       setNotes([]);
       return;
     }
@@ -57,7 +58,7 @@ export function Header() {
     }).catch(() => {
       if (active) setNotes([]);
     });
-    const channel = supabase
+    const channel = client
       .channel(`notifications:${user.id}`)
       .on(
         "postgres_changes",
@@ -67,7 +68,7 @@ export function Header() {
       .subscribe();
     return () => {
       active = false;
-      void supabase.removeChannel(channel);
+      void client.removeChannel(channel);
     };
   }, [user]);
 

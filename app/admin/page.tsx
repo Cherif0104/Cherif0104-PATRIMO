@@ -13,6 +13,8 @@ import {
   loadListingsForReview,
   loadOfferRequests,
   loadVerificationRequests,
+  loadVerificationDocuments,
+  getVerificationDocumentUrl,
   reviewListing,
   reviewVerificationRequest,
   savePlatformSettings,
@@ -152,6 +154,7 @@ function OperationsQueue() {
   const [offers, setOffers] = useState<OfferRequest[]>([]);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [documentLinks, setDocumentLinks] = useState<Record<string, Array<{ label: string; url: string }>>>({});
 
   useEffect(() => {
     Promise.all([loadVerificationRequests(), loadOfferRequests()])
@@ -170,6 +173,25 @@ function OperationsQueue() {
       setVerifications((rows) => rows.filter((row) => row.id !== request.id));
     } catch {
       setError("La décision de certification n’a pas été enregistrée.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function openDocuments(request: VerificationRequest) {
+    setBusy(request.id);
+    setError("");
+    try {
+      const documents = await loadVerificationDocuments(request.id);
+      const links = await Promise.all(
+        documents.map(async (document) => ({
+          label: document.document_kind,
+          url: await getVerificationDocumentUrl(document.storage_path),
+        })),
+      );
+      setDocumentLinks((current) => ({ ...current, [request.id]: links }));
+    } catch {
+      setError("Les documents de certification ne peuvent pas être ouverts.");
     } finally {
       setBusy("");
     }
@@ -204,8 +226,27 @@ function OperationsQueue() {
             <article key={request.id} className="rounded-[20px] border border-[#e5e5e5] p-4">
               <p className="font-semibold">{request.business_name || (request.account_type === "agence" ? "Agence" : "Propriétaire")}</p>
               <p className="mt-1 text-xs text-[#6a6a6a]">Demande documentaire · {request.account_type}</p>
+              <button className="mt-3 text-sm font-medium underline" disabled={busy === request.id} onClick={() => void openDocuments(request)}>
+                Charger les documents privés
+              </button>
+              {documentLinks[request.id] && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {documentLinks[request.id].length > 0 ? documentLinks[request.id].map((document, index) => (
+                    <a key={`${document.label}-${index}`} href={document.url} target="_blank" rel="noopener noreferrer" className="rounded-full bg-[#f2f2f2] px-3 py-1 text-xs font-medium">
+                      {document.label}
+                    </a>
+                  )) : <span className="text-xs text-[#a52a12]">Aucun document reçu.</span>}
+                </div>
+              )}
               <div className="mt-4 flex gap-2">
-                <button className={btnPrimary} disabled={busy === request.id} onClick={() => void decideVerification(request, true)}>Certifier</button>
+                <button
+                  className={btnPrimary}
+                  disabled={busy === request.id || !documentLinks[request.id]?.length}
+                  title={!documentLinks[request.id]?.length ? "Chargez et contrôlez au moins un document avant de certifier." : undefined}
+                  onClick={() => void decideVerification(request, true)}
+                >
+                  Certifier
+                </button>
                 <button className={btnSecondary} disabled={busy === request.id} onClick={() => void decideVerification(request, false)}>Refuser</button>
               </div>
             </article>

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
 import { createInitial, hostById, hostIdForRole } from "./seed";
-import { loadFavorites, loadPlatformSettings, loadPublishedListings, setFavorite } from "./supabase";
+import { loadFavorites, loadOwnedListings, loadPlatformSettings, loadPublishedListings, setFavorite } from "./supabase";
 import type {
   Ad,
   AppState,
@@ -374,6 +374,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
     };
     // Synchronize once after hydration or when the authenticated identity changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, user?.id]);
+
+  useEffect(() => {
+    if (!ready || !user) return;
+    let active = true;
+    loadOwnedListings(user.id)
+      .then((listings) => {
+        if (active && listings.length) {
+          dispatch({ type: "merge-marketplace-listings", listings });
+        }
+      })
+      .catch(() => {
+        if (active) setStorageWarning("Vos annonces ne peuvent pas être chargées pour le moment.");
+      });
+    return () => {
+      active = false;
+    };
   }, [ready, user?.id]);
 
   const value = useMemo(

@@ -1,5 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 import type {
+  AvailabilityBlock,
   Conversation,
   ConversationMessage,
   HostPublicProfile,
@@ -12,13 +13,14 @@ import type {
   Quote,
   Refund,
   Settings,
+  VerificationDocument,
   VerificationRequest,
 } from "./types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-export const supabase = url && key ? createClient(url, key) : null;
+export const supabase = url && key ? createBrowserClient(url, key) : null;
 
 export async function loadFavorites(): Promise<string[]> {
   if (!supabase) return [];
@@ -53,6 +55,119 @@ export async function loadPublishedListings(): Promise<Listing[]> {
     ownerUserId: row.owner_id,
     publicationStatus: row.status,
   }));
+}
+
+export async function loadOwnedListings(userId: string): Promise<Listing[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("marketplace_listings")
+    .select("id, owner_id, status, data")
+    .eq("owner_id", userId)
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    ...(row.data as Listing),
+    databaseId: row.id,
+    ownerUserId: row.owner_id,
+    publicationStatus: row.status,
+  }));
+}
+
+export async function updateOwnedListing(listing: Listing) {
+  if (!supabase || !listing.databaseId) throw new Error("Annonce persistante introuvable.");
+  const { data, error } = await supabase
+    .from("marketplace_listings")
+    .update({
+      mode: listing.mode,
+      title: listing.title.trim(),
+      city: listing.city.trim(),
+      country: listing.country.trim(),
+      neighborhood: listing.neighborhood.trim(),
+      price: listing.price,
+      currency: listing.currency,
+      lat: listing.lat,
+      lng: listing.lng,
+      data: listing,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", listing.databaseId)
+    .select("id, owner_id, status, data")
+    .single();
+  if (error) throw error;
+  return {
+    ...(data.data as Listing),
+    databaseId: data.id,
+    ownerUserId: data.owner_id,
+    publicationStatus: data.status,
+  } as Listing;
+}
+
+export async function setOwnedListingStatus(listing: Listing, status: "archived" | "pending_review") {
+  if (!supabase || !listing.databaseId) throw new Error("Annonce persistante introuvable.");
+  const { data, error } = await supabase.rpc("set_owner_listing_status", {
+    p_listing_id: listing.databaseId,
+    p_status: status,
+  });
+  if (error) throw error;
+  const row = data as {
+    id: string;
+    owner_id: string;
+    status: Listing["publicationStatus"];
+    data: Listing;
+  };
+  return {
+    ...row.data,
+    databaseId: row.id,
+    ownerUserId: row.owner_id,
+    publicationStatus: row.status,
+  } as Listing;
+}
+
+export async function loadAvailabilityBlocks(listingId: string): Promise<AvailabilityBlock[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("availability_blocks")
+    .select("*")
+    .eq("listing_id", listingId)
+    .in("source", ["owner", "maintenance", "external"])
+    .order("start_date", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as AvailabilityBlock[];
+}
+
+export async function createAvailabilityBlock(input: {
+  listingId: string;
+  userId: string;
+  startDate: string;
+  endDate: string;
+  source: "owner" | "maintenance" | "external";
+  note?: string;
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("availability_blocks")
+    .insert({
+      listing_id: input.listingId,
+      created_by: input.userId,
+      start_date: input.startDate,
+      end_date: input.endDate,
+      source: input.source,
+      note: input.note?.trim() || null,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as AvailabilityBlock;
+}
+
+export async function deleteAvailabilityBlock(id: string) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { error } = await supabase
+    .from("availability_blocks")
+    .delete()
+    .eq("id", id)
+    .in("source", ["owner", "maintenance", "external"]);
+  if (error) throw error;
 }
 
 export async function loadHostPublicProfile(ownerId: string): Promise<HostPublicProfile | null> {
@@ -144,6 +259,59 @@ export async function submitVerificationRequest(input: {
     .single();
   if (error) throw error;
   return data as VerificationRequest;
+}
+
+export async function uploadVerificationDocument(input: {
+  userId: string;
+  requestId: string;
+  kind: VerificationDocument["document_kind"];
+  file: File;
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const extension = input.file.name.split(".").pop()?.toLowerCase() || "bin";
+  const path = `${input.userId}/${input.requestId}/${crypto.randomUUID()}.${extension}`;
+  const upload = await supabase.storage.from("verification-documents").upload(path, input.file, {
+    cacheControl: "3600",
+    contentType: input.file.type,
+    upsert: false,
+  });
+  if (upload.error) throw upload.error;
+
+  const { data, error } = await supabase
+    .from("verification_documents")
+    .insert({
+      request_id: input.requestId,
+      owner_id: input.userId,
+      document_kind: input.kind,
+      storage_path: path,
+    })
+    .select("*")
+    .single();
+  if (error) {
+    await supabase.storage.from("verification-documents").remove([path]);
+    throw error;
+  }
+  return data as VerificationDocument;
+}
+
+export async function loadVerificationDocuments(requestId: string) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("verification_documents")
+    .select("*")
+    .eq("request_id", requestId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as VerificationDocument[];
+}
+
+export async function getVerificationDocumentUrl(path: string) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase.storage
+    .from("verification-documents")
+    .createSignedUrl(path, 600);
+  if (error) throw error;
+  return data.signedUrl;
 }
 
 export async function createOfferRequest(input: {

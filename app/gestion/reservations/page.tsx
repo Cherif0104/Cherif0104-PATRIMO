@@ -3,21 +3,12 @@
 import { useEffect, useState } from "react";
 import { PageHead, Pill } from "@/components/ui";
 import { btnSecondary, formatDate, formatMoney } from "@/lib/format";
-import { RESERVATION_STATUS } from "@/lib/labels";
 import { loadMyBookings, preapproveMarketBooking, updateMarketBookingStatus } from "@/lib/supabase";
-import { useAmeena, useScope } from "@/lib/store";
+import { useScope } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
-import type { MarketBooking, ReservationStatus } from "@/lib/types";
-
-const tone = {
-  demande: "warn",
-  confirmee: "good",
-  "en-cours": "good",
-  terminee: "neutral",
-} as const;
+import type { MarketBooking } from "@/lib/types";
 
 export default function ReservationsPage() {
-  const { state, dispatch } = useAmeena();
   const scope = useScope();
   const [marketBookings, setMarketBookings] = useState<MarketBooking[]>([]);
   const [busyId, setBusyId] = useState("");
@@ -91,45 +82,11 @@ export default function ReservationsPage() {
           </div>
         </section>
       )}
-
-      <h2 className="mb-1 text-lg font-semibold">Simulation locale</h2>
-      <p className="mb-3 text-sm text-[#6a6a6a]">Ces exemples ne créent ni réservation, ni paiement, ni écriture comptable réelle.</p>
-      <div className="overflow-x-auto rounded-3xl border border-[#ebebeb]">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-[#fafafa] text-[#6a6a6a]">
-            <tr>
-              <th className="px-4 py-3 font-medium">Client</th>
-              <th className="px-4 py-3 font-medium">Bien</th>
-              <th className="px-4 py-3 font-medium">Dates</th>
-              <th className="px-4 py-3 font-medium">Montant</th>
-              <th className="px-4 py-3 font-medium">Statut</th>
-              <th className="px-4 py-3 font-medium" />
-            </tr>
-          </thead>
-          <tbody>
-            {scope.reservations.map((reservation) => {
-              const listing = state.listings.find((item) => item.id === reservation.listingId);
-              return (
-                <tr key={reservation.id} className="border-t border-[#f2f2f2]">
-                  <td className="px-4 py-3 font-medium">{reservation.guestName}</td>
-                  <td className="px-4 py-3">{listing?.neighborhood}</td>
-                  <td className="px-4 py-3">{formatDate(reservation.from)} → {formatDate(reservation.to)}</td>
-                  <td className="px-4 py-3">{formatMoney(reservation.guestPays, reservation.currency)}</td>
-                  <td className="px-4 py-3"><Pill tone={tone[reservation.status]}>{RESERVATION_STATUS[reservation.status]}</Pill></td>
-                  <td className="px-4 py-3 text-right">
-                    {reservation.status === "demande" && (
-                      <button className={btnSecondary} onClick={() => dispatch({ type: "set-reservation-status", id: reservation.id, status: "confirmee" satisfies ReservationStatus })}>
-                        Confirmer
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {scope.reservations.length === 0 && <p className="p-6 text-sm text-[#6a6a6a]">Aucune réservation sur ce portefeuille.</p>}
-      </div>
+      {marketBookings.length === 0 && (
+        <p className="rounded-3xl border border-dashed border-[#cccccc] p-8 text-center text-sm text-[#6a6a6a]">
+          Aucune demande réelle pour vos annonces.
+        </p>
+      )}
     </div>
   );
 }

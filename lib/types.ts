@@ -36,6 +36,17 @@ export type Listing = {
   reviews: Review[];
 };
 
+export type AvailabilityBlock = {
+  id: string;
+  listing_id: string;
+  start_date: string;
+  end_date: string;
+  source: "owner" | "reservation" | "reservation_hold" | "reservation_confirmed" | "maintenance" | "external";
+  note: string | null;
+  created_by: string;
+  expires_at: string | null;
+};
+
 export type Review = {
   id: string;
   name: string;
@@ -264,6 +275,15 @@ export type VerificationRequest = {
   status: "pending" | "reviewing" | "approved" | "rejected";
   created_at: string;
   reviewed_at: string | null;
+};
+
+export type VerificationDocument = {
+  id: string;
+  request_id: string;
+  owner_id: string;
+  document_kind: "identity" | "ownership" | "business_registration" | "other";
+  storage_path: string;
+  created_at: string;
 };
 
 export type OfferRequest = {

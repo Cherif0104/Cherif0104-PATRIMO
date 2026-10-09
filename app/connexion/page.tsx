@@ -28,6 +28,9 @@ function AuthForm() {
   const returnTo = requested.startsWith("/") && !requested.startsWith("//") ? requested : "/compte";
 
   useEffect(() => {
+    if (params.get("erreur") === "lien_invalide") {
+      setError("Ce lien a expiré ou a déjà été utilisé. Demandez un nouveau lien.");
+    }
     if (params.get("reinitialiser") === "1") {
       setMode("nouveau");
       return;
@@ -47,20 +50,24 @@ function AuthForm() {
         if (authError) throw authError;
         router.replace(returnTo);
       } else if (mode === "inscription") {
+        const callback = new URL("/auth/callback", window.location.origin);
+        callback.searchParams.set("next", returnTo);
         const { data, error: authError } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: { full_name: fullName.trim(), account_type: accountType },
-            emailRedirectTo: `${window.location.origin}/connexion?retour=${encodeURIComponent(returnTo)}`,
+            emailRedirectTo: callback.toString(),
           },
         });
         if (authError) throw authError;
         if (data.session) router.replace(returnTo);
         else setMessage("Compte créé. Ouvrez l’e-mail de confirmation pour activer votre accès.");
       } else if (mode === "oubli") {
+        const callback = new URL("/auth/callback", window.location.origin);
+        callback.searchParams.set("next", "/connexion?reinitialiser=1");
         const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/connexion?reinitialiser=1`,
+          redirectTo: callback.toString(),
         });
         if (authError) throw authError;
         setMessage("Un lien de réinitialisation vient d’être envoyé si ce compte existe.");

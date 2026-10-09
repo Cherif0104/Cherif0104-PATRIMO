@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BadgeCheck, Bell, CalendarDays, CreditCard, Home, LogOut, MessageCircle, ShieldCheck, UserRound } from "lucide-react";
+import { BadgeCheck, Bell, CalendarDays, CreditCard, Home, LogOut, MessageCircle, ShieldCheck, Upload, UserRound } from "lucide-react";
 import { InstallAppCard } from "@/components/install-app-card";
 import { PreferencesPanel } from "@/components/preference-controls";
 import { useAuth } from "@/lib/auth";
@@ -11,12 +11,14 @@ import {
   loadHostPublicProfile,
   loadMyBookings,
   loadMyVerificationRequest,
+  loadVerificationDocuments,
   saveHostPublicProfile,
   submitVerificationRequest,
   supabase,
   updateProfile,
+  uploadVerificationDocument,
 } from "@/lib/supabase";
-import type { AccountType, MarketBooking, VerificationRequest } from "@/lib/types";
+import type { AccountType, MarketBooking, VerificationDocument, VerificationRequest } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
 const STATUS: Record<MarketBooking["status"], string> = {
@@ -41,7 +43,10 @@ export default function AccountPage() {
   const [bio, setBio] = useState("");
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [verificationRequest, setVerificationRequest] = useState<VerificationRequest | null>(null);
+  const [verificationDocuments, setVerificationDocuments] = useState<VerificationDocument[]>([]);
+  const [documentKind, setDocumentKind] = useState<VerificationDocument["document_kind"]>("identity");
   const [verificationBusy, setVerificationBusy] = useState(false);
+  const [documentBusy, setDocumentBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [paymentBusy, setPaymentBusy] = useState("");
@@ -76,6 +81,9 @@ export default function AccountPage() {
         if (hostProfile.whatsapp_e164 && !phone) setPhone(hostProfile.whatsapp_e164);
       }
       setVerificationRequest(request);
+      if (request) {
+        void loadVerificationDocuments(request.id).then(setVerificationDocuments);
+      }
     }).catch(() => setError("Le profil public n’a pas pu être chargé."));
   }, [profile, user]);
 
@@ -152,6 +160,29 @@ export default function AccountPage() {
       setError("La demande de certification n’a pas pu être envoyée.");
     } finally {
       setVerificationBusy(false);
+    }
+  }
+
+  async function addVerificationDocument(file: File | undefined) {
+    if (!file || !user || !verificationRequest) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Le document doit peser moins de 10 Mo.");
+      return;
+    }
+    setDocumentBusy(true);
+    setError("");
+    try {
+      const document = await uploadVerificationDocument({
+        userId: user.id,
+        requestId: verificationRequest.id,
+        kind: documentKind,
+        file,
+      });
+      setVerificationDocuments((rows) => [...rows, document]);
+    } catch {
+      setError("Le document n’a pas pu être envoyé.");
+    } finally {
+      setDocumentBusy(false);
     }
   }
 
@@ -342,6 +373,33 @@ export default function AccountPage() {
                     ? verificationRequest.status === "reviewing" ? "Certification en cours d’étude" : "Certification demandée"
                     : verificationBusy ? "Envoi…" : "Demander la certification"}
                 </button>
+              )}
+              {verificationRequest && (
+                <div className="mt-3 rounded-2xl border border-[#dddddd] p-4">
+                  <p className="text-sm font-semibold">Documents de vérification</p>
+                  <p className="mt-1 text-xs leading-5 text-[#6a6a6a]">Fichiers privés, accessibles uniquement à vous et à l’équipe de contrôle.</p>
+                  <select className={`${fieldClass} mt-3`} value={documentKind} onChange={(event) => setDocumentKind(event.target.value as VerificationDocument["document_kind"])}>
+                    <option value="identity">Pièce d’identité</option>
+                    <option value="ownership">Justificatif du bien</option>
+                    <option value="business_registration">Registre de l’entreprise</option>
+                    <option value="other">Autre document</option>
+                  </select>
+                  <label className={`${btnSecondary} mt-3 w-full cursor-pointer`}>
+                    <Upload className="h-4 w-4" />
+                    {documentBusy ? "Envoi sécurisé…" : "Ajouter un document"}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,application/pdf"
+                      className="sr-only"
+                      disabled={documentBusy}
+                      onChange={(event) => {
+                        void addVerificationDocument(event.target.files?.[0]);
+                        event.target.value = "";
+                      }}
+                    />
+                  </label>
+                  <p className="mt-2 text-xs text-[#6a6a6a]">{verificationDocuments.length} document{verificationDocuments.length > 1 ? "s" : ""} envoyé{verificationDocuments.length > 1 ? "s" : ""}</p>
+                </div>
               )}
               <p className="mt-3 text-xs leading-5 text-[#6a6a6a]">La certification repose aujourd’hui sur une vérification documentaire. Aucun abonnement n’est facturé tant que l’offre Pro n’est pas définie.</p>
             </>

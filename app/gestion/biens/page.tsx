@@ -46,6 +46,7 @@ export default function BiensPage() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2">
+                  <Link className={btnSecondary} href={`/gestion/biens/${listing.id}`}>Gérer</Link>
                   <Link className={btnSecondary} href={`/logements/${listing.id}`}>Fiche</Link>
                   <Link className={btnSecondary} href={`/gestion/incidents/nouveau?bien=${listing.id}`}>Signaler</Link>
                   <Link className={btnSecondary} href={`/gestion/etats-des-lieux/nouveau?bien=${listing.id}`}>État des lieux</Link>

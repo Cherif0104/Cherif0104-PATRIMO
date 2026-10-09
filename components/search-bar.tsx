@@ -65,7 +65,7 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
           <span className="block text-xs font-semibold">Destination</span>
           <input
             className="w-full bg-transparent text-sm outline-none placeholder:text-[#8a8a8a]"
-            placeholder="Dakar, Saly, Paris…"
+            placeholder="Dakar, Saly, Saint-Louis…"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);

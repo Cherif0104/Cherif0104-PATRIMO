@@ -5,13 +5,14 @@ import { useEffect, useState } from "react";
 import { CalendarDays, MapPinned, Plane } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { btnPrimary, formatDate, formatMoney } from "@/lib/format";
-import { loadMyBookings } from "@/lib/supabase";
-import type { MarketBooking } from "@/lib/types";
+import { loadMyBookings, loadMyOfferRequests } from "@/lib/supabase";
+import type { MarketBooking, OfferRequest } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
 export default function TripsPage() {
   const { user, loading } = useAuth();
   const [bookings, setBookings] = useState<MarketBooking[]>([]);
+  const [offerRequests, setOfferRequests] = useState<OfferRequest[]>([]);
   const [loaded, setLoaded] = useState(false);
   useTitle("Voyages · Se Loger au Sénégal");
 
@@ -20,8 +21,11 @@ export default function TripsPage() {
       setLoaded(true);
       return;
     }
-    loadMyBookings()
-      .then((rows) => setBookings(rows.filter((booking) => !["declined", "cancelled", "expired"].includes(booking.status))))
+    Promise.all([loadMyBookings(), loadMyOfferRequests()])
+      .then(([bookingRows, offerRows]) => {
+        setBookings(bookingRows.filter((booking) => !["declined", "cancelled", "expired"].includes(booking.status)));
+        setOfferRequests(offerRows.filter((request) => !["declined", "cancelled"].includes(request.status)));
+      })
       .finally(() => setLoaded(true));
   }, [user]);
 
@@ -30,7 +34,7 @@ export default function TripsPage() {
   return (
     <main className="mobile-page px-4 py-7 md:px-10 lg:py-12 xl:px-16">
       <h1 className="text-[30px] font-semibold tracking-[-0.04em]">Voyages</h1>
-      {bookings.length > 0 ? (
+      {bookings.length > 0 || offerRequests.length > 0 ? (
         <div className="mt-7 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {bookings.map((booking) => (
             <article key={booking.id} className="rounded-[24px] border border-[#e5e5e5] p-5 shadow-sm">
@@ -42,6 +46,21 @@ export default function TripsPage() {
                 <CalendarDays className="h-5 w-5 text-[#C13515]" />
               </div>
               <p className="mt-5 border-t border-[#eeeeee] pt-4 text-sm font-semibold">{formatMoney(booking.total, booking.currency)}</p>
+            </article>
+          ))}
+          {offerRequests.map((request) => (
+            <article key={request.id} className="rounded-[24px] border border-[#e5e5e5] p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[.12em] text-[#FF385C]">{request.offer_kind === "experience" ? "Expérience" : "Service"}</p>
+                  <h2 className="mt-1 font-semibold">{request.offer_title}</h2>
+                  <p className="mt-1 text-sm text-[#6a6a6a]">{formatDate(request.preferred_date)} · {request.people} personne{request.people > 1 ? "s" : ""}</p>
+                </div>
+                <CalendarDays className="h-5 w-5 text-[#C13515]" />
+              </div>
+              <p className="mt-5 border-t border-[#eeeeee] pt-4 text-sm font-semibold">
+                {request.status === "requested" ? "Demande envoyée" : request.status === "contacted" ? "Vous avez été contacté" : request.status === "confirmed" ? "Confirmée" : "Traitement en cours"}
+              </p>
             </article>
           ))}
         </div>

@@ -393,16 +393,13 @@ export function useAmeena() {
 export function useScope() {
   const { state } = useAmeena();
   const { user } = useAuth();
+  const persistedListings = state.listings.filter((listing) => Boolean(listing.ownerUserId));
   const listings =
     state.role === "admin"
-      ? state.listings
+      ? persistedListings
       : state.role === "voyageur"
         ? []
-        : state.listings.filter(
-            (listing) =>
-              listing.ownerUserId === user?.id ||
-              (!listing.ownerUserId && listing.hostId === hostIdForRole(state.role)),
-          );
+        : persistedListings.filter((listing) => listing.ownerUserId === user?.id);
   const ids = new Set(listings.map((listing) => listing.id));
   const inScope = <T extends { listingId: string }>(rows: T[]) =>
     state.role === "admin" ? rows : rows.filter((row) => ids.has(row.listingId));

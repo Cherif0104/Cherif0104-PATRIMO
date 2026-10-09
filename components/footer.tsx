@@ -6,6 +6,7 @@ const columns = [
     links: [
       ["Mon compte", "/compte"],
       ["Centre de confiance", "/confiance"],
+      ["Conditions d’utilisation", "/conditions"],
       ["Confidentialité", "/confidentialite"],
       ["Explorer la carte", "/explorer"],
       ["Boutiques partenaires", "/boutiques"],
@@ -30,7 +31,6 @@ const columns = [
       ["Finances", "/gestion/finances"],
       ["Incidents", "/gestion/incidents"],
       ["États des lieux", "/gestion/etats-des-lieux"],
-      ["Réglages des commissions", "/admin"],
     ],
   },
 ];

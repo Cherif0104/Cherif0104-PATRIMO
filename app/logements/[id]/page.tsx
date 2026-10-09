@@ -3,16 +3,17 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, BadgeCheck, Bath, BedDouble, Heart, MapPin, Ruler, Share2, Star, X } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Bath, BedDouble, Heart, MapPin, MessageCircle, Ruler, Share2, Star, X } from "lucide-react";
 import { AdSlot } from "@/components/ad-slot";
 import { BookingCard } from "@/components/booking-card";
 import { MapView } from "@/components/map";
 import { MediaCarousel } from "@/components/media-carousel";
 import { Photo } from "@/components/photo";
-import { btnSecondary, formatDate, formatMoney } from "@/lib/format";
+import { btnSecondary, formatDate, formatMoney, whatsappHref } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
 import { hostById } from "@/lib/seed";
-import { getOrCreateConversation, setFavorite } from "@/lib/supabase";
+import { getOrCreateConversation, loadHostPublicProfile, setFavorite } from "@/lib/supabase";
+import type { HostPublicProfile } from "@/lib/types";
 import { useAmeena } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
 import { TYPE_LABEL } from "@/lib/labels";
@@ -24,6 +25,7 @@ export default function ListingPage() {
   const { user } = useAuth();
   const listing = state.listings.find((item) => item.id === id);
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const [publicHost, setPublicHost] = useState<HostPublicProfile | null>(null);
   const [contactError, setContactError] = useState("");
   const [contactBusy, setContactBusy] = useState(false);
   useTitle(listing ? `${listing.title} · Se Loger au Sénégal` : "Logement · Se Loger au Sénégal");
@@ -41,6 +43,16 @@ export default function ListingPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [lightbox, listing]);
 
+  useEffect(() => {
+    if (!listing?.ownerUserId) {
+      setPublicHost(null);
+      return;
+    }
+    loadHostPublicProfile(listing.ownerUserId)
+      .then(setPublicHost)
+      .catch(() => setPublicHost(null));
+  }, [listing?.ownerUserId]);
+
   if (!listing) {
     return (
       <div className="mx-auto max-w-lg px-6 py-24 text-center">
@@ -53,7 +65,7 @@ export default function ListingPage() {
   }
 
   const host = hostById(listing.hostId);
-  const hostName = host?.name ?? "Hôte Se Loger au Sénégal";
+  const hostName = publicHost?.business_name || publicHost?.display_name || host?.name || "Hôte Se Loger au Sénégal";
   const images = listing.images.slice(0, 5);
   const saved = state.saved.includes(listing.id);
   const currentListing = listing;
@@ -170,6 +182,7 @@ export default function ListingPage() {
               <p className="text-xl font-semibold">
                 {TYPE_LABEL[listing.type]} {listing.mode === "sejour" ? "entier" : "à louer"} · proposé par {hostName}
               </p>
+              {publicHost?.certified && <p className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-[#16836f]"><BadgeCheck className="h-4 w-4" /> Profil certifié</p>}
               <p className="mt-1 text-sm text-[#6a6a6a]">
                 {listing.guests} voyageurs · {listing.bedrooms} chambres · {listing.beds} lits · {listing.baths} salles d&apos;eau
               </p>
@@ -180,13 +193,26 @@ export default function ListingPage() {
           </div>
           {listing.ownerUserId !== user?.id && (
             <div className="border-b border-[#ebebeb] py-5">
-              <button onClick={() => void contactHost()} disabled={contactBusy} className={btnSecondary}>
-                {contactBusy ? "Ouverture…" : user ? "Contacter le propriétaire" : "Se connecter pour écrire"}
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <button onClick={() => void contactHost()} disabled={contactBusy || !listing.databaseId} className={btnSecondary}>
+                  {contactBusy ? "Ouverture…" : user ? "Écrire sur la plateforme" : "Se connecter pour écrire"}
+                </button>
+                {publicHost?.whatsapp_enabled && publicHost.whatsapp_e164 && (
+                  <a
+                    href={whatsappHref(publicHost.whatsapp_e164, listing.title)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[#16836f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#116b5b]"
+                  >
+                    <MessageCircle className="h-4 w-4" /> WhatsApp
+                  </a>
+                )}
+              </div>
               {!listing.databaseId && <p className="mt-2 text-xs text-[#6a6a6a]">La messagerie s’active sur les annonces publiées par les propriétaires.</p>}
               {contactError && <p role="alert" className="mt-2 text-sm text-[#a52a12]">{contactError}</p>}
             </div>
           )}
+          {publicHost?.bio && <p className="border-b border-[#ebebeb] py-5 text-sm leading-6 text-[#6a6a6a]">{publicHost.bio}</p>}
 
           <ul className="grid gap-4 border-b border-[#ebebeb] py-6 sm:grid-cols-3">
             <Fact icon={<BedDouble className="h-5 w-5" />} title={`${listing.bedrooms} chambres`} text={`${listing.surface} m²`} />
@@ -246,8 +272,8 @@ export default function ListingPage() {
             <p className="text-[15px] font-semibold">{formatMoney(listing.price, listing.currency)}</p>
             <p className="text-xs text-[#6a6a6a]">{listing.mode === "sejour" ? "par nuit" : "par mois"}</p>
           </div>
-          <a href="#reservation" className="inline-flex items-center justify-center rounded-full bg-[#FF385C] px-7 py-3 text-sm font-semibold text-[#000000]">
-            {listing.mode === "sejour" ? "Réserver" : "Demander"}
+          <a href="#reservation" className="inline-flex items-center justify-center rounded-full bg-[#FF385C] px-7 py-3 text-sm font-semibold text-white">
+            {!listing.databaseId ? "Voir les détails" : listing.mode === "sejour" ? "Réserver" : "Demander"}
           </a>
         </div>
       </div>

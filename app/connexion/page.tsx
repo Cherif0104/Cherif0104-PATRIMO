@@ -221,7 +221,7 @@ function AuthForm() {
             )}
           </form>
           <p className="mt-5 text-xs leading-5 text-[#6a6a6a]">
-            En continuant, vous acceptez les conditions d’utilisation et la politique de confidentialité d’Se Loger au Sénégal.
+            En continuant, vous acceptez les <Link href="/conditions" className="underline">conditions d’utilisation</Link> et la <Link href="/confidentialite" className="underline">politique de confidentialité</Link> de Se Loger au Sénégal.
           </p>
         </div>
       </section>

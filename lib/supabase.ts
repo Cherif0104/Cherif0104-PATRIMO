@@ -2,14 +2,17 @@ import { createClient } from "@supabase/supabase-js";
 import type {
   Conversation,
   ConversationMessage,
+  HostPublicProfile,
   Listing,
   MarketBooking,
+  OfferRequest,
   PaymentOrder,
   Payout,
   Profile,
   Quote,
   Refund,
   Settings,
+  VerificationRequest,
 } from "./types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -50,6 +53,159 @@ export async function loadPublishedListings(): Promise<Listing[]> {
     ownerUserId: row.owner_id,
     publicationStatus: row.status,
   }));
+}
+
+export async function loadHostPublicProfile(ownerId: string): Promise<HostPublicProfile | null> {
+  if (!supabase || !ownerId) return null;
+  const { data, error } = await supabase
+    .from("host_public_profiles")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as HostPublicProfile | null) ?? null;
+}
+
+export async function saveHostPublicProfile(input: {
+  ownerId: string;
+  displayName: string;
+  businessName?: string;
+  bio?: string;
+  whatsappE164?: string;
+  whatsappEnabled: boolean;
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("host_public_profiles")
+    .upsert({
+      owner_id: input.ownerId,
+      display_name: input.displayName.trim(),
+      business_name: input.businessName?.trim() || null,
+      bio: input.bio?.trim() || null,
+      whatsapp_e164: input.whatsappEnabled ? input.whatsappE164?.trim() || null : null,
+      whatsapp_enabled: input.whatsappEnabled,
+      updated_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as HostPublicProfile;
+}
+
+export async function loadMyVerificationRequest(): Promise<VerificationRequest | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("verification_requests")
+    .select("*")
+    .in("status", ["pending", "reviewing"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as VerificationRequest | null) ?? null;
+}
+
+export async function loadVerificationRequests(): Promise<VerificationRequest[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("verification_requests")
+    .select("*")
+    .in("status", ["pending", "reviewing"])
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as VerificationRequest[];
+}
+
+export async function reviewVerificationRequest(id: string, approved: boolean) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { error } = await supabase.rpc("review_verification_request", {
+    p_request_id: id,
+    p_approved: approved,
+  });
+  if (error) throw error;
+}
+
+export async function submitVerificationRequest(input: {
+  userId: string;
+  accountType: "proprietaire" | "agence";
+  businessName?: string;
+  note?: string;
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("verification_requests")
+    .insert({
+      requester_id: input.userId,
+      account_type: input.accountType,
+      business_name: input.businessName?.trim() || null,
+      note: input.note?.trim() || null,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as VerificationRequest;
+}
+
+export async function createOfferRequest(input: {
+  userId: string;
+  kind: "experience" | "service";
+  offerKey: string;
+  offerTitle: string;
+  customerName: string;
+  customerPhone?: string;
+  preferredDate: string;
+  people: number;
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("offer_requests")
+    .insert({
+      customer_id: input.userId,
+      offer_kind: input.kind,
+      offer_key: input.offerKey,
+      offer_title: input.offerTitle,
+      customer_name: input.customerName.trim(),
+      customer_phone: input.customerPhone?.trim() || null,
+      preferred_date: input.preferredDate,
+      people: input.people,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function loadMyOfferRequests(): Promise<OfferRequest[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("offer_requests")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as OfferRequest[];
+}
+
+export async function loadOfferRequests(): Promise<OfferRequest[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("offer_requests")
+    .select("*")
+    .in("status", ["requested", "contacted", "confirmed"])
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as OfferRequest[];
+}
+
+export async function updateOfferRequestStatus(
+  id: string,
+  status: "contacted" | "confirmed" | "declined" | "completed",
+) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { error } = await supabase
+    .from("offer_requests")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
 }
 
 export async function loadPlatformSettings(): Promise<Settings | null> {
@@ -244,11 +400,21 @@ export async function loadConversations(): Promise<Conversation[]> {
     .select("id, full_name, avatar_url")
     .in("id", profileIds);
   if (profiles.error) throw profiles.error;
+  const publicHosts = await supabase
+    .from("host_public_profiles")
+    .select("owner_id, display_name")
+    .in("owner_id", [...new Set(rows.map((row) => row.host_id))]);
+  if (publicHosts.error) throw publicHosts.error;
   const byId = new Map((profiles.data ?? []).map((profile) => [profile.id, profile]));
+  const hostById = new Map((publicHosts.data ?? []).map((profile) => [profile.owner_id, profile.display_name]));
   return rows.map((row) => ({
     ...row,
     guest: byId.get(row.guest_id) ?? null,
-    host: byId.get(row.host_id) ?? null,
+    host: byId.get(row.host_id) ?? (
+      hostById.get(row.host_id)
+        ? { id: row.host_id, full_name: hostById.get(row.host_id)!, avatar_url: null }
+        : null
+    ),
   })) as Conversation[];
 }
 

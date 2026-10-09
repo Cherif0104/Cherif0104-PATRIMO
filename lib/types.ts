@@ -244,6 +244,43 @@ export type Profile = {
   identity_status: "non_verifie" | "en_verification" | "verifie" | "refuse";
 };
 
+export type HostPublicProfile = {
+  owner_id: string;
+  display_name: string;
+  business_name: string | null;
+  bio: string | null;
+  whatsapp_e164: string | null;
+  whatsapp_enabled: boolean;
+  certified: boolean;
+  updated_at: string;
+};
+
+export type VerificationRequest = {
+  id: string;
+  requester_id: string;
+  account_type: "proprietaire" | "agence";
+  business_name: string | null;
+  note: string | null;
+  status: "pending" | "reviewing" | "approved" | "rejected";
+  created_at: string;
+  reviewed_at: string | null;
+};
+
+export type OfferRequest = {
+  id: string;
+  customer_id: string;
+  offer_kind: "experience" | "service";
+  offer_key: string;
+  offer_title: string;
+  customer_name: string;
+  customer_phone: string | null;
+  preferred_date: string;
+  people: number;
+  status: "requested" | "contacted" | "confirmed" | "declined" | "cancelled" | "completed";
+  created_at: string;
+  updated_at: string;
+};
+
 export type MarketBooking = {
   id: string;
   listing_id: string | null;

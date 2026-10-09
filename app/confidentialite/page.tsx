@@ -18,11 +18,14 @@ export default function PrivacyPage() {
         <Section title="Photos">
           Les médias d’annonce sont publics après publication. Ne transmettez ni pièce d’identité, ni document bancaire, ni information sensible dans les photos d’un logement.
         </Section>
+        <Section title="Contact et WhatsApp">
+          Un propriétaire peut choisir de rendre son numéro WhatsApp public sur ses annonces. Cette option est désactivée par défaut et peut être retirée depuis son profil. L’ouverture de WhatsApp transfère l’utilisateur vers un service tiers soumis à ses propres conditions.
+        </Section>
         <Section title="Conservation et droits">
           Les durées légales définitives, l’identité du responsable de traitement et le canal formel d’exercice des droits doivent être complétés avec l’entité juridique qui exploitera Se Loger au Sénégal avant l’ouverture commerciale.
         </Section>
         <Section title="Paiement">
-          Aucun paiement n’est actuellement débité dans l’interface. Lors de l’activation commerciale, le prestataire de paiement et ses propres traitements seront indiqués ici.
+          Lorsqu’une demande est préapprouvée, le paiement peut être traité sur la page sécurisée de PayDunya. Se Loger au Sénégal conserve les références et statuts nécessaires au suivi, mais ne stocke pas les données de carte ou de portefeuille mobile.
         </Section>
       </div>
     </article>

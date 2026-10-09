@@ -2,13 +2,21 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BadgeCheck, Bell, CalendarDays, CreditCard, Home, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { BadgeCheck, Bell, CalendarDays, CreditCard, Home, LogOut, MessageCircle, ShieldCheck, UserRound } from "lucide-react";
 import { InstallAppCard } from "@/components/install-app-card";
 import { PreferencesPanel } from "@/components/preference-controls";
 import { useAuth } from "@/lib/auth";
-import { btnPrimary, btnSecondary, cx, fieldClass, formatDate, formatMoney } from "@/lib/format";
-import { loadMyBookings, supabase, updateProfile } from "@/lib/supabase";
-import type { AccountType, MarketBooking } from "@/lib/types";
+import { btnPrimary, btnSecondary, cx, fieldClass, formatDate, formatMoney, normalizePhoneE164 } from "@/lib/format";
+import {
+  loadHostPublicProfile,
+  loadMyBookings,
+  loadMyVerificationRequest,
+  saveHostPublicProfile,
+  submitVerificationRequest,
+  supabase,
+  updateProfile,
+} from "@/lib/supabase";
+import type { AccountType, MarketBooking, VerificationRequest } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
 const STATUS: Record<MarketBooking["status"], string> = {
@@ -29,6 +37,11 @@ export default function AccountPage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [accountType, setAccountType] = useState<AccountType>("voyageur");
+  const [businessName, setBusinessName] = useState("");
+  const [bio, setBio] = useState("");
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+  const [verificationRequest, setVerificationRequest] = useState<VerificationRequest | null>(null);
+  const [verificationBusy, setVerificationBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [paymentBusy, setPaymentBusy] = useState("");
@@ -49,6 +62,22 @@ export default function AccountPage() {
       .catch(() => setError("Les demandes ne peuvent pas être chargées pour le moment."))
       .finally(() => setBookingsLoading(false));
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !profile || profile.account_type === "voyageur") return;
+    Promise.all([
+      loadHostPublicProfile(user.id),
+      loadMyVerificationRequest(),
+    ]).then(([hostProfile, request]) => {
+      if (hostProfile) {
+        setBusinessName(hostProfile.business_name ?? "");
+        setBio(hostProfile.bio ?? "");
+        setWhatsappEnabled(hostProfile.whatsapp_enabled);
+        if (hostProfile.whatsapp_e164 && !phone) setPhone(hostProfile.whatsapp_e164);
+      }
+      setVerificationRequest(request);
+    }).catch(() => setError("Le profil public n’a pas pu être chargé."));
+  }, [profile, user]);
 
   if (loading) {
     return <div className="px-4 py-20 text-center text-sm text-[#6a6a6a]">Ouverture du compte…</div>;
@@ -82,10 +111,47 @@ export default function AccountPage() {
         phone: phone.trim() || null,
         account_type: accountType,
       });
+      if (accountType !== "voyageur") {
+        const whatsappE164 = normalizePhoneE164(phone);
+        if (whatsappEnabled && !/^\+[1-9][0-9]{7,14}$/.test(whatsappE164)) {
+          throw new Error("whatsapp_invalid");
+        }
+        await saveHostPublicProfile({
+          ownerId: profile.id,
+          displayName: fullName.trim(),
+          businessName,
+          bio,
+          whatsappE164,
+          whatsappEnabled,
+        });
+      }
       await refreshProfile();
       setSaved(true);
+    } catch (cause) {
+      setError(
+        cause instanceof Error && cause.message === "whatsapp_invalid"
+          ? "Le numéro WhatsApp doit être au format international, par exemple +221770000000."
+          : "Le profil n’a pas pu être enregistré.",
+      );
+    }
+  }
+
+  async function requestVerification() {
+    if (!user || accountType === "voyageur" || verificationRequest) return;
+    setVerificationBusy(true);
+    setError("");
+    try {
+      const request = await submitVerificationRequest({
+        userId: user.id,
+        accountType,
+        businessName,
+        note: "Demande envoyée depuis le profil.",
+      });
+      setVerificationRequest(request);
     } catch {
-      setError("Le profil n’a pas pu être enregistré.");
+      setError("La demande de certification n’a pas pu être envoyée.");
+    } finally {
+      setVerificationBusy(false);
     }
   }
 
@@ -133,6 +199,9 @@ export default function AccountPage() {
           </div>
           <p className="mt-4 text-3xl font-semibold">{profile?.full_name || user.email}</p>
           <p className="mt-1 text-[#6a6a6a]">{profile?.account_type === "voyageur" ? "Voyageur" : profile?.account_type === "agence" ? "Agence" : "Propriétaire"}</p>
+          <button className={`${btnSecondary} mt-5 w-full`} onClick={() => void signOut()}>
+            <LogOut className="h-4 w-4" /> Se déconnecter
+          </button>
         </div>
       </div>
 
@@ -223,6 +292,25 @@ export default function AccountPage() {
               Nom complet
               <input className={`${fieldClass} mt-1`} value={fullName} onChange={(event) => setFullName(event.target.value)} minLength={2} required />
             </label>
+            {(accountType === "proprietaire" || accountType === "agence") && (
+              <>
+                <label className="text-sm font-medium">
+                  Nom commercial <span className="font-normal text-[#6a6a6a]">· facultatif</span>
+                  <input className={`${fieldClass} mt-1`} value={businessName} onChange={(event) => setBusinessName(event.target.value)} maxLength={120} placeholder="Agence Teranga Immobilier" />
+                </label>
+                <label className="text-sm font-medium">
+                  Présentation publique
+                  <textarea className={`${fieldClass} mt-1 min-h-24`} value={bio} onChange={(event) => setBio(event.target.value)} maxLength={600} placeholder="Présentez votre activité et votre expérience." />
+                </label>
+                <label className="flex items-start gap-3 rounded-2xl border border-[#dddddd] p-4 text-sm">
+                  <input className="mt-1" type="checkbox" checked={whatsappEnabled} onChange={(event) => setWhatsappEnabled(event.target.checked)} />
+                  <span>
+                    <span className="flex items-center gap-2 font-semibold"><MessageCircle className="h-4 w-4 text-[#16836f]" /> Autoriser le contact WhatsApp</span>
+                    <span className="mt-1 block text-xs leading-5 text-[#6a6a6a]">Votre numéro sera public sur vos annonces. Décochez cette option pour le masquer immédiatement.</span>
+                  </span>
+                </label>
+              </>
+            )}
             <label className="text-sm font-medium">
               Téléphone
               <input className={`${fieldClass} mt-1`} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+221 77 000 00 00" autoComplete="tel" />
@@ -240,7 +328,23 @@ export default function AccountPage() {
             <button className={`${btnPrimary} w-full`}>Enregistrer</button>
           </form>
           {(accountType === "proprietaire" || accountType === "agence") && (
-            <Link href="/publier" className={`${btnSecondary} mt-3 w-full`}>Publier un bien</Link>
+            <>
+              <Link href="/publier" className={`${btnSecondary} mt-3 w-full`}>Publier un bien</Link>
+              {profile?.identity_status !== "verifie" && (
+                <button
+                  type="button"
+                  className={`${btnSecondary} mt-3 w-full`}
+                  disabled={verificationBusy || Boolean(verificationRequest)}
+                  onClick={() => void requestVerification()}
+                >
+                  <BadgeCheck className="h-4 w-4" />
+                  {verificationRequest
+                    ? verificationRequest.status === "reviewing" ? "Certification en cours d’étude" : "Certification demandée"
+                    : verificationBusy ? "Envoi…" : "Demander la certification"}
+                </button>
+              )}
+              <p className="mt-3 text-xs leading-5 text-[#6a6a6a]">La certification repose aujourd’hui sur une vérification documentaire. Aucun abonnement n’est facturé tant que l’offre Pro n’est pas définie.</p>
+            </>
           )}
         </aside>
       </div>

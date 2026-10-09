@@ -112,7 +112,7 @@ function MessagesContent() {
 
   return (
     <main className="mobile-page px-0 py-0 md:px-8 lg:py-10 xl:px-16">
-      <div className="mx-auto grid h-[calc(100dvh-5rem)] max-w-6xl overflow-hidden border-[#e5e5e5] md:h-[720px] md:rounded-[28px] md:border lg:grid-cols-[340px_1fr]">
+      <div className="mx-auto grid h-[calc(100dvh-4.25rem)] max-w-6xl overflow-hidden border-[#e5e5e5] md:h-[720px] md:rounded-[28px] md:border lg:grid-cols-[340px_1fr]">
         <aside className={cx("border-r border-[#e5e5e5] bg-white", selectedId && "hidden lg:block")}>
           <div className="border-b border-[#eeeeee] px-5 py-5">
             <h1 className="text-2xl font-semibold tracking-tight">Messages</h1>

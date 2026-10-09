@@ -88,6 +88,20 @@ export function initials(name: string) {
     .join("");
 }
 
+export function normalizePhoneE164(value: string) {
+  const compact = value.replace(/[^\d+]/g, "");
+  if (compact.startsWith("00")) return `+${compact.slice(2)}`;
+  if (compact.startsWith("+")) return compact;
+  if (/^[0-9]{9}$/.test(compact)) return `+221${compact}`;
+  return compact ? `+${compact}` : "";
+}
+
+export function whatsappHref(phoneE164: string, subject: string) {
+  const number = phoneE164.replace(/\D/g, "");
+  const message = `Bonjour, je vous contacte depuis Se Loger au Sénégal au sujet de « ${subject} ».`;
+  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+}
+
 export const btn =
   "inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40";
 

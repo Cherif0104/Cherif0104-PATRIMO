@@ -9,10 +9,18 @@ import { btnPrimary, btnSecondary, fieldClass, uid } from "@/lib/format";
 import { readImage } from "@/lib/images";
 import { PLACEMENT_LABEL } from "@/lib/labels";
 import { buildQuote } from "@/lib/quote";
-import { loadListingsForReview, reviewListing, savePlatformSettings } from "@/lib/supabase";
+import {
+  loadListingsForReview,
+  loadOfferRequests,
+  loadVerificationRequests,
+  reviewListing,
+  reviewVerificationRequest,
+  savePlatformSettings,
+  updateOfferRequestStatus,
+} from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
-import type { Ad, AdPlacement, CommissionRule, Listing, Payer, Promo } from "@/lib/types";
+import type { Ad, AdPlacement, CommissionRule, Listing, OfferRequest, Payer, Promo, VerificationRequest } from "@/lib/types";
 
 export default function AdminPage() {
   const { state, dispatch, storageWarning, ready } = useAmeena();
@@ -51,15 +59,11 @@ export default function AdminPage() {
         eyebrow="Administration"
         title="Commissions, gestes, publicités"
         text="Les taux, le payeur et les offres se changent ici. Les fiches logement reprennent le montant tout de suite. Rien n'est figé."
-        action={
-          <button className={btnSecondary} onClick={() => dispatch({ type: "reset" })}>
-            Réinitialiser la démo
-          </button>
-        }
       />
       {storageWarning && <p className="mb-4 rounded-2xl bg-[#fff4e5] px-4 py-3 text-sm">{storageWarning}</p>}
       {settingsStatus && <p className="mb-4 text-right text-xs text-[#6a6a6a]">{settingsStatus}</p>}
       <ReviewQueue />
+      <OperationsQueue />
 
       <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-4">
@@ -140,6 +144,100 @@ export default function AdminPage() {
         <AddAd onAdd={(ad) => save({ ...settings, ads: [...settings.ads, ad] })} />
       </section>
     </div>
+  );
+}
+
+function OperationsQueue() {
+  const [verifications, setVerifications] = useState<VerificationRequest[]>([]);
+  const [offers, setOffers] = useState<OfferRequest[]>([]);
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    Promise.all([loadVerificationRequests(), loadOfferRequests()])
+      .then(([verificationRows, offerRows]) => {
+        setVerifications(verificationRows);
+        setOffers(offerRows);
+      })
+      .catch(() => setError("Les demandes opérationnelles ne peuvent pas être chargées."));
+  }, []);
+
+  async function decideVerification(request: VerificationRequest, approved: boolean) {
+    setBusy(request.id);
+    setError("");
+    try {
+      await reviewVerificationRequest(request.id, approved);
+      setVerifications((rows) => rows.filter((row) => row.id !== request.id));
+    } catch {
+      setError("La décision de certification n’a pas été enregistrée.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function setOfferStatus(request: OfferRequest, status: "contacted" | "confirmed" | "declined" | "completed") {
+    setBusy(request.id);
+    setError("");
+    try {
+      await updateOfferRequestStatus(request.id, status);
+      setOffers((rows) =>
+        status === "declined" || status === "completed"
+          ? rows.filter((row) => row.id !== request.id)
+          : rows.map((row) => row.id === request.id ? { ...row, status } : row),
+      );
+    } catch {
+      setError("Le statut de la demande n’a pas été enregistré.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  return (
+    <section className="mb-12 grid gap-8 lg:grid-cols-2">
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-2xl font-semibold tracking-tight">Certifications</h2>
+          <Pill tone={verifications.length ? "warn" : "good"}>{verifications.length} à traiter</Pill>
+        </div>
+        <div className="mt-4 grid gap-3">
+          {verifications.map((request) => (
+            <article key={request.id} className="rounded-[20px] border border-[#e5e5e5] p-4">
+              <p className="font-semibold">{request.business_name || (request.account_type === "agence" ? "Agence" : "Propriétaire")}</p>
+              <p className="mt-1 text-xs text-[#6a6a6a]">Demande documentaire · {request.account_type}</p>
+              <div className="mt-4 flex gap-2">
+                <button className={btnPrimary} disabled={busy === request.id} onClick={() => void decideVerification(request, true)}>Certifier</button>
+                <button className={btnSecondary} disabled={busy === request.id} onClick={() => void decideVerification(request, false)}>Refuser</button>
+              </div>
+            </article>
+          ))}
+          {verifications.length === 0 && <p className="rounded-2xl border border-dashed border-[#cccccc] p-5 text-sm text-[#6a6a6a]">Aucune certification en attente.</p>}
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-2xl font-semibold tracking-tight">Expériences et services</h2>
+          <Pill tone={offers.length ? "warn" : "good"}>{offers.length} ouvertes</Pill>
+        </div>
+        <div className="mt-4 grid gap-3">
+          {offers.map((request) => (
+            <article key={request.id} className="rounded-[20px] border border-[#e5e5e5] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[.12em] text-[#FF385C]">{request.offer_kind}</p>
+              <p className="mt-1 font-semibold">{request.offer_title}</p>
+              <p className="mt-1 text-sm text-[#6a6a6a]">{request.customer_name} · {request.preferred_date} · {request.people} personne{request.people > 1 ? "s" : ""}</p>
+              {request.customer_phone && <a className="mt-2 block text-sm font-medium underline" href={`tel:${request.customer_phone}`}>{request.customer_phone}</a>}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button className={btnPrimary} disabled={busy === request.id} onClick={() => void setOfferStatus(request, "contacted")}>Contacté</button>
+                <button className={btnSecondary} disabled={busy === request.id} onClick={() => void setOfferStatus(request, "confirmed")}>Confirmer</button>
+                <button className={btnSecondary} disabled={busy === request.id} onClick={() => void setOfferStatus(request, "declined")}>Refuser</button>
+              </div>
+            </article>
+          ))}
+          {offers.length === 0 && <p className="rounded-2xl border border-dashed border-[#cccccc] p-5 text-sm text-[#6a6a6a]">Aucune demande de service ouverte.</p>}
+        </div>
+      </div>
+      {error && <p role="alert" className="lg:col-span-2 rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
+    </section>
   );
 }
 

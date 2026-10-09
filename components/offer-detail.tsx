@@ -1,20 +1,56 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { BadgeCheck, Clock3, MapPin, Star } from "lucide-react";
 import { btnPrimary, btnSecondary, fieldClass, formatMoney } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
+import { createOfferRequest } from "@/lib/supabase";
 import type { Offer } from "@/lib/catalog";
 import { MediaCarousel } from "./media-carousel";
 import { Photo } from "./photo";
 
 export function OfferDetail({ offer }: { offer: Offer }) {
+  const pathname = usePathname();
+  const { user, profile } = useAuth();
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [when, setWhen] = useState("");
   const [people, setPeople] = useState(2);
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const back = offer.kind === "experience" ? "/experiences" : "/services";
   const backLabel = offer.kind === "experience" ? "Expériences" : "Services";
+
+  useEffect(() => {
+    if (profile?.full_name) setName(profile.full_name);
+    if (profile?.phone) setPhone(profile.phone);
+  }, [profile]);
+
+  async function requestOffer() {
+    if (!user || !name.trim() || !when) return;
+    setBusy(true);
+    setError("");
+    try {
+      await createOfferRequest({
+        userId: user.id,
+        kind: offer.kind,
+        offerKey: offer.id,
+        offerTitle: offer.title,
+        customerName: name,
+        customerPhone: phone,
+        preferredDate: when,
+        people,
+      });
+      setSent(true);
+    } catch {
+      setError("Votre demande n’a pas pu être enregistrée. Réessayez.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <article className="mx-auto max-w-[1120px] px-0 pb-36 md:px-6 md:pb-16 lg:pb-10">
@@ -116,20 +152,29 @@ export function OfferDetail({ offer }: { offer: Offer }) {
               Votre nom
               <input className={`${fieldClass} mt-1`} value={name} onChange={(event) => setName(event.target.value)} placeholder="Nom et prénom" />
             </label>
+            <label className="text-xs font-medium">
+              Téléphone
+              <input className={`${fieldClass} mt-1`} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+221 77 000 00 00" autoComplete="tel" />
+            </label>
           </div>
           {sent ? (
             <p className="mt-5 rounded-2xl bg-[#e7f4f2] px-4 py-3 text-sm leading-6 text-[#145e57]">
               Demande notée pour {offer.title}. {offer.host} revient vers vous avec le créneau.
             </p>
+          ) : !user ? (
+            <Link href={`/connexion?retour=${encodeURIComponent(pathname)}`} className={`${btnPrimary} mt-5 w-full py-3`}>
+              Se connecter pour demander
+            </Link>
           ) : (
             <button
               className={`${btnPrimary} mt-5 w-full py-3`}
-              disabled={!name.trim() || !when}
-              onClick={() => setSent(true)}
+              disabled={busy || !name.trim() || !when}
+              onClick={() => void requestOffer()}
             >
-              {offer.kind === "experience" ? "Demander l'expérience" : "Demander le service"}
+              {busy ? "Enregistrement…" : offer.kind === "experience" ? "Demander l'expérience" : "Demander le service"}
             </button>
           )}
+          {error && <p role="alert" className="mt-3 text-sm text-[#a52a12]">{error}</p>}
           <p className="mt-3 text-center text-xs text-[#6a6a6a]">Aucun débit à cette étape. Le prix affiché est celui du catalogue.</p>
         </aside>
       </div>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { BadgeCheck, LockKeyhole, ShieldCheck } from "lucide-react";
+import { BadgeCheck, Home, LockKeyhole, ShieldCheck, X } from "lucide-react";
 import { btnPrimary, cx, fieldClass } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
@@ -96,9 +96,13 @@ function AuthForm() {
         <p className="text-sm text-white/55">Ameena · Sénégal, puis international</p>
       </section>
 
-      <section className="flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <Link href="/" className="logo-word text-3xl text-[#1F6F66] lg:hidden">Ameena</Link>
+      <section className="flex items-center justify-center bg-[#f2f2f2] px-0 pt-8 lg:bg-white lg:px-4 lg:py-12">
+        <div className="min-h-[calc(100dvh-2rem)] w-full max-w-md rounded-t-[30px] bg-white px-7 py-7 lg:min-h-0 lg:rounded-none lg:px-0 lg:py-0">
+          <div className="flex items-center justify-between lg:hidden">
+            <Link href="/" aria-label="Fermer" className="grid h-10 w-10 place-items-center rounded-full hover:bg-[#f2f2f2]"><X className="h-5 w-5" /></Link>
+            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[#E21D5A] text-white"><Home className="h-7 w-7" /></span>
+            <span className="h-10 w-10" />
+          </div>
           <div className="mt-8 grid grid-cols-2 rounded-full bg-[#f2f2f2] p-1 text-sm lg:mt-0">
             {(["connexion", "inscription"] as const).map((item) => (
               <button
@@ -115,8 +119,8 @@ function AuthForm() {
             ))}
           </div>
 
-          <h2 className="mt-8 text-3xl font-semibold tracking-tight">
-            {mode === "connexion" ? "Ravi de vous revoir" : "Créer votre compte"}
+          <h2 className="mt-8 text-center text-[28px] font-semibold tracking-tight lg:text-left lg:text-3xl">
+            {mode === "connexion" ? "Connexion ou inscription" : "Créer votre compte"}
           </h2>
           <p className="mt-2 text-sm leading-6 text-[#6a6a6a]">
             {mode === "connexion"
@@ -145,7 +149,7 @@ function AuthForm() {
                         onClick={() => setAccountType(value)}
                         className={cx(
                           "rounded-xl border px-3 py-3 text-sm",
-                          accountType === value ? "border-[#1F6F66] bg-[#e7f4f2] font-semibold text-[#145e57]" : "border-[#dddddd]",
+                          accountType === value ? "border-[#E21D5A] bg-[#fff0f5] font-semibold text-[#C9144C]" : "border-[#dddddd]",
                         )}
                       >
                         {label}

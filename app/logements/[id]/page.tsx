@@ -196,7 +196,7 @@ export default function ListingPage() {
         <BookingCard listing={listing} />
       </div>
 
-      <div className="fixed inset-x-0 bottom-[4.25rem] z-40 border-t border-[#ebebeb] bg-white px-4 py-3 lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#ebebeb] bg-white px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 lg:hidden">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[15px] font-semibold">{formatMoney(listing.price, listing.currency)}</p>

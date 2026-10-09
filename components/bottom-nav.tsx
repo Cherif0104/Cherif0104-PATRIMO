@@ -7,7 +7,7 @@ import { cx } from "@/lib/format";
 
 export function BottomNav() {
   const pathname = usePathname();
-  if (pathname.startsWith("/gestion") || pathname.startsWith("/admin")) return null;
+  if (pathname.startsWith("/gestion") || pathname.startsWith("/admin") || pathname.startsWith("/logements/")) return null;
 
   const items = [
     { href: "/", label: "Explorer", icon: Search, active: pathname === "/" || pathname.startsWith("/explorer") || pathname.startsWith("/logements") || pathname.startsWith("/experiences") || pathname.startsWith("/services") },

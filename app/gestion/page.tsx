@@ -1,36 +1,50 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { AdSlot } from "@/components/ad-slot";
 import { Photo } from "@/components/photo";
 import { PageHead, Pill } from "@/components/ui";
-import { formatDate, formatMoney, roleLabel } from "@/lib/format";
-import { INCIDENT_STATUS } from "@/lib/labels";
-import { useAmeena, useScope } from "@/lib/store";
+import { formatDate, formatMoney } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
+import { loadMyBookings } from "@/lib/supabase";
+import { useScope } from "@/lib/store";
+import type { MarketBooking } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
 export default function DashboardPage() {
-  const { state } = useAmeena();
+  const { profile } = useAuth();
   const scope = useScope();
+  const [bookings, setBookings] = useState<MarketBooking[]>([]);
+  const [error, setError] = useState("");
   useTitle("Tableau de bord · Se Loger au Sénégal");
-  const openIncidents = scope.incidents.filter((item) => item.status !== "resolu");
-  const upcoming = scope.reservations.filter((item) => item.status === "confirmee" || item.status === "en-cours");
+  const listingIds = new Set(scope.listings.flatMap((listing) => listing.databaseId ? [listing.databaseId] : []));
+  const listingIdsKey = [...listingIds].sort().join(",");
+
+  useEffect(() => {
+    const allowed = new Set(listingIdsKey ? listingIdsKey.split(",") : []);
+    loadMyBookings()
+      .then((rows) => setBookings(rows.filter((booking) => booking.listing_id && allowed.has(booking.listing_id))))
+      .catch(() => setError("Les indicateurs de réservation ne peuvent pas être chargés."));
+  }, [listingIdsKey]);
+
+  const activeBookings = bookings.filter((booking) =>
+    ["requested", "preapproved", "awaiting_payment", "confirmed"].includes(booking.status));
 
   return (
     <div>
       <PageHead
         eyebrow="Système d'exploitation du parc"
-        title={`Bonjour ${roleLabel(state.role).split(" ")[0]}`}
-        text="Biens, encaissements, clients, pannes et états des lieux. Le même dossier sert de preuve et de pilotage."
+        title={`Bonjour ${profile?.full_name?.split(" ")[0] || "partenaire"}`}
+        text="Les indicateurs ci-dessous proviennent exclusivement des annonces et demandes persistées sur le serveur."
       />
+      {error && <p role="alert" className="mb-4 rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
       <div className="mb-8">
         <AdSlot placement="gestion" compact />
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2">
         <Stat label="Biens" value={String(scope.listings.length)} href="/gestion/biens" />
-        <Stat label="Incidents ouverts" value={String(openIncidents.length)} href="/gestion/incidents" />
-        <Stat label="Réservations actives" value={String(upcoming.length)} href="/gestion/reservations" />
-        <Stat label="États des lieux" value={String(scope.inspections.length)} href="/gestion/etats-des-lieux" />
+        <Stat label="Demandes actives" value={String(activeBookings.length)} href="/gestion/reservations" />
       </div>
 
       <h2 className="mb-4 mt-10 text-xl font-semibold">Biens</h2>
@@ -49,38 +63,24 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-2">
-        <section>
-          <h2 className="mb-3 text-xl font-semibold">À traiter</h2>
-          <div className="space-y-3">
-            {openIncidents.map((incident) => (
-              <Link key={incident.id} href={`/gestion/incidents/${incident.id}`} className="block rounded-2xl border border-[#ebebeb] p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-medium">{incident.title}</p>
-                  <Pill tone={incident.status === "nouveau" ? "bad" : "warn"}>{INCIDENT_STATUS[incident.status]}</Pill>
+      <section className="mt-10">
+        <h2 className="mb-3 text-xl font-semibold">Demandes récentes</h2>
+        <div className="space-y-3">
+          {activeBookings.slice(0, 6).map((booking) => (
+            <Link key={booking.id} href="/gestion/reservations" className="block rounded-2xl border border-[#ebebeb] p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-medium">{booking.guest_name}</p>
+                  <p className="text-sm text-[#6a6a6a]">{booking.listing_title}</p>
+                  <p className="mt-1 text-sm">{formatDate(booking.start_date)} → {formatDate(booking.end_date)}</p>
                 </div>
-                <p className="mt-1 text-sm text-[#6a6a6a]">{incident.photos.length} photo{incident.photos.length > 1 ? "s" : ""} · {incident.notifiedName}</p>
-              </Link>
-            ))}
-            {openIncidents.length === 0 && <p className="text-sm text-[#6a6a6a]">Aucun incident ouvert.</p>}
-          </div>
-        </section>
-        <section>
-          <h2 className="mb-3 text-xl font-semibold">Séjours et baux en cours</h2>
-          <div className="space-y-3">
-            {upcoming.map((reservation) => {
-              const listing = state.listings.find((item) => item.id === reservation.listingId);
-              return (
-                <div key={reservation.id} className="rounded-2xl border border-[#ebebeb] p-4">
-                  <p className="font-medium">{reservation.guestName}</p>
-                  <p className="text-sm text-[#6a6a6a]">{listing?.title}</p>
-                  <p className="mt-1 text-sm">{formatDate(reservation.from)} → {formatDate(reservation.to)}</p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      </div>
+                <Pill tone={booking.status === "confirmed" ? "good" : "warn"}>{booking.status}</Pill>
+              </div>
+            </Link>
+          ))}
+          {activeBookings.length === 0 && <p className="rounded-2xl border border-dashed border-[#cccccc] p-5 text-sm text-[#6a6a6a]">Aucune demande réelle à traiter.</p>}
+        </div>
+      </section>
     </div>
   );
 }

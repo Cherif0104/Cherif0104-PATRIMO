@@ -5,15 +5,18 @@ import {
   createPaymentAdminClient,
   createTokenVerifier,
 } from "@/lib/payments/supabase-server";
+import { serverLog } from "@/lib/server-log";
 import type { PaymentOrder } from "@/lib/types";
 
 const METHODS = new Set(["hosted_checkout"]);
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
   const config = getPayDunyaConfig();
   const admin = createPaymentAdminClient();
   const verifier = createTokenVerifier();
   if (!config || !admin || !verifier) {
+    serverLog.warn("payment.checkout.not_configured");
     return NextResponse.json(
       { code: "PAYMENTS_NOT_CONFIGURED", message: "Le paiement est en cours d’activation." },
       { status: 503 },
@@ -71,6 +74,12 @@ export async function POST(request: Request) {
 
   if (orderError || !order) {
     const expired = orderError?.message.includes("booking_hold_expired");
+    serverLog.warn("payment.checkout.rejected", {
+      bookingId: body.bookingId,
+      code: expired ? "BOOKING_HOLD_EXPIRED" : "BOOKING_NOT_PAYABLE",
+      durationMs: Date.now() - startedAt,
+      userId: authData.user.id,
+    });
     return NextResponse.json(
       {
         code: expired ? "BOOKING_HOLD_EXPIRED" : "BOOKING_NOT_PAYABLE",
@@ -118,7 +127,14 @@ export async function POST(request: Request) {
       checkoutUrl: checkout.checkoutUrl,
       orderId: paymentOrder.id,
     });
-  } catch {
+  } catch (cause) {
+    serverLog.error("payment.checkout.provider_failed", {
+      bookingId: body.bookingId,
+      durationMs: Date.now() - startedAt,
+      error: cause instanceof Error ? cause.message : "unknown",
+      orderId: paymentOrder.id,
+      userId: authData.user.id,
+    });
     return NextResponse.json(
       {
         code: "PAYMENT_PROVIDER_UNAVAILABLE",

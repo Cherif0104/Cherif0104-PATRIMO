@@ -5,34 +5,30 @@ import { usePathname } from "next/navigation";
 import {
   Building2,
   CalendarDays,
-  ClipboardCheck,
   LayoutDashboard,
-  Users,
   Wallet,
-  Wrench,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { cx, roleLabel } from "@/lib/format";
-import { useAmeena } from "@/lib/store";
+import { cx } from "@/lib/format";
 
 const links = [
   { href: "/gestion", label: "Tableau", icon: LayoutDashboard, exact: true },
   { href: "/gestion/biens", label: "Biens", icon: Building2 },
   { href: "/gestion/reservations", label: "Réservations", icon: CalendarDays },
-  { href: "/gestion/clients", label: "Clientèle", icon: Users },
   { href: "/gestion/finances", label: "Finances", icon: Wallet },
-  { href: "/gestion/incidents", label: "Incidents", icon: Wrench },
-  { href: "/gestion/etats-des-lieux", label: "États des lieux", icon: ClipboardCheck },
 ];
 
 export function GestionShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { state } = useAmeena();
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
+  const isAdmin = user?.app_metadata?.role === "admin";
+  const isVerifiedProfessional =
+    profile?.identity_status === "verifie"
+    && (profile.account_type === "proprietaire" || profile.account_type === "agence");
 
   if (loading) return <div className="p-12 text-center text-sm text-[#6a6a6a]">Ouverture de la gestion…</div>;
 
-  if (!user || state.role === "voyageur") {
+  if (!user || (!isAdmin && !isVerifiedProfessional)) {
     return (
       <div className="mx-auto max-w-xl px-6 py-24 text-center">
         <p className="text-sm text-[#6a6a6a]">Espace de gestion</p>
@@ -52,7 +48,9 @@ export function GestionShell({ children }: { children: React.ReactNode }) {
       <aside className="no-print border-b border-[#ebebeb] bg-[#fafafa] lg:border-b-0 lg:border-r">
         <div className="px-4 py-5">
           <p className="text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">Gestion</p>
-          <p className="mt-1 font-semibold">{roleLabel(state.role)}</p>
+          <p className="mt-1 font-semibold">
+            {isAdmin ? "Administration" : profile?.account_type === "agence" ? "Agence vérifiée" : "Propriétaire vérifié"}
+          </p>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:px-3">
           {links.map((link) => {

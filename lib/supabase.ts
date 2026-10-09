@@ -718,14 +718,14 @@ export async function loadRefunds(): Promise<Refund[]> {
   return (data ?? []) as Refund[];
 }
 
-export async function updateProfile(profile: Pick<Profile, "id" | "full_name" | "phone" | "account_type">) {
+export async function updateProfile(profile: Pick<Profile, "id" | "full_name" | "phone" | "requested_account_type">) {
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
   const { error } = await supabase
     .from("profiles")
     .update({
       full_name: profile.full_name,
       phone: profile.phone,
-      account_type: profile.account_type,
+      requested_account_type: profile.requested_account_type,
     })
     .eq("id", profile.id);
   if (error) throw error;

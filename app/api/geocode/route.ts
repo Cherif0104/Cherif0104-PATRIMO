@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { serverLog } from "@/lib/server-log";
 
 type PhotonFeature = {
   geometry?: { coordinates?: [number, number] };
@@ -15,6 +16,7 @@ type PhotonFeature = {
 };
 
 export async function GET(request: NextRequest) {
+  const startedAt = Date.now();
   const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
   if (query.length < 3 || query.length > 160) {
     return NextResponse.json({ results: [] });
@@ -57,8 +59,15 @@ export async function GET(request: NextRequest) {
           lng: coordinates[0],
         };
       });
-    return NextResponse.json({ results });
-  } catch {
+    return NextResponse.json(
+      { results },
+      { headers: { "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800" } },
+    );
+  } catch (cause) {
+    serverLog.warn("geocode.unavailable", {
+      durationMs: Date.now() - startedAt,
+      error: cause instanceof Error ? cause.message : "unknown",
+    });
     return NextResponse.json({ results: [], error: "Service d’adresse indisponible." }, { status: 503 });
   }
 }

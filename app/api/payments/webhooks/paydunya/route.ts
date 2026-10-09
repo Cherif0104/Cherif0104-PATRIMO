@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getPayDunyaConfig } from "@/lib/payments/config";
 import { confirmPayDunyaCheckout } from "@/lib/payments/paydunya";
 import { createPaymentAdminClient } from "@/lib/payments/supabase-server";
+import { serverLog } from "@/lib/server-log";
 
 function constantTimeMatch(left: string, right: string) {
   const a = Buffer.from(left.toLowerCase());
@@ -32,6 +33,7 @@ function callbackFields(raw: string) {
 }
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
   const config = getPayDunyaConfig();
   const admin = createPaymentAdminClient();
   if (!config || !admin) {
@@ -47,7 +49,7 @@ export async function POST(request: Request) {
     ? `${fields.token}:${fields.status || "unknown"}`
     : `invalid:${payloadHash}`;
 
-  await admin.from("payment_webhook_inbox").upsert(
+  const { error: inboxError } = await admin.from("payment_webhook_inbox").upsert(
     {
       provider: "paydunya",
       event_id: eventId,
@@ -60,8 +62,20 @@ export async function POST(request: Request) {
     },
     { onConflict: "provider,event_id", ignoreDuplicates: true },
   );
+  if (inboxError) {
+    serverLog.error("payment.webhook.inbox_failed", {
+      durationMs: Date.now() - startedAt,
+      error: inboxError.message,
+      eventId,
+    });
+    return NextResponse.json({ code: "WEBHOOK_STORAGE_FAILED" }, { status: 500 });
+  }
 
   if (!signatureValid || !fields.token) {
+    serverLog.warn("payment.webhook.invalid_signature", {
+      durationMs: Date.now() - startedAt,
+      eventId,
+    });
     return NextResponse.json({ code: "INVALID_SIGNATURE" }, { status: 400 });
   }
 
@@ -124,8 +138,13 @@ export async function POST(request: Request) {
       p_event_id: eventId,
     });
     if (processingError) throw processingError;
+    serverLog.info("payment.webhook.processed", {
+      durationMs: Date.now() - startedAt,
+      eventId,
+      orderId: order.id,
+    });
     return NextResponse.json({ received: true });
-  } catch {
+  } catch (cause) {
     await admin
       .from("payment_webhook_inbox")
       .update({
@@ -135,6 +154,11 @@ export async function POST(request: Request) {
       })
       .eq("provider", "paydunya")
       .eq("event_id", eventId);
+    serverLog.error("payment.webhook.processing_failed", {
+      durationMs: Date.now() - startedAt,
+      error: cause instanceof Error ? cause.message : "unknown",
+      eventId,
+    });
     return NextResponse.json({ code: "WEBHOOK_PROCESSING_FAILED" }, { status: 500 });
   }
 }

@@ -13,7 +13,25 @@ function redirectWithCookies(request: NextRequest, response: NextResponse, pathn
 }
 
 export async function proxy(request: NextRequest) {
-  if (!url || !key) return NextResponse.next({ request });
+  const pathname = request.nextUrl.pathname;
+  const requiresAuth = [
+    "/compte",
+    "/messages",
+    "/voyages",
+    "/publier",
+    "/gestion",
+    "/admin",
+  ].some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+
+  if (!url || !key) {
+    if (requiresAuth) {
+      return new NextResponse("Service temporairement indisponible.", {
+        status: 503,
+        headers: { "Cache-Control": "no-store" },
+      });
+    }
+    return NextResponse.next({ request });
+  }
 
   let response = NextResponse.next({ request });
   const supabase = createServerClient(url, key, {
@@ -32,16 +50,6 @@ export async function proxy(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const pathname = request.nextUrl.pathname;
-  const requiresAuth = [
-    "/compte",
-    "/messages",
-    "/voyages",
-    "/publier",
-    "/gestion",
-    "/admin",
-  ].some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-
   if (requiresAuth && !user) {
     const target = request.nextUrl.clone();
     target.pathname = "/connexion";
@@ -56,15 +64,30 @@ export async function proxy(request: NextRequest) {
     return redirectWithCookies(request, response, "/");
   }
 
-  if (pathname.startsWith("/gestion") && user?.app_metadata?.role !== "admin") {
+  if (
+    (pathname.startsWith("/gestion") || pathname.startsWith("/publier"))
+    && user?.app_metadata?.role !== "admin"
+  ) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("account_type")
+      .select("account_type, identity_status")
       .eq("id", user!.id)
       .maybeSingle();
-    if (!profile || !["proprietaire", "agence"].includes(profile.account_type)) {
+    if (
+      !profile
+      || !["proprietaire", "agence"].includes(profile.account_type)
+      || profile.identity_status !== "verifie"
+    ) {
       return redirectWithCookies(request, response, "/compte");
     }
+  }
+
+  if ([
+    "/gestion/clients",
+    "/gestion/incidents",
+    "/gestion/etats-des-lieux",
+  ].some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
+    return redirectWithCookies(request, response, "/gestion");
   }
 
   return response;

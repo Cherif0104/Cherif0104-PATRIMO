@@ -409,17 +409,18 @@ export function useAmeena() {
 
 export function useScope() {
   const { state } = useAmeena();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const isAdmin = user?.app_metadata?.role === "admin";
   const persistedListings = state.listings.filter((listing) => Boolean(listing.ownerUserId));
   const listings =
-    state.role === "admin"
+    isAdmin
       ? persistedListings
-      : state.role === "voyageur"
+      : profile?.account_type === "voyageur"
         ? []
         : persistedListings.filter((listing) => listing.ownerUserId === user?.id);
   const ids = new Set(listings.map((listing) => listing.id));
   const inScope = <T extends { listingId: string }>(rows: T[]) =>
-    state.role === "admin" ? rows : rows.filter((row) => ids.has(row.listingId));
+    isAdmin ? rows : rows.filter((row) => ids.has(row.listingId));
   return {
     listings,
     reservations: inScope(state.reservations),

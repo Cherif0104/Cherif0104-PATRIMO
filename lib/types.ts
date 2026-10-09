@@ -250,6 +250,7 @@ export type Profile = {
   full_name: string;
   avatar_url: string | null;
   account_type: AccountType;
+  requested_account_type: AccountType;
   phone: string | null;
   country_code: string;
   identity_status: "non_verifie" | "en_verification" | "verifie" | "refuse";

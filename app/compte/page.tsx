@@ -56,7 +56,11 @@ export default function AccountPage() {
     if (!profile) return;
     setFullName(profile.full_name);
     setPhone(profile.phone ?? "");
-    setAccountType(profile.account_type);
+    setAccountType(
+      profile.account_type === "voyageur"
+        ? profile.requested_account_type
+        : profile.account_type,
+    );
   }, [profile]);
 
   useEffect(() => {
@@ -69,7 +73,14 @@ export default function AccountPage() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || !profile || profile.account_type === "voyageur") return;
+    if (
+      !user
+      || !profile
+      || (
+        profile.account_type === "voyageur"
+        && profile.requested_account_type === "voyageur"
+      )
+    ) return;
     Promise.all([
       loadHostPublicProfile(user.id),
       loadMyVerificationRequest(),
@@ -117,7 +128,7 @@ export default function AccountPage() {
         id: profile.id,
         full_name: fullName.trim(),
         phone: phone.trim() || null,
-        account_type: accountType,
+        requested_account_type: accountType,
       });
       if (accountType !== "voyageur") {
         const whatsappE164 = normalizePhoneE164(phone);
@@ -145,10 +156,16 @@ export default function AccountPage() {
   }
 
   async function requestVerification() {
-    if (!user || accountType === "voyageur" || verificationRequest) return;
+    if (!user || !profile || accountType === "voyageur" || verificationRequest) return;
     setVerificationBusy(true);
     setError("");
     try {
+      await updateProfile({
+        id: profile.id,
+        full_name: fullName.trim(),
+        phone: phone.trim() || null,
+        requested_account_type: accountType,
+      });
       const request = await submitVerificationRequest({
         userId: user.id,
         accountType,
@@ -360,7 +377,9 @@ export default function AccountPage() {
           </form>
           {(accountType === "proprietaire" || accountType === "agence") && (
             <>
-              <Link href="/publier" className={`${btnSecondary} mt-3 w-full`}>Publier un bien</Link>
+              {profile?.identity_status === "verifie" && (
+                <Link href="/publier" className={`${btnSecondary} mt-3 w-full`}>Publier un bien</Link>
+              )}
               {profile?.identity_status !== "verifie" && (
                 <button
                   type="button"

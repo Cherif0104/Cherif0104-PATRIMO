@@ -56,7 +56,7 @@ function AuthForm() {
           email,
           password,
           options: {
-            data: { full_name: fullName.trim(), account_type: accountType },
+            data: { full_name: fullName.trim(), requested_account_type: accountType },
             emailRedirectTo: callback.toString(),
           },
         });

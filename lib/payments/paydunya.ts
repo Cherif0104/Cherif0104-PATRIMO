@@ -6,6 +6,9 @@ type PayDunyaResponse = {
   token?: string;
   status?: string;
   hash?: string;
+  provider_reference?: string;
+  receipt_identifier?: string;
+  receipt_url?: string;
   invoice?: {
     token?: string;
     total_amount?: number | string;

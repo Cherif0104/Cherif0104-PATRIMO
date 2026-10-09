@@ -83,7 +83,7 @@ export async function POST(request: Request) {
   }
   const paymentOrder = order as PaymentOrder;
 
-  if (paymentOrder.checkout_url && paymentOrder.provider_reference) {
+  if (paymentOrder.checkout_url && paymentOrder.checkout_token) {
     return NextResponse.json({
       checkoutUrl: paymentOrder.checkout_url,
       orderId: paymentOrder.id,
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
     const { error: updateError } = await admin
       .from("payment_orders")
       .update({
-        provider_reference: checkout.token,
+        checkout_token: checkout.token,
         checkout_url: checkout.checkoutUrl,
         status: "pending",
         updated_at: new Date().toISOString(),

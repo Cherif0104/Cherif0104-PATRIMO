@@ -76,12 +76,16 @@ export async function POST(request: Request) {
       .from("payment_orders")
       .select("id, amount, status")
       .eq("provider", "paydunya")
-      .eq("provider_reference", fields.token)
+      .eq("checkout_token", fields.token)
       .single();
     if (orderError || !order) throw new Error("payment_order_not_found");
 
     const confirmedAmount = Number(confirmation.invoice?.total_amount);
-    if (!Number.isFinite(confirmedAmount) || confirmedAmount !== Number(order.amount)) {
+    if (
+      confirmation.invoice?.token !== fields.token ||
+      !Number.isFinite(confirmedAmount) ||
+      confirmedAmount !== Number(order.amount)
+    ) {
       throw new Error("payment_amount_mismatch");
     }
 
@@ -105,9 +109,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
+    await admin
+      .from("payment_orders")
+      .update({
+        receipt_identifier: confirmation.receipt_identifier ?? null,
+        receipt_url: confirmation.receipt_url ?? null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", order.id);
+
     const { error: processingError } = await admin.rpc("process_successful_payment", {
       p_order_id: order.id,
-      p_provider_reference: fields.token,
+      p_provider_reference: confirmation.provider_reference || fields.token,
       p_event_id: eventId,
     });
     if (processingError) throw processingError;

@@ -278,7 +278,10 @@ export type PaymentOrder = {
   payer_id: string;
   payment_method: "hosted_checkout" | "wave" | "orange_money" | "card" | "manual";
   provider: "paydunya" | "flutterwave" | "sandbox";
+  checkout_token: string | null;
   provider_reference: string | null;
+  receipt_identifier: string | null;
+  receipt_url: string | null;
   status: "created" | "pending" | "paid" | "failed" | "refunded" | "cancelled";
   amount: number;
   currency: Currency;

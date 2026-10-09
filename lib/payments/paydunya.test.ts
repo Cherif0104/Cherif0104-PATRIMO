@@ -78,6 +78,9 @@ test("la confirmation est relue depuis l’API PayDunya", async () => {
     return Response.json({
       response_code: "00",
       status: "completed",
+      provider_reference: "WAVE-123",
+      receipt_identifier: "RECEIPT-123",
+      receipt_url: "https://app.paydunya.com/receipt/test_123",
       invoice: { token: "test_123", total_amount: 50_000 },
     });
   }) as typeof fetch;
@@ -85,6 +88,7 @@ test("la confirmation est relue depuis l’API PayDunya", async () => {
     const confirmation = await confirmPayDunyaCheckout(config, "test_123");
     assert.equal(confirmation.status, "completed");
     assert.equal(confirmation.invoice?.total_amount, 50_000);
+    assert.equal(confirmation.provider_reference, "WAVE-123");
   } finally {
     global.fetch = originalFetch;
   }

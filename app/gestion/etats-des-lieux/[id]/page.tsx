@@ -2,22 +2,34 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Pill } from "@/components/ui";
 import { btnSecondary, formatDate, formatDateTime } from "@/lib/format";
 import { ROOM_LABEL } from "@/lib/labels";
-import { useAmeena } from "@/lib/store";
+import { loadPropertyInspections } from "@/lib/supabase";
+import { useScope } from "@/lib/store";
+import type { PropertyInspection } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
 export default function InspectionPage() {
   const { id } = useParams<{ id: string }>();
-  const { state } = useAmeena();
-  const inspection = state.inspections.find((item) => item.id === id);
-  const listing = state.listings.find((item) => item.id === inspection?.listingId);
-  const twin = state.inspections.find(
-    (item) => item.listingId === inspection?.listingId && item.kind !== inspection?.kind && item.id !== inspection?.id,
+  const scope = useScope();
+  const [inspections, setInspections] = useState<PropertyInspection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const inspection = inspections.find((item) => item.id === id);
+  const listing = scope.listings.find((item) => item.databaseId === inspection?.listing_id);
+  const twin = inspections.find(
+    (item) => item.listing_id === inspection?.listing_id && item.kind !== inspection?.kind && item.id !== inspection?.id,
   );
   useTitle("État des lieux · Se Loger au Sénégal");
 
+  useEffect(() => {
+    loadPropertyInspections()
+      .then(setInspections)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <p>Chargement du document…</p>;
   if (!inspection || !listing) return <p>Document introuvable.</p>;
 
   return (
@@ -31,10 +43,10 @@ export default function InspectionPage() {
         État des lieux {inspection.kind === "entree" ? "d'entrée" : "de sortie"}
       </h1>
       <p className="mt-2 text-[15px]">{listing.title}</p>
-      <p className="text-sm text-[#6a6a6a]">{listing.neighborhood}, {listing.city} · {formatDate(inspection.date)} · {inspection.author}</p>
-      {inspection.signedAt ? (
+      <p className="text-sm text-[#6a6a6a]">{listing.neighborhood}, {listing.city} · {formatDate(inspection.inspection_date)} · {inspection.author}</p>
+      {inspection.signed_at ? (
         <p className="mt-4 rounded-2xl border border-[#1F6F66] bg-[#f6fbfa] px-4 py-3 text-sm leading-6">
-          Document signé le {formatDateTime(inspection.signedAt)}. Il constate l&apos;état des lieux et des compteurs à cette date.
+          Document signé le {formatDateTime(inspection.signed_at)}. Il constate l&apos;état des lieux et des compteurs à cette date.
         </p>
       ) : (
         <p className="mt-4 text-sm text-[#8a5a00]">Brouillon, pas encore signé.</p>
@@ -70,12 +82,12 @@ export default function InspectionPage() {
           </div>
         ))}
       </div>
-      <p className="mt-4 text-sm">Clés remises : {inspection.keys}</p>
+      <p className="mt-4 text-sm">Clés remises : {inspection.keys_count}</p>
       {inspection.comments && <p className="mt-2 text-sm leading-6">{inspection.comments}</p>}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        <Signature label="Locataire" name={inspection.tenantSignature} />
-        <Signature label="Propriétaire ou gestionnaire" name={inspection.ownerSignature} />
+        <Signature label="Locataire" name={inspection.tenant_signature ?? undefined} />
+        <Signature label="Propriétaire ou gestionnaire" name={inspection.owner_signature ?? undefined} />
       </div>
       {twin && (
         <p className="no-print mt-8">

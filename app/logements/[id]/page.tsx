@@ -21,7 +21,7 @@ import { TYPE_LABEL } from "@/lib/labels";
 export default function ListingPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { state, dispatch } = useAmeena();
+  const { state, dispatch, ready } = useAmeena();
   const { user } = useAuth();
   const listing = state.listings.find((item) => item.id === id);
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -53,6 +53,10 @@ export default function ListingPage() {
       .catch(() => setPublicHost(null));
   }, [listing?.ownerUserId]);
 
+  if (!ready) {
+    return <div className="px-6 py-24 text-center text-sm text-[#6a6a6a]">Chargement du logement…</div>;
+  }
+
   if (!listing) {
     return (
       <div className="mx-auto max-w-lg px-6 py-24 text-center">
@@ -64,7 +68,7 @@ export default function ListingPage() {
     );
   }
 
-  const host = hostById(listing.hostId);
+  const host = listing.databaseId ? undefined : hostById(listing.hostId);
   const hostName = publicHost?.business_name || publicHost?.display_name || host?.name || "Hôte Se Loger au Sénégal";
   const images = listing.images.slice(0, 5);
   const saved = state.saved.includes(listing.id);

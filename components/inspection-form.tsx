@@ -2,17 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { btnPrimary, fieldClass, todayISO, uid } from "@/lib/format";
-import { readImage } from "@/lib/images";
+import { btnPrimary, fieldClass, todayISO } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
 import { DEFAULT_ROOMS, ROOM_LABEL } from "@/lib/labels";
-import { useAmeena, useScope } from "@/lib/store";
-import type { Inspection, RoomCheck, RoomState } from "@/lib/types";
+import { createPropertyInspection } from "@/lib/supabase";
+import { useScope } from "@/lib/store";
+import type { PropertyInspection, RoomCheck, RoomState } from "@/lib/types";
 
 export function InspectionForm({ presetListing }: { presetListing?: string }) {
   const router = useRouter();
-  const { listings, dispatch } = useScopeDispatch();
+  const { user } = useAuth();
+  const { listings } = useScope();
   const [listingId, setListingId] = useState(presetListing || listings[0]?.id || "");
-  const [kind, setKind] = useState<Inspection["kind"]>("entree");
+  const [kind, setKind] = useState<PropertyInspection["kind"]>("entree");
   const [date, setDate] = useState(todayISO());
   const [author, setAuthor] = useState("");
   const [rooms, setRooms] = useState<RoomCheck[]>(
@@ -20,38 +22,51 @@ export function InspectionForm({ presetListing }: { presetListing?: string }) {
   );
   const [water, setWater] = useState("");
   const [power, setPower] = useState("");
-  const [waterPhoto, setWaterPhoto] = useState("");
-  const [powerPhoto, setPowerPhoto] = useState("");
+  const [roomFiles, setRoomFiles] = useState<File[][]>(() => DEFAULT_ROOMS.map(() => []));
+  const [waterPhoto, setWaterPhoto] = useState<File>();
+  const [powerPhoto, setPowerPhoto] = useState<File>();
   const [keys, setKeys] = useState(2);
   const [comments, setComments] = useState("");
   const [tenant, setTenant] = useState("");
   const [owner, setOwner] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
   function updateRoom(index: number, partial: Partial<RoomCheck>) {
     setRooms((current) => current.map((room, i) => (i === index ? { ...room, ...partial } : room)));
   }
 
-  function save(sign: boolean) {
-    if (!listingId) return;
-    const inspection: Inspection = {
-      id: uid("edl"),
-      listingId,
-      kind,
-      date,
-      author: author.trim() || "Se Loger au Sénégal",
-      rooms,
-      meters: [
-        { kind: "eau", index: water, unit: "m³", photo: waterPhoto || undefined },
-        { kind: "electricite", index: power, unit: "kWh", photo: powerPhoto || undefined },
-      ],
-      keys,
-      comments,
-      tenantSignature: sign ? tenant.trim() : undefined,
-      ownerSignature: sign ? owner.trim() : undefined,
-      signedAt: sign && tenant.trim() && owner.trim() ? new Date().toISOString() : undefined,
-    };
-    dispatch(inspection);
-    router.push(`/gestion/etats-des-lieux/${inspection.id}`);
+  async function save(sign: boolean) {
+    const listing = listings.find((item) => item.id === listingId);
+    if (!listing?.databaseId || !user) return;
+    setBusy(true);
+    setError("");
+    try {
+      const id = await createPropertyInspection({
+        listingId: listing.databaseId,
+        userId: user.id,
+        kind,
+        date,
+        author: author.trim() || "Se Loger au Sénégal",
+        rooms,
+        meters: [
+          { kind: "eau", index: water, unit: "m³" },
+          { kind: "electricite", index: power, unit: "kWh" },
+        ],
+        keys,
+        comments,
+        tenantSignature: tenant,
+        ownerSignature: owner,
+        sign,
+        roomFiles,
+        meterFiles: { eau: waterPhoto, electricite: powerPhoto },
+      });
+      router.push(`/gestion/etats-des-lieux/${id}`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "L’état des lieux n’a pas pu être enregistré.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -62,7 +77,7 @@ export function InspectionForm({ presetListing }: { presetListing?: string }) {
             <option key={listing.id} value={listing.id}>{listing.title}</option>
           ))}
         </select>
-        <select className={fieldClass} value={kind} onChange={(event) => setKind(event.target.value as Inspection["kind"])}>
+        <select className={fieldClass} value={kind} onChange={(event) => setKind(event.target.value as PropertyInspection["kind"])}>
           <option value="entree">Entrée</option>
           <option value="sortie">Sortie / restitution</option>
         </select>
@@ -85,13 +100,14 @@ export function InspectionForm({ presetListing }: { presetListing?: string }) {
             className="mt-3 block text-sm"
             type="file"
             accept="image/*"
-            onChange={async (event) => {
+            onChange={(event) => {
               const file = event.target.files?.[0];
               if (!file) return;
-              const photo = await readImage(file);
-              updateRoom(index, { photos: [...room.photos, photo] });
+              setRoomFiles((current) => current.map((files, roomIndex) =>
+                roomIndex === index ? [...files, file].slice(0, 4) : files));
             }}
           />
+          {roomFiles[index]?.length > 0 && <p className="mt-2 text-xs text-[#6a6a6a]">{roomFiles[index].length} photo(s) sélectionnée(s)</p>}
         </fieldset>
       ))}
 
@@ -101,17 +117,17 @@ export function InspectionForm({ presetListing }: { presetListing?: string }) {
           <label className="text-sm">
             Eau (m³)
             <input className={`${fieldClass} mt-1`} value={water} onChange={(event) => setWater(event.target.value)} />
-            <input className="mt-2 block text-sm" type="file" accept="image/*" onChange={async (event) => {
+            <input className="mt-2 block text-sm" type="file" accept="image/*" onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) setWaterPhoto(await readImage(file));
+              if (file) setWaterPhoto(file);
             }} />
           </label>
           <label className="text-sm">
             Électricité (kWh)
             <input className={`${fieldClass} mt-1`} value={power} onChange={(event) => setPower(event.target.value)} />
-            <input className="mt-2 block text-sm" type="file" accept="image/*" onChange={async (event) => {
+            <input className="mt-2 block text-sm" type="file" accept="image/*" onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) setPowerPhoto(await readImage(file));
+              if (file) setPowerPhoto(file);
             }} />
           </label>
         </div>
@@ -127,20 +143,12 @@ export function InspectionForm({ presetListing }: { presetListing?: string }) {
         <input className={fieldClass} placeholder="Signature du propriétaire — nom" value={owner} onChange={(event) => setOwner(event.target.value)} />
       </div>
       <div className="flex flex-wrap gap-3">
-        <button className={btnPrimary} onClick={() => save(false)}>Enregistrer le brouillon</button>
-        <button className={btnPrimary} disabled={!tenant.trim() || !owner.trim()} onClick={() => save(true)}>
+        {error && <p role="alert" className="w-full text-sm text-[#a52a12]">{error}</p>}
+        <button className={btnPrimary} disabled={busy} onClick={() => void save(false)}>Enregistrer le brouillon</button>
+        <button className={btnPrimary} disabled={busy || !tenant.trim() || !owner.trim()} onClick={() => void save(true)}>
           Signer et horodater
         </button>
       </div>
     </div>
   );
-}
-
-function useScopeDispatch() {
-  const scope = useScope();
-  const { dispatch } = useAmeena();
-  return {
-    listings: scope.listings,
-    dispatch: (inspection: Inspection) => dispatch({ type: "add-inspection", inspection }),
-  };
 }

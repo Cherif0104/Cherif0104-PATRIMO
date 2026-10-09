@@ -1,16 +1,32 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Photo } from "@/components/photo";
 import { Empty, PageHead, Pill } from "@/components/ui";
 import { btnSecondary, formatMoney } from "@/lib/format";
 import { MODE_LABEL } from "@/lib/labels";
+import { loadPropertyIncidents, loadPropertyInspections } from "@/lib/supabase";
 import { useScope } from "@/lib/store";
+import type { PropertyIncident, PropertyInspection } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
 export default function BiensPage() {
   const scope = useScope();
+  const [incidents, setIncidents] = useState<PropertyIncident[]>([]);
+  const [inspections, setInspections] = useState<PropertyInspection[]>([]);
   useTitle("Biens · Se Loger au Sénégal");
+
+  useEffect(() => {
+    Promise.all([loadPropertyIncidents(), loadPropertyInspections()])
+      .then(([incidentRows, inspectionRows]) => {
+        setIncidents(incidentRows);
+        setInspections(inspectionRows);
+      })
+      .catch(() => {
+        // The listing remains manageable if operational counters are unavailable.
+      });
+  }, []);
 
   return (
     <div>
@@ -24,8 +40,8 @@ export default function BiensPage() {
       ) : (
         <div className="grid gap-4">
           {scope.listings.map((listing) => {
-            const incidents = scope.incidents.filter((item) => item.listingId === listing.id && item.status !== "resolu").length;
-            const inspection = scope.inspections.find((item) => item.listingId === listing.id);
+            const openIncidents = incidents.filter((item) => item.listing_id === listing.databaseId && item.status !== "resolu").length;
+            const inspection = inspections.find((item) => item.listing_id === listing.databaseId);
             return (
               <article key={listing.id} className="grid gap-4 rounded-3xl border border-[#ebebeb] p-4 md:grid-cols-[180px_1fr_auto] md:items-center">
                 <div className="relative h-32 overflow-hidden rounded-2xl">
@@ -41,8 +57,8 @@ export default function BiensPage() {
                   <p className="mt-2 text-sm">
                     {formatMoney(listing.price, listing.currency)} {listing.mode === "sejour" ? "/ nuit" : "/ mois"}
                     {" · "}
-                    {incidents} incident{incidents > 1 ? "s" : ""} ouvert{incidents > 1 ? "s" : ""}
-                    {inspection ? ` · dernier état des lieux le ${inspection.date}` : " · pas encore d'état des lieux"}
+                    {openIncidents} incident{openIncidents > 1 ? "s" : ""} ouvert{openIncidents > 1 ? "s" : ""}
+                    {inspection ? ` · dernier état des lieux le ${inspection.inspection_date}` : " · pas encore d'état des lieux"}
                   </p>
                 </div>
                 <div className="flex flex-col gap-2">

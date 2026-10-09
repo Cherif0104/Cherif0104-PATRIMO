@@ -140,9 +140,10 @@ export function BookingCard({ listing }: { listing: Listing }) {
       </div>
       {error && <p role="alert" className="mt-3 text-sm text-[#a52a12]">{error}</p>}
       {sent ? (
-        <p className="mt-5 rounded-2xl bg-[#e7f4f2] px-4 py-3 text-sm leading-6 text-[#145e57]">
-          Demande enregistrée. Vous pouvez la suivre dans votre compte, avec le prix et la commission figés à cet instant.
-        </p>
+        <div className="mt-5 rounded-2xl bg-[#e7f4f2] px-4 py-3 text-sm leading-6 text-[#145e57]">
+          <p>Demande enregistrée avec le prix et la commission figés à cet instant.</p>
+          <Link href="/voyages" className="mt-2 inline-block font-semibold underline">Suivre cette demande</Link>
+        </div>
       ) : !user ? (
         <Link
           className={`${btnPrimary} mt-5 w-full py-3`}

@@ -5,8 +5,11 @@ import { usePathname } from "next/navigation";
 import {
   Building2,
   CalendarDays,
+  ClipboardCheck,
   LayoutDashboard,
+  Users,
   Wallet,
+  Wrench,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { cx } from "@/lib/format";
@@ -15,7 +18,10 @@ const links = [
   { href: "/gestion", label: "Tableau", icon: LayoutDashboard, exact: true },
   { href: "/gestion/biens", label: "Biens", icon: Building2 },
   { href: "/gestion/reservations", label: "Réservations", icon: CalendarDays },
+  { href: "/gestion/clients", label: "Clientèle", icon: Users },
   { href: "/gestion/finances", label: "Finances", icon: Wallet },
+  { href: "/gestion/incidents", label: "Incidents", icon: Wrench },
+  { href: "/gestion/etats-des-lieux", label: "États des lieux", icon: ClipboardCheck },
 ];
 
 export function GestionShell({ children }: { children: React.ReactNode }) {

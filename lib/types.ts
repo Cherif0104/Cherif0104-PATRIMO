@@ -157,6 +157,19 @@ export type Expense = {
   chargeToTenant: boolean;
 };
 
+export type PropertyExpense = {
+  id: string;
+  listing_id: string;
+  label: string;
+  category: ExpenseCategory;
+  amount: number;
+  currency: Currency;
+  expense_date: string;
+  charge_to_tenant: boolean;
+  created_by: string;
+  created_at: string;
+};
+
 export type ClientKind = "locataire" | "voyageur";
 
 export type Client = {
@@ -185,6 +198,21 @@ export type Incident = {
   createdAt: string;
   status: IncidentStatus;
   notifiedName: string;
+};
+
+export type PropertyIncident = {
+  id: string;
+  listing_id: string;
+  title: string;
+  category: IncidentCategory;
+  description: string;
+  reporter: string;
+  status: IncidentStatus;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+  photos: string[];
 };
 
 export type RoomState = "neuf" | "bon" | "use" | "degrade";
@@ -216,6 +244,23 @@ export type Inspection = {
   tenantSignature?: string;
   ownerSignature?: string;
   signedAt?: string;
+};
+
+export type PropertyInspection = {
+  id: string;
+  listing_id: string;
+  kind: "entree" | "sortie";
+  inspection_date: string;
+  author: string;
+  rooms: RoomCheck[];
+  meters: MeterReading[];
+  keys_count: number;
+  comments: string;
+  tenant_signature: string | null;
+  owner_signature: string | null;
+  signed_at: string | null;
+  created_by: string;
+  created_at: string;
 };
 
 export type Notification = {

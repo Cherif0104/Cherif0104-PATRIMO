@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CalendarDays, MapPinned, Plane } from "lucide-react";
+import { CalendarDays, CreditCard, MapPinned, Plane } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { btnPrimary, formatDate, formatMoney } from "@/lib/format";
-import { loadMyBookings, loadMyOfferRequests } from "@/lib/supabase";
+import { btnPrimary, btnSecondary, formatDate, formatMoney } from "@/lib/format";
+import { loadMyBookings, loadMyOfferRequests, supabase } from "@/lib/supabase";
 import type { MarketBooking, OfferRequest } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
@@ -14,6 +14,8 @@ export default function TripsPage() {
   const [bookings, setBookings] = useState<MarketBooking[]>([]);
   const [offerRequests, setOfferRequests] = useState<OfferRequest[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [paymentBusy, setPaymentBusy] = useState("");
+  const [error, setError] = useState("");
   useTitle("Voyages · Se Loger au Sénégal");
 
   useEffect(() => {
@@ -31,9 +33,36 @@ export default function TripsPage() {
 
   if (loading || !loaded) return <p className="p-8 text-sm text-[#6a6a6a]">Chargement de vos voyages…</p>;
 
+  async function startPayment(booking: MarketBooking) {
+    if (!supabase || !user) return;
+    setPaymentBusy(booking.id);
+    setError("");
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error("Votre session a expiré. Reconnectez-vous.");
+      const response = await fetch("/api/payments/create", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Idempotency-Key": `checkout:${booking.id}:${user.id}`,
+        },
+        body: JSON.stringify({ bookingId: booking.id, paymentMethod: "hosted_checkout" }),
+      });
+      const result = await response.json() as { checkoutUrl?: string; message?: string };
+      if (!response.ok || !result.checkoutUrl) throw new Error(result.message || "Le paiement ne peut pas être ouvert.");
+      window.location.assign(result.checkoutUrl);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Le paiement ne peut pas être ouvert.");
+      setPaymentBusy("");
+    }
+  }
+
   return (
     <main className="mobile-page px-4 py-7 md:px-10 lg:py-12 xl:px-16">
       <h1 className="text-[30px] font-semibold tracking-[-0.04em]">Voyages</h1>
+      {error && <p role="alert" className="mt-4 rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
       {bookings.length > 0 || offerRequests.length > 0 ? (
         <div className="mt-7 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {bookings.map((booking) => (
@@ -45,7 +74,20 @@ export default function TripsPage() {
                 </div>
                 <CalendarDays className="h-5 w-5 text-[#C13515]" />
               </div>
-              <p className="mt-5 border-t border-[#eeeeee] pt-4 text-sm font-semibold">{formatMoney(booking.total, booking.currency)}</p>
+              <div className="mt-5 border-t border-[#eeeeee] pt-4">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <strong>{formatMoney(booking.total, booking.currency)}</strong>
+                  <span className="text-[#6a6a6a]">{bookingStatus(booking.status)}</span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link href={`/logements/${booking.listing_key}`} className={btnSecondary}>Voir le logement</Link>
+                  {(booking.status === "preapproved" || booking.status === "awaiting_payment") && (
+                    <button className={btnPrimary} disabled={paymentBusy === booking.id} onClick={() => void startPayment(booking)}>
+                      <CreditCard className="h-4 w-4" /> {paymentBusy === booking.id ? "Ouverture…" : "Payer"}
+                    </button>
+                  )}
+                </div>
+              </div>
             </article>
           ))}
           {offerRequests.map((request) => (
@@ -83,4 +125,18 @@ export default function TripsPage() {
       )}
     </main>
   );
+}
+
+function bookingStatus(status: MarketBooking["status"]) {
+  const labels: Record<MarketBooking["status"], string> = {
+    requested: "Demande envoyée",
+    preapproved: "Préapprouvée",
+    awaiting_payment: "Paiement attendu",
+    confirmed: "Confirmée",
+    declined: "Refusée",
+    cancelled: "Annulée",
+    completed: "Terminée",
+    expired: "Expirée",
+  };
+  return labels[status];
 }

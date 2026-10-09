@@ -3,67 +3,65 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHead } from "@/components/ui";
-import { btnPrimary, btnSecondary, fieldClass, uid } from "@/lib/format";
-import { readImage } from "@/lib/images";
+import { btnPrimary, fieldClass } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
 import { INCIDENT_LABEL } from "@/lib/labels";
-import { hostById } from "@/lib/seed";
-import { useAmeena, useScope } from "@/lib/store";
+import { createPropertyIncident } from "@/lib/supabase";
+import { useScope } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
 import type { IncidentCategory } from "@/lib/types";
-
-const sample = "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=1400&q=80";
 
 function Form() {
   const params = useSearchParams();
   const router = useRouter();
-  const { dispatch } = useAmeena();
+  const { user, profile } = useAuth();
   const scope = useScope();
   const [listingId, setListingId] = useState(params.get("bien") || scope.listings[0]?.id || "");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<IncidentCategory>("panne");
   const [description, setDescription] = useState("");
   const [reporter, setReporter] = useState("");
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
   const [sent, setSent] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   useTitle("Signaler un incident · Se Loger au Sénégal");
 
   const listing = scope.listings.find((item) => item.id === listingId);
-  const host = listing ? hostById(listing.hostId) : undefined;
-  const notifiedName = listing?.managedByPlatform ? `${host?.name ?? "Le propriétaire"} et Se Loger au Sénégal` : host?.name ?? "Le gestionnaire";
+  const notifiedName = listing?.managedByPlatform ? "L’équipe de gestion et le propriétaire" : "Votre équipe de gestion";
 
-  async function addFiles(files: FileList | null) {
-    if (!files) return;
-    const next: string[] = [];
-    for (const file of Array.from(files).slice(0, 4 - photos.length)) next.push(await readImage(file));
-    setPhotos((current) => [...current, ...next].slice(0, 4));
+  function addFiles(selected: FileList | null) {
+    if (!selected) return;
+    setFiles((current) => [...current, ...Array.from(selected)].slice(0, 4));
   }
 
-  function submit() {
-    if (!listing || !title.trim()) return;
-    const id = uid("inc");
-    dispatch({
-      type: "add-incident",
-      incident: {
-        id,
-        listingId: listing.id,
-        title: title.trim(),
+  async function submit() {
+    if (!listing?.databaseId || !title.trim() || !user) return;
+    setBusy(true);
+    setError("");
+    try {
+      const id = await createPropertyIncident({
+        listingId: listing.databaseId,
+        userId: user.id,
+        title,
         category,
-        description: description.trim(),
-        photos,
-        reporter: reporter.trim() || "Occupant",
-        createdAt: new Date().toISOString(),
-        status: "nouveau",
-        notifiedName,
-      },
-    });
-    setSent(id);
+        description,
+        reporter: reporter.trim() || profile?.full_name || "Gestionnaire",
+        files,
+      });
+      setSent(id);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Le signalement n’a pas pu être enregistré.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (sent) {
     return (
       <div className="max-w-xl rounded-3xl bg-[#e7f4f2] p-6">
         <h1 className="text-2xl font-semibold">Notification envoyée</h1>
-        <p className="mt-2 text-sm leading-6">{notifiedName} reçoit le signalement avec {photos.length} photo{photos.length > 1 ? "s" : ""}.</p>
+        <p className="mt-2 text-sm leading-6">{notifiedName} reçoit le signalement avec {files.length} photo{files.length > 1 ? "s" : ""}.</p>
         <button className={`${btnPrimary} mt-4`} onClick={() => router.push(`/gestion/incidents/${sent}`)}>
           Voir le dossier
         </button>
@@ -93,15 +91,11 @@ function Form() {
         <textarea className={`${fieldClass} min-h-28`} placeholder="Ce qui se passe, depuis quand" value={description} onChange={(event) => setDescription(event.target.value)} />
         <input className={fieldClass} placeholder="Votre nom" value={reporter} onChange={(event) => setReporter(event.target.value)} />
         <input type="file" accept="image/*" multiple onChange={(event) => addFiles(event.target.files)} />
-        <button type="button" className={btnSecondary} onClick={() => setPhotos((current) => [...current, sample].slice(0, 4))}>
-          Joindre une photo d&apos;exemple
+        {files.length > 0 && <p className="text-sm text-[#6a6a6a]">{files.map((file) => file.name).join(", ")}</p>}
+        {error && <p role="alert" className="text-sm text-[#a52a12]">{error}</p>}
+        <button className={btnPrimary} disabled={busy || !title.trim() || !listing?.databaseId} onClick={() => void submit()}>
+          {busy ? "Enregistrement sécurisé…" : "Envoyer le signalement"}
         </button>
-        <div className="grid grid-cols-3 gap-2">
-          {photos.map((photo) => (
-            <img key={photo.slice(0, 32)} src={photo} alt="" className="h-24 w-full rounded-xl object-cover" />
-          ))}
-        </div>
-        <button className={btnPrimary} disabled={!title.trim() || !listing} onClick={submit}>Envoyer le signalement</button>
       </div>
     </div>
   );

@@ -2,22 +2,33 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Pill } from "@/components/ui";
 import { ROOM_LABEL } from "@/lib/labels";
-import { useAmeena } from "@/lib/store";
+import { loadPropertyInspections } from "@/lib/supabase";
+import { useScope } from "@/lib/store";
+import type { PropertyInspection, RoomState } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
-import type { RoomState } from "@/lib/types";
 
 const rank: Record<RoomState, number> = { neuf: 0, bon: 1, use: 2, degrade: 3 };
 
 export default function ComparePage() {
   const { listingId } = useParams<{ listingId: string }>();
-  const { state } = useAmeena();
-  const listing = state.listings.find((item) => item.id === listingId);
-  const entry = state.inspections.find((item) => item.listingId === listingId && item.kind === "entree");
-  const exit = state.inspections.find((item) => item.listingId === listingId && item.kind === "sortie");
+  const scope = useScope();
+  const [inspections, setInspections] = useState<PropertyInspection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const listing = scope.listings.find((item) => item.id === listingId);
+  const entry = inspections.find((item) => item.listing_id === listing?.databaseId && item.kind === "entree");
+  const exit = inspections.find((item) => item.listing_id === listing?.databaseId && item.kind === "sortie");
   useTitle("Comparaison · Se Loger au Sénégal");
 
+  useEffect(() => {
+    loadPropertyInspections()
+      .then(setInspections)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <p>Chargement de la comparaison…</p>;
   if (!listing || !entry || !exit) {
     return (
       <div>

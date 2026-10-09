@@ -10,8 +10,13 @@ import type {
   PaymentOrder,
   Payout,
   Profile,
+  PropertyExpense,
+  PropertyIncident,
+  PropertyInspection,
   Quote,
   Refund,
+  RoomCheck,
+  MeterReading,
   Settings,
   VerificationDocument,
   VerificationRequest,
@@ -168,6 +173,266 @@ export async function deleteAvailabilityBlock(id: string) {
     .eq("id", id)
     .in("source", ["owner", "maintenance", "external"]);
   if (error) throw error;
+}
+
+type PropertyMedia = {
+  entity_id: string;
+  media_kind: "photo" | "room" | "water_meter" | "power_meter";
+  sort_order: number;
+  storage_path: string;
+};
+
+async function loadPropertyMedia(entityType: "incident" | "inspection", entityIds: string[]) {
+  const media = new Map<string, Array<PropertyMedia & { url: string }>>();
+  if (!supabase || entityIds.length === 0) return media;
+  const { data, error } = await supabase
+    .from("property_media")
+    .select("entity_id, media_kind, sort_order, storage_path")
+    .eq("entity_type", entityType)
+    .in("entity_id", entityIds)
+    .order("sort_order", { ascending: true });
+  if (error) throw error;
+  await Promise.all((data ?? []).map(async (row) => {
+    const { data: signed, error: signedError } = await supabase!.storage
+      .from("property-media")
+      .createSignedUrl(row.storage_path, 600);
+    if (signedError) throw signedError;
+    const list = media.get(row.entity_id) ?? [];
+    list.push({ ...(row as PropertyMedia), url: signed.signedUrl });
+    media.set(row.entity_id, list);
+  }));
+  return media;
+}
+
+async function uploadPropertyMedia(input: {
+  userId: string;
+  listingId: string;
+  entityType: "incident" | "inspection";
+  entityId: string;
+  mediaKind: PropertyMedia["media_kind"];
+  sortOrder: number;
+  file: File;
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  if (!["image/jpeg", "image/png", "image/webp"].includes(input.file.type) || input.file.size > 10 * 1024 * 1024) {
+    throw new Error("Fichier image invalide ou supérieur à 10 Mo.");
+  }
+  const extension = input.file.type === "image/png" ? "png" : input.file.type === "image/webp" ? "webp" : "jpg";
+  const path = `${input.userId}/${input.entityType}/${input.entityId}/${crypto.randomUUID()}.${extension}`;
+  const upload = await supabase.storage.from("property-media").upload(path, input.file, {
+    cacheControl: "3600",
+    contentType: input.file.type,
+    upsert: false,
+  });
+  if (upload.error) throw upload.error;
+  const { error } = await supabase.from("property_media").insert({
+    listing_id: input.listingId,
+    entity_type: input.entityType,
+    entity_id: input.entityId,
+    media_kind: input.mediaKind,
+    storage_path: path,
+    sort_order: input.sortOrder,
+    uploaded_by: input.userId,
+  });
+  if (error) {
+    await supabase.storage.from("property-media").remove([path]);
+    throw error;
+  }
+}
+
+export async function loadPropertyIncidents(): Promise<PropertyIncident[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("property_incidents")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  const media = await loadPropertyMedia("incident", (data ?? []).map((row) => row.id));
+  return (data ?? []).map((row) => ({
+    ...row,
+    photos: (media.get(row.id) ?? []).map((item) => item.url),
+  })) as PropertyIncident[];
+}
+
+export async function createPropertyIncident(input: {
+  listingId: string;
+  userId: string;
+  title: string;
+  category: PropertyIncident["category"];
+  description: string;
+  reporter: string;
+  files: File[];
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("property_incidents")
+    .insert({
+      listing_id: input.listingId,
+      title: input.title.trim(),
+      category: input.category,
+      description: input.description.trim(),
+      reporter: input.reporter.trim(),
+      created_by: input.userId,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  await Promise.all(input.files.slice(0, 4).map((file, index) => uploadPropertyMedia({
+    userId: input.userId,
+    listingId: input.listingId,
+    entityType: "incident",
+    entityId: data.id,
+    mediaKind: "photo",
+    sortOrder: index,
+    file,
+  })));
+  return data.id as string;
+}
+
+export async function updatePropertyIncidentStatus(id: string, status: PropertyIncident["status"]) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { error } = await supabase
+    .from("property_incidents")
+    .update({
+      status,
+      resolved_at: status === "resolu" ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function loadPropertyExpenses(): Promise<PropertyExpense[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("property_expenses")
+    .select("*")
+    .order("expense_date", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as PropertyExpense[];
+}
+
+export async function createPropertyExpense(input: {
+  listingId: string;
+  userId: string;
+  label: string;
+  category: PropertyExpense["category"];
+  amount: number;
+  currency: PropertyExpense["currency"];
+  date: string;
+  chargeToTenant: boolean;
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("property_expenses")
+    .insert({
+      listing_id: input.listingId,
+      label: input.label.trim(),
+      category: input.category,
+      amount: input.amount,
+      currency: input.currency,
+      expense_date: input.date,
+      charge_to_tenant: input.chargeToTenant,
+      created_by: input.userId,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as PropertyExpense;
+}
+
+export async function loadPropertyInspections(): Promise<PropertyInspection[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("property_inspections")
+    .select("*")
+    .order("inspection_date", { ascending: false });
+  if (error) throw error;
+  const media = await loadPropertyMedia("inspection", (data ?? []).map((row) => row.id));
+  return (data ?? []).map((row) => {
+    const files = media.get(row.id) ?? [];
+    const rooms = (row.rooms as RoomCheck[]).map((room, roomIndex) => ({
+      ...room,
+      photos: files
+        .filter((item) => item.media_kind === "room" && Math.floor(item.sort_order / 100) === roomIndex)
+        .map((item) => item.url),
+    }));
+    const meters = (row.meters as MeterReading[]).map((meter) => ({
+      ...meter,
+      photo: files.find((item) =>
+        item.media_kind === (meter.kind === "eau" ? "water_meter" : "power_meter"))?.url,
+    }));
+    return { ...row, rooms, meters } as PropertyInspection;
+  });
+}
+
+export async function createPropertyInspection(input: {
+  listingId: string;
+  userId: string;
+  kind: PropertyInspection["kind"];
+  date: string;
+  author: string;
+  rooms: RoomCheck[];
+  meters: MeterReading[];
+  keys: number;
+  comments: string;
+  tenantSignature?: string;
+  ownerSignature?: string;
+  sign: boolean;
+  roomFiles: File[][];
+  meterFiles: { eau?: File; electricite?: File };
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("property_inspections")
+    .insert({
+      listing_id: input.listingId,
+      kind: input.kind,
+      inspection_date: input.date,
+      author: input.author.trim(),
+      rooms: input.rooms.map((room) => ({ ...room, photos: [] })),
+      meters: input.meters.map((meter) => ({ ...meter, photo: undefined })),
+      keys_count: input.keys,
+      comments: input.comments.trim(),
+      tenant_signature: input.sign ? input.tenantSignature?.trim() || null : null,
+      owner_signature: input.sign ? input.ownerSignature?.trim() || null : null,
+      signed_at: input.sign ? new Date().toISOString() : null,
+      created_by: input.userId,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  const uploads = input.roomFiles.flatMap((files, roomIndex) =>
+    files.slice(0, 4).map((file, fileIndex) => uploadPropertyMedia({
+      userId: input.userId,
+      listingId: input.listingId,
+      entityType: "inspection" as const,
+      entityId: data.id,
+      mediaKind: "room" as const,
+      sortOrder: roomIndex * 100 + fileIndex,
+      file,
+    })),
+  );
+  if (input.meterFiles.eau) uploads.push(uploadPropertyMedia({
+    userId: input.userId,
+    listingId: input.listingId,
+    entityType: "inspection",
+    entityId: data.id,
+    mediaKind: "water_meter",
+    sortOrder: 10000,
+    file: input.meterFiles.eau,
+  }));
+  if (input.meterFiles.electricite) uploads.push(uploadPropertyMedia({
+    userId: input.userId,
+    listingId: input.listingId,
+    entityType: "inspection",
+    entityId: data.id,
+    mediaKind: "power_meter",
+    sortOrder: 10001,
+    file: input.meterFiles.electricite,
+  }));
+  await Promise.all(uploads);
+  return data.id as string;
 }
 
 export async function loadHostPublicProfile(ownerId: string): Promise<HostPublicProfile | null> {

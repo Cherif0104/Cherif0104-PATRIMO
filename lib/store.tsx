@@ -23,7 +23,7 @@ import { useAuth } from "./auth";
 const KEY = "ameena-os-v1";
 
 type Action =
-  | { type: "hydrate"; payload: AppState }
+  | { type: "hydrate"; payload: Partial<AppState> }
   | { type: "merge-marketplace-listings"; listings: Listing[] }
   | { type: "reset" }
   | { type: "set-role"; role: Role }
@@ -56,7 +56,7 @@ function reducer(state: AppState, action: Action): AppState {
       };
     }
     case "reset":
-      return createInitial();
+      return createRuntimeInitial();
     case "set-role":
       return { ...state, role: action.role };
     case "toggle-save": {
@@ -154,29 +154,24 @@ function reducer(state: AppState, action: Action): AppState {
 }
 
 function hydrate(saved: Partial<AppState> | null): AppState {
-  const base = createInitial();
+  const base = createRuntimeInitial();
   if (!saved || typeof saved !== "object") return base;
-  const settings = saved.settings;
   return {
     ...base,
-    ...saved,
-    listings: Array.isArray(saved.listings) ? saved.listings : base.listings,
-    reservations: Array.isArray(saved.reservations) ? saved.reservations : base.reservations,
-    invoices: Array.isArray(saved.invoices) ? saved.invoices : base.invoices,
-    expenses: Array.isArray(saved.expenses) ? saved.expenses : base.expenses,
-    clients: Array.isArray(saved.clients) ? saved.clients : base.clients,
-    incidents: Array.isArray(saved.incidents) ? saved.incidents : base.incidents,
-    inspections: Array.isArray(saved.inspections) ? saved.inspections : base.inspections,
-    notifications: Array.isArray(saved.notifications) ? saved.notifications : base.notifications,
     saved: Array.isArray(saved.saved) ? saved.saved : base.saved,
-    settings: {
-      ...base.settings,
-      ...settings,
-      advanceMonths: settings?.advanceMonths || base.settings.advanceMonths,
-      rules: Array.isArray(settings?.rules) ? settings.rules : base.settings.rules,
-      promos: Array.isArray(settings?.promos) ? settings.promos : base.settings.promos,
-      ads: Array.isArray(settings?.ads) ? settings.ads : base.settings.ads,
-    },
+  };
+}
+
+function createRuntimeInitial(): AppState {
+  return {
+    ...createInitial(),
+    reservations: [],
+    invoices: [],
+    expenses: [],
+    clients: [],
+    incidents: [],
+    inspections: [],
+    notifications: [],
   };
 }
 
@@ -306,7 +301,7 @@ const Ctx = createContext<Store | null>(null);
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [state, dispatch] = useReducer(reducer, undefined, createInitial);
+  const [state, dispatch] = useReducer(reducer, undefined, createRuntimeInitial);
   const [ready, setReady] = useState(false);
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
 
@@ -316,7 +311,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         try {
-          dispatch({ type: "hydrate", payload: JSON.parse(raw) as AppState });
+          dispatch({ type: "hydrate", payload: JSON.parse(raw) as Partial<AppState> });
         } catch {
           setStorageWarning("Les données locales étaient illisibles. La démonstration repart des exemples.");
         }
@@ -345,9 +340,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!ready) return;
     try {
-      localStorage.setItem(KEY, JSON.stringify(state));
+      localStorage.setItem(KEY, JSON.stringify({ saved: state.saved }));
     } catch {
-      setStorageWarning("Le navigateur n'a plus assez de place pour les photos. Retirez une image ou réinitialisez la démo.");
+      setStorageWarning("Les préférences locales n’ont pas pu être enregistrées.");
     }
     // Demo preferences stay local. Market data is written table-by-table through RLS.
   }, [state, ready]);
@@ -355,7 +350,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!ready || !user) return;
     let active = true;
-    const localSaved = state.saved;
+    const remoteKeys = new Set(
+      state.listings
+        .filter((listing) => Boolean(listing.databaseId))
+        .map((listing) => listing.id),
+    );
+    const localSaved = state.saved.filter((listingKey) => remoteKeys.has(listingKey));
     loadFavorites()
       .then(async (remoteSaved) => {
         const merged = [...new Set([...remoteSaved, ...localSaved])];

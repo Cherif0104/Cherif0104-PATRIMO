@@ -82,14 +82,6 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  if ([
-    "/gestion/clients",
-    "/gestion/incidents",
-    "/gestion/etats-des-lieux",
-  ].some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
-    return redirectWithCookies(request, response, "/gestion");
-  }
-
   return response;
 }
 

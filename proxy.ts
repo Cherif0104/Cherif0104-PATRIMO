@@ -18,6 +18,7 @@ export async function proxy(request: NextRequest) {
     "/compte",
     "/messages",
     "/voyages",
+    "/portefeuille",
     "/publier",
     "/gestion",
     "/admin",

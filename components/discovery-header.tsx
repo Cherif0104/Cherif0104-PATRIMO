@@ -35,7 +35,7 @@ export function DiscoveryHeader({
             className={cx(
               "shrink-0 rounded-full border px-5 py-2.5 text-[15px] shadow-sm",
               active === tab.key
-                ? "border-[#C7A05A] bg-[#f7f0e2] font-semibold text-[#151515]"
+                ? "border-[#D4AF37] bg-[#f8f1d3] font-semibold text-[#000000]"
                 : "theme-border app-card border-[#e6e6e6]",
             )}
           >

@@ -58,7 +58,7 @@ export default function AccountPage() {
     return (
       <div className="mx-auto max-w-xl px-4 py-16">
         <div className="text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#f7f0e2] text-[#A77F39]">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#f8f1d3] text-[#A77D12]">
             <UserRound />
           </div>
           <h1 className="mt-5 text-3xl font-semibold tracking-tight">Votre espace Ameena</h1>

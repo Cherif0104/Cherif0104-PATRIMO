@@ -23,21 +23,21 @@ export default function ServicesPage() {
         <section className="section-champagne theme-border mx-auto max-w-5xl overflow-hidden rounded-[28px] border border-[#e7e7e7] p-6 shadow-[0_8px_24px_rgba(0,0,0,.08)] md:p-10">
           <div className="grid items-center gap-8 md:grid-cols-[1.2fr_.8fr]">
             <div>
-              <span className="app-card inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm">
-                <ShieldCheck className="h-4 w-4 text-[#A77F39]" /> {t("verifiedDrivers")}
+              <span className="app-card gold-ring inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm">
+                <ShieldCheck className="h-4 w-4 text-[#A77D12]" /> {t("verifiedDrivers")}
               </span>
-              <h1 className="mt-5 text-[30px] font-semibold leading-[1.08] tracking-[-0.04em] md:text-5xl">
+              <h1 className="premium-title mt-5 text-[30px] leading-[1.08] md:text-5xl">
                 {t("arrivalTitle")}
               </h1>
               <p className="mt-4 max-w-xl text-[15px] leading-6 text-[#6a6a6a] md:text-base">
                 {t("arrivalText")}
               </p>
-              <Link href="#mobilite" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#C7A05A] px-5 py-3 text-sm font-semibold text-[#151515]">
+              <Link href="#mobilite" className="gold-cta mt-6 inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold">
                 {t("seeTransport")} <ChevronRight className="h-4 w-4" />
               </Link>
             </div>
             <div className="app-card relative mx-auto grid h-52 w-full max-w-sm place-items-center rounded-[26px] shadow-[0_12px_32px_rgba(0,0,0,.09)]">
-              <Plane className="absolute left-8 top-8 h-10 w-10 -rotate-12 text-[#A77F39]" />
+              <Plane className="absolute left-8 top-8 h-10 w-10 -rotate-12 text-[#A77D12]" />
               <CarFront className="h-24 w-24 text-[#222]" strokeWidth={1.25} />
               <span className="absolute bottom-6 rounded-full bg-[#f2f2f2] px-4 py-2 text-sm font-semibold">AIBD → votre logement</span>
             </div>
@@ -54,7 +54,7 @@ export default function ServicesPage() {
 function ServiceRail({ title, offers, id }: { title: string; offers: typeof SERVICES; id?: string }) {
   return (
     <section id={id} className="pt-10">
-      <h2 className="text-[24px] font-semibold tracking-[-0.03em] md:text-[30px]">{title}</h2>
+      <h2 className="premium-title text-[24px] md:text-[30px]">{title}</h2>
       <div className="mobile-rail -mx-4 mt-5 px-4 pb-2 md:mx-0 md:px-0 lg:grid lg:grid-flow-row lg:grid-cols-4 lg:overflow-visible lg:px-0">
         {offers.map((offer) => <OfferCard key={offer.id} offer={offer} />)}
       </div>

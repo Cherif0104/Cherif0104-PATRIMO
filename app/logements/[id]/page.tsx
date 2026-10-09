@@ -202,7 +202,7 @@ export default function ListingPage() {
             <p className="text-[15px] font-semibold">{formatMoney(listing.price, listing.currency)}</p>
             <p className="text-xs text-[#6a6a6a]">{listing.mode === "sejour" ? "par nuit" : "par mois"}</p>
           </div>
-          <a href="#reservation" className="inline-flex items-center justify-center rounded-full bg-[#C7A05A] px-7 py-3 text-sm font-semibold text-[#151515]">
+          <a href="#reservation" className="inline-flex items-center justify-center rounded-full bg-[#D4AF37] px-7 py-3 text-sm font-semibold text-[#000000]">
             {listing.mode === "sejour" ? "Réserver" : "Demander"}
           </a>
         </div>

@@ -33,7 +33,7 @@ export default function HomePage() {
       <div className="hidden lg:block"><TrustStrip /></div>
 
       <section className="section-ivory px-4 pb-8 pt-5 md:px-10 lg:pt-9 xl:px-16">
-        <h1 className="text-[22px] font-semibold tracking-[-0.025em] md:text-[28px]">{t("destinations")}</h1>
+        <h1 className="premium-title text-[22px] md:text-[28px]">{t("destinations")}</h1>
         <div className="no-scrollbar -mx-4 mt-4 flex gap-3 overflow-x-auto px-4 md:mx-0 md:px-0">
           {destinations.map((listing) => (
             <Link key={listing.city} href={`/explorer?q=${encodeURIComponent(listing.city)}`} className="w-[132px] shrink-0 md:w-[164px]">
@@ -66,7 +66,7 @@ export default function HomePage() {
 
       <section className="section-champagne px-4 py-10 md:px-10 xl:px-16">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="text-[22px] font-semibold tracking-[-0.025em] md:text-2xl">{t("experienceWeekend")}</h2>
+          <h2 className="premium-title text-[22px] md:text-2xl">{t("experienceWeekend")}</h2>
           <Link href="/experiences" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f2f2f2]" aria-label="Voir les expériences">
             <ChevronRight className="h-5 w-5" />
           </Link>
@@ -82,13 +82,13 @@ export default function HomePage() {
 
       <section className="section-pearl px-4 py-10 md:px-10 xl:px-16">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="text-[22px] font-semibold tracking-[-0.025em] md:text-2xl">{t("stayServices")}</h2>
+          <h2 className="premium-title text-[22px] md:text-2xl">{t("stayServices")}</h2>
           <Link href="/services" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f2f2f2]" aria-label="Voir les services">
             <ChevronRight className="h-5 w-5" />
           </Link>
         </div>
         <Link href="/services#mobilite" className="mb-5 flex items-center gap-4 rounded-[24px] border border-[#e5e5e5] bg-white p-5 shadow-[0_6px_20px_rgba(0,0,0,.08)]">
-          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#f7f0e2] text-[#A77F39]">
+          <span className="gold-ring grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#f8f1d3] text-[#A77D12]">
             <CarFront className="h-8 w-8" />
           </span>
           <span className="min-w-0">
@@ -139,7 +139,7 @@ function ListingRail({ title, listings, tone }: { title: string; listings: Listi
   return (
     <section className={`${tone} px-4 py-9 md:px-10 xl:px-16`}>
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="text-[22px] font-semibold tracking-[-0.025em] md:text-2xl">{title}</h2>
+        <h2 className="premium-title text-[22px] md:text-2xl">{title}</h2>
         <Link
           href={`/explorer?q=${encodeURIComponent(listings[0].city)}`}
           className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f2f2f2]"

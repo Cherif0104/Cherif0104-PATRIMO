@@ -56,7 +56,7 @@ export function Header() {
     <header className="app-surface theme-border no-print sticky top-0 z-[1100] hidden h-20 border-b border-[#ebebeb] lg:block">
       <div className="flex h-full items-center gap-3 px-4 md:gap-6 md:px-10 xl:px-16">
         <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Ameena, accueil">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#C7A05A] text-[#151515]">
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#D4AF37] text-[#000000]">
             <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
               <path fill="currentColor" d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-5.4h-5.6V21H4a1 1 0 0 1-1-1v-8.8Z" />
             </svg>
@@ -178,7 +178,7 @@ export function Header() {
               aria-label="Mon compte"
             >
               <span className="hidden max-w-[120px] truncate sm:block">{profile?.full_name || "Mon compte"}</span>
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#C7A05A] text-[10px] font-semibold text-[#151515]">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#D4AF37] text-[10px] font-semibold text-[#000000]">
                 {(profile?.full_name || user.email || "A").slice(0, 1).toUpperCase()}
               </span>
             </Link>

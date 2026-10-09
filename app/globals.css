@@ -3,10 +3,10 @@
 :root {
   color: #222222;
   background: #ffffff;
-  --ameena-primary: #c7a05a;
-  --ameena-primary-dark: #a77f39;
-  --ameena-gold-soft: #f7f0e2;
-  --ameena-ink: #151515;
+  --ameena-primary: #d4af37;
+  --ameena-primary-dark: #a77d12;
+  --ameena-gold-soft: #f8f1d3;
+  --ameena-ink: #000000;
   --ameena-muted: #6a6a6a;
   --ameena-line: #ebebeb;
   --ameena-soft: #f7f7f7;
@@ -44,15 +44,15 @@ body {
 }
 
 .section-ivory {
-  background: linear-gradient(180deg, #ffffff 0%, #fbf8f1 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #fcfaf2 100%);
 }
 
 .section-champagne {
-  background: linear-gradient(135deg, #f8f1e4 0%, #fffdfa 58%, #f2e5ca 100%);
+  background: linear-gradient(135deg, #f8f1d3 0%, #ffffff 58%, #efe0a3 100%);
 }
 
 .section-pearl {
-  background: linear-gradient(135deg, #f3f5f4 0%, #ffffff 65%);
+  background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 65%);
 }
 
 .section-noir {
@@ -65,22 +65,22 @@ html[data-theme="dark"] {
   --ameena-muted: #b9b5ac;
   --ameena-line: #383838;
   --ameena-soft: #222222;
-  --ameena-surface: #101010;
-  --ameena-card: #1a1a1a;
+  --ameena-surface: #000000;
+  --ameena-card: #0d0d0d;
 }
 
 html[data-theme="dark"] body {
-  background: #101010;
+  background: #000000;
   color: #f5f3ee;
 }
 
 html[data-theme="dark"] .section-ivory,
 html[data-theme="dark"] .section-pearl {
-  background: #101010;
+  background: #000000;
 }
 
 html[data-theme="dark"] .section-champagne {
-  background: linear-gradient(135deg, #201c16 0%, #121212 62%, #2a2114 100%);
+  background: linear-gradient(135deg, #191400 0%, #000000 62%, #241b00 100%);
 }
 
 html[data-theme="dark"] .theme-border {
@@ -93,7 +93,29 @@ html[data-theme="dark"] .theme-muted {
 
 html[data-theme="dark"] .bg-white,
 html[data-theme="dark"] .bg-white\/95 {
-  background-color: #1a1a1a !important;
+  background-color: #0d0d0d !important;
+}
+
+.premium-title {
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+.gold-rule {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(90deg, transparent, #d4af37 18%, #d4af37 82%, transparent);
+}
+
+.gold-cta {
+  background: linear-gradient(135deg, #f5dc7a 0%, #d4af37 48%, #a77d12 100%);
+  color: #000000;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 7px 20px rgba(164, 120, 12, 0.22);
+}
+
+.gold-ring {
+  border: 1.5px solid #d4af37;
 }
 
 html[data-theme="dark"] .bg-\[\#f7f7f7\],

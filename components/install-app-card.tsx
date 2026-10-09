@@ -39,7 +39,7 @@ export function InstallAppCard() {
   return (
     <section className="rounded-[24px] border border-[#e5e5e5] bg-white p-5 shadow-[0_6px_20px_rgba(0,0,0,.07)]">
       <div className="flex gap-4">
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#f7f0e2] text-[#A77F39]">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#f8f1d3] text-[#A77D12]">
           <Smartphone className="h-6 w-6" />
         </span>
         <div>

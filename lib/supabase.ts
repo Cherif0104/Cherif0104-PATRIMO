@@ -442,7 +442,7 @@ export async function addPropertyStakeholderByEmail(input: {
   sharePercent?: number;
 }) {
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
-  const { data, error } = await supabase.rpc("add_property_stakeholder_by_email", {
+  const { data, error } = await supabase.schema("private").rpc("add_property_stakeholder_by_email", {
     p_listing_id: input.listingId,
     p_email: input.email.trim(),
     p_role: input.role,

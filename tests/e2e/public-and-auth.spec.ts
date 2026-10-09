@@ -15,7 +15,7 @@ test("le catalogue public est servi avec les éléments SEO", async ({ page }) =
 });
 
 test("les parcours privés redirigent les visiteurs vers la connexion", async ({ page }) => {
-  for (const route of ["/compte", "/voyages", "/messages", "/publier", "/gestion", "/admin"]) {
+  for (const route of ["/compte", "/voyages", "/messages", "/publier", "/portefeuille", "/gestion", "/gestion/contrats", "/admin"]) {
     await page.goto(route);
     await expect(page).toHaveURL((url) => url.pathname === "/connexion" && url.searchParams.get("retour") === route);
   }
@@ -47,4 +47,11 @@ test("le manifeste expose les icônes de la nouvelle marque", async ({ page }) =
   const manifest = await response.json();
   expect(manifest.theme_color).toBe("#FF4845");
   expect(manifest.icons).toEqual(expect.arrayContaining([expect.objectContaining({ src: "/icon-512.png" })]));
+});
+
+test("le parcours agence passe par le contact contrôlé", async ({ page }) => {
+  await page.goto("/agences");
+  await expect(page.getByRole("heading", { name: /Votre agence, vérifiée/ })).toBeVisible();
+  const whatsapp = page.getByRole("link", { name: /WhatsApp : \+221 78 832 40 69/ });
+  await expect(whatsapp).toHaveAttribute("href", /wa\.me\/221788324069/);
 });

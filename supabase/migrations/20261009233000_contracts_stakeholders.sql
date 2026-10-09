@@ -106,7 +106,7 @@ grant execute on function public.add_property_stakeholder_by_email(uuid, text, t
 create table public.property_contracts (
   id uuid primary key default gen_random_uuid(),
   listing_id uuid not null references public.marketplace_listings(id) on delete cascade,
-  booking_id uuid references public.market_bookings(id) on delete set null,
+  booking_id uuid references public.booking_requests(id) on delete set null,
   tenant_id uuid references auth.users(id) on delete set null,
   owner_id uuid references auth.users(id) on delete set null,
   organization_id uuid references public.organizations(id) on delete set null,

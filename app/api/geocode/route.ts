@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
   const mapQuery = query
     .replace(/\b(appartement|appart|villa|maison|studio|duplex|rooftop|hôtel|hotel|terrain|logement)\b/gi, " ")
     .replace(/\b(à vendre|à louer|meublé|meublee?|non meublé|premium|luxe)\b/gi, " ")
+    .replace(/\b(à|au|aux|en|dans)\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
   const endpoint = new URL("https://photon.komoot.io/api/");

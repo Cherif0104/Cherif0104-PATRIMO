@@ -54,7 +54,7 @@ export default function InspectionsPage() {
               <div>
                 <div className="flex gap-2">
                   <Pill tone={inspection.kind === "entree" ? "good" : "warn"}>{inspection.kind === "entree" ? "Entrée" : "Sortie"}</Pill>
-                  {inspection.signedAt && <Pill>Signé</Pill>}
+                  {inspection.signed_at && <Pill>Signé</Pill>}
                 </div>
                 <p className="mt-2 font-semibold">{listing?.title}</p>
                 <p className="text-sm text-[#6a6a6a]">{formatDate(inspection.inspection_date)} · {inspection.author}</p>

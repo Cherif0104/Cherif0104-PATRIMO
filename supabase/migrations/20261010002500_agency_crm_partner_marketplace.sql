@@ -313,7 +313,18 @@ create policy partner_products_public_read on public.partner_products for select
         )
     )
   );
-create policy partner_products_manage on public.partner_products for all to authenticated
+create policy partner_products_insert on public.partner_products for insert to authenticated
+  with check (
+    exists (
+      select 1 from public.marketplace_partners partner
+      where partner.id = partner_products.partner_id
+        and (
+          partner.owner_id = (select auth.uid())
+          or coalesce((select auth.jwt()) -> 'app_metadata' ->> 'role', '') = 'admin'
+        )
+    )
+  );
+create policy partner_products_update on public.partner_products for update to authenticated
   using (
     exists (
       select 1 from public.marketplace_partners partner
@@ -325,6 +336,17 @@ create policy partner_products_manage on public.partner_products for all to auth
     )
   )
   with check (
+    exists (
+      select 1 from public.marketplace_partners partner
+      where partner.id = partner_products.partner_id
+        and (
+          partner.owner_id = (select auth.uid())
+          or coalesce((select auth.jwt()) -> 'app_metadata' ->> 'role', '') = 'admin'
+        )
+    )
+  );
+create policy partner_products_delete on public.partner_products for delete to authenticated
+  using (
     exists (
       select 1 from public.marketplace_partners partner
       where partner.id = partner_products.partner_id

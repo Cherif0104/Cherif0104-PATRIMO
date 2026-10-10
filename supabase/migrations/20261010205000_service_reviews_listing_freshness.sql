@@ -72,7 +72,7 @@ create index marketplace_listings_freshness_idx
   )
   where status = 'published';
 
-create or replace function public.confirm_listing_availability(
+create or replace function private.confirm_listing_availability(
   p_listing_id uuid,
   p_outcome text
 )
@@ -124,6 +124,21 @@ begin
 
   return target;
 end;
+$$;
+
+revoke all on function private.confirm_listing_availability(uuid, text) from public, anon;
+grant execute on function private.confirm_listing_availability(uuid, text) to authenticated;
+
+create or replace function public.confirm_listing_availability(
+  p_listing_id uuid,
+  p_outcome text
+)
+returns public.marketplace_listings
+language sql
+security invoker
+set search_path = ''
+as $$
+  select private.confirm_listing_availability(p_listing_id, p_outcome);
 $$;
 
 revoke all on function public.confirm_listing_availability(uuid, text) from public, anon;

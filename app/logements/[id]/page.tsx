@@ -152,6 +152,11 @@ export default function ListingPage() {
         </div>
       </div>
       <section className="relative z-10 -mt-3 rounded-t-[30px] bg-white px-6 pb-2 pt-9 text-center md:hidden">
+        {!listing.databaseId && (
+          <p className="mx-auto mb-5 w-fit rounded-full bg-[#fff4dd] px-3 py-1.5 text-xs font-semibold text-[#7a4c00]">
+            Offre de démonstration
+          </p>
+        )}
         <h1 className="text-[28px] font-semibold leading-[1.12] tracking-[-0.035em]">{listing.title}</h1>
         <p className="mt-5 text-[16px] text-[#6a6a6a]">
           {TYPE_LABEL[listing.type]} entier · {listing.neighborhood}, {listing.country}
@@ -201,7 +206,7 @@ export default function ListingPage() {
               {hostName.slice(0, 1)}
             </div>
           </div>
-          {listing.ownerUserId !== user?.id && (
+          {(!listing.ownerUserId || listing.ownerUserId !== user?.id) && (
             <div className="border-b border-[#ebebeb] py-5">
               <div className="flex flex-wrap gap-3">
                 <button onClick={() => void contactHost()} disabled={contactBusy || !listing.databaseId} className={btnSecondary}>

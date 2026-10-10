@@ -50,6 +50,20 @@ test("la recherche accepte une destination saisie et expose les filtres", async 
   expect(new URL(page.url()).searchParams.get("q")).toBe("appartement à Dakar");
 });
 
+test("les catégories ouvrent directement un catalogue minimaliste", async ({ page }) => {
+  await page.goto("/explorer?categorie=terrain");
+  await expect(page.getByRole("heading", { name: "Terrains & champs" })).toBeVisible();
+  await expect(page.getByText(/bien/).first()).toBeVisible();
+  await expect(page.getByText("Démonstration").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Afficher les filtres" })).toBeVisible();
+  await expect(page.getByPlaceholder("Budget minimum")).toHaveCount(0);
+
+  await page.getByRole("link", { name: /Terrain · Lac Rose/ }).first().click();
+  await expect(page).toHaveURL(/\/logements\/lac-rose-terrain/);
+  await expect(page.getByText(/Offre de démonstration/).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /Demander des informations à Se Loger au Sénégal/ })).toHaveAttribute("href", /wa\.me\/221788324069/);
+});
+
 test("le manifeste expose les icônes de la nouvelle marque", async ({ page }) => {
   const response = await page.request.get("/manifest.webmanifest");
   expect(response.ok()).toBeTruthy();

@@ -165,7 +165,6 @@ function hydrate(saved: Partial<AppState> | null): AppState {
 function createRuntimeInitial(): AppState {
   return {
     ...createInitial(),
-    listings: [],
     reservations: [],
     invoices: [],
     expenses: [],

@@ -25,6 +25,7 @@ export function PropertyCard({
   const { user } = useAuth();
   const saved = state.saved.includes(listing.id);
   const badges = [
+    !listing.databaseId ? "Démonstration" : null,
     listing.rating >= 4.95 ? "Coup de cœur" : null,
     listing.purpose === "vente" ? "À vendre" : listing.mode === "location" ? "Location" : null,
     listing.standing === "premium" || listing.standing === "luxe" || listing.standing === "presidentiel"

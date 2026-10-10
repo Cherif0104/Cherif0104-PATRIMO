@@ -10,15 +10,18 @@ import { cx } from "@/lib/format";
 
 const tabs = [
   { href: "/", label: "Tous", key: "all" },
-  { href: "/explorer?marche=location", label: "À louer", key: "stays" },
+  { href: "/explorer?categorie=appartement", label: "Appartements", key: "apartments" },
+  { href: "/explorer?categorie=maison", label: "Maisons & villas", key: "houses" },
+  { href: "/explorer?categorie=terrain", label: "Terrains & champs", key: "land" },
   { href: "/explorer?marche=vente", label: "À vendre", key: "sale" },
-  { href: "/explorer?type=terrain", label: "Terrains", key: "land" },
+  { href: "/explorer?categorie=longue-duree", label: "Longue durée", key: "long-term" },
+  { href: "/explorer?categorie=premium", label: "Premium", key: "premium" },
 ] as const;
 
 export function DiscoveryHeader({
   active = "all",
 }: {
-  active?: "all" | "stays" | "sale" | "land";
+  active?: (typeof tabs)[number]["key"];
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");

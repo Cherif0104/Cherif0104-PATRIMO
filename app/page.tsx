@@ -13,7 +13,9 @@ import type { Listing } from "@/lib/types";
 export default function HomePage() {
   const { state } = useAmeena();
   const { t } = usePreferences();
-  const listings = state.listings.filter((listing) => listing.publicationStatus === "published");
+  const listings = state.listings.filter(
+    (listing) => !listing.publicationStatus || listing.publicationStatus === "published",
+  );
   const destinations = [...new Map(listings.map((listing) => [listing.city, listing])).values()].slice(0, 6);
   const cities = [...new Set(listings.map((listing) => listing.city))].slice(0, 4);
 

@@ -68,7 +68,9 @@ export default function ListingPage() {
   }
 
   const host = listing.databaseId ? undefined : hostById(listing.hostId);
-  const hostName = publicHost?.business_name || publicHost?.display_name || host?.name || "Hôte Se Loger au Sénégal";
+  const hostName = !listing.databaseId
+    ? "catalogue de démonstration"
+    : publicHost?.business_name || publicHost?.display_name || host?.name || "Hôte Se Loger au Sénégal";
   const images = listing.images.slice(0, 5);
   const saved = state.saved.includes(listing.id);
   const currentListing = listing;
@@ -103,6 +105,11 @@ export default function ListingPage() {
   return (
     <article className="mx-auto max-w-[1120px] px-0 pb-36 pt-4 md:px-6 md:py-6 lg:pb-10">
       <div className="hidden px-4 md:block md:px-0">
+      {!listing.databaseId && (
+        <p className="mb-4 rounded-xl bg-[#fff4dd] px-4 py-3 text-sm font-medium text-[#7a4c00]">
+          Offre de démonstration · disponibilité, propriétaire et dossier à confirmer avec notre équipe.
+        </p>
+      )}
       {listing.publicationStatus === "pending_review" && (
         <p className="mb-4 rounded-xl bg-[#fff4dd] px-4 py-3 text-sm text-[#7a4c00]">
           Annonce envoyée en validation. Elle n’est visible que dans votre espace tant que le contrôle n’est pas terminé.
@@ -208,6 +215,16 @@ export default function ListingPage() {
                     className="inline-flex items-center justify-center gap-2 rounded-full bg-[#16836f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#116b5b]"
                   >
                     <MessageCircle className="h-4 w-4" /> WhatsApp
+                  </a>
+                )}
+                {!listing.databaseId && (
+                  <a
+                    href={whatsappHref("+221788324069", listing.title)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[#16836f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#116b5b]"
+                  >
+                    <MessageCircle className="h-4 w-4" /> Demander des informations à Se Loger au Sénégal
                   </a>
                 )}
               </div>

@@ -76,16 +76,30 @@ export async function proxy(request: NextRequest) {
     (pathname.startsWith("/gestion") || pathname.startsWith("/publier"))
     && user?.app_metadata?.role !== "admin"
   ) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_type, identity_status")
-      .eq("id", user!.id)
-      .maybeSingle();
-    if (
-      !profile
-      || !["proprietaire", "agence"].includes(profile.account_type)
-      || profile.identity_status !== "verifie"
-    ) {
+    const [{ data: profile }, { data: memberships }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("account_type, identity_status")
+        .eq("id", user!.id)
+        .maybeSingle(),
+      supabase
+        .from("organization_members")
+        .select("role, functional_domains")
+        .eq("user_id", user!.id),
+    ]);
+    const verifiedProfessional = Boolean(
+      profile
+      && ["proprietaire", "agence"].includes(profile.account_type)
+      && profile.identity_status === "verifie",
+    );
+    const organizationAccess = (memberships ?? []).some((membership) =>
+      pathname.startsWith("/gestion")
+      || (
+        pathname.startsWith("/publier")
+        && membership.role !== "viewer"
+        && membership.functional_domains?.includes("catalogue")
+      ));
+    if (!verifiedProfessional && !organizationAccess) {
       return redirectWithCookies(request, response, "/compte");
     }
   }

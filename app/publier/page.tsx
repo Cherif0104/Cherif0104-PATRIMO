@@ -9,7 +9,7 @@ import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { PageHead } from "@/components/ui";
 import { btnPrimary, fieldClass, uid } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
-import { loadOrganizations, submitListing, uploadListingPhoto } from "@/lib/supabase";
+import { loadMyOrganizationMemberships, loadOrganizations, submitListing, uploadListingPhoto } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
 import type {
@@ -19,6 +19,7 @@ import type {
   ManagementMandate,
   Mode,
   Organization,
+  OrganizationMember,
   PropertyType,
   RentalTerm,
   Standing,
@@ -52,6 +53,9 @@ export default function PublishPage() {
   const [bedrooms, setBedrooms] = useState(1);
   const [description, setDescription] = useState("");
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [memberships, setMemberships] = useState<OrganizationMember[]>([]);
+  const [membershipsLoaded, setMembershipsLoaded] = useState(false);
+  const [membershipsUserId, setMembershipsUserId] = useState("");
   const [organizationId, setOrganizationId] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -62,15 +66,33 @@ export default function PublishPage() {
   const [step, setStep] = useState(1);
   useTitle("Publier un bien · Se Loger au Sénégal");
 
-  const professional = profile?.account_type === "proprietaire" || profile?.account_type === "agence" || user?.app_metadata?.role === "admin";
+  const verifiedProfessional = profile?.identity_status === "verifie"
+    && (profile?.account_type === "proprietaire" || profile?.account_type === "agence");
+  const delegatedPublisher = memberships.some((membership) =>
+    membership.role !== "viewer" && membership.functional_domains.includes("catalogue"));
+  const professional = verifiedProfessional || delegatedPublisher || user?.app_metadata?.role === "admin";
 
   useEffect(() => {
-    if (!user || profile?.account_type !== "agence") return;
-    loadOrganizations().then((rows) => {
-      setOrganizations(rows);
-      setOrganizationId(rows[0]?.id ?? "");
-    }).catch(() => setOrganizations([]));
-  }, [profile?.account_type, user]);
+    if (!user) {
+      setMemberships([]);
+      setMembershipsUserId("");
+      setMembershipsLoaded(true);
+      return;
+    }
+    setMembershipsLoaded(false);
+    Promise.all([loadMyOrganizationMemberships(), loadOrganizations()])
+      .then(([membershipRows, organizationRows]) => {
+        setMemberships(membershipRows);
+        setOrganizations(organizationRows);
+        setOrganizationId(organizationRows[0]?.id ?? "");
+      })
+      .catch(() => {
+        setMemberships([]);
+        setOrganizations([]);
+      })
+      .finally(() => setMembershipsLoaded(true));
+    setMembershipsUserId(user.id);
+  }, [user]);
 
   async function onFiles(files: FileList | null) {
     if (!files || !user) return;
@@ -143,7 +165,9 @@ export default function PublishPage() {
     }
   }
 
-  if (loading) return <div className="p-12 text-center text-sm text-[#6a6a6a]">Ouverture de la publication…</div>;
+  if (loading || !membershipsLoaded || (user && membershipsUserId !== user.id)) {
+    return <div className="p-12 text-center text-sm text-[#6a6a6a]">Ouverture de la publication…</div>;
+  }
 
   if (!user) {
     return (

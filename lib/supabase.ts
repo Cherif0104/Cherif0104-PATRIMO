@@ -934,6 +934,16 @@ export async function loadOrganizationMembers(organizationId: string): Promise<O
   return (data ?? []) as unknown as OrganizationMember[];
 }
 
+export async function loadMyOrganizationMemberships(): Promise<OrganizationMember[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("organization_members")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as OrganizationMember[];
+}
+
 export async function loadOrganizationInvitations(organizationId: string): Promise<OrganizationInvitation[]> {
   if (!supabase) return [];
   const { data, error } = await supabase

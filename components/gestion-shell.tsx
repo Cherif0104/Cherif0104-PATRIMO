@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -18,36 +19,80 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { cx } from "@/lib/format";
+import { loadMyOrganizationMemberships } from "@/lib/supabase";
+import type { FunctionalDomain, OrganizationMember } from "@/lib/types";
 
-const links = [
+type GestionLink = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+  domain?: FunctionalDomain;
+};
+
+const links: GestionLink[] = [
   { href: "/gestion", label: "Tableau", icon: LayoutDashboard, exact: true },
-  { href: "/gestion/biens", label: "Biens", icon: Building2 },
-  { href: "/gestion/reservations", label: "Réservations", icon: CalendarDays },
-  { href: "/gestion/clients", label: "Clientèle", icon: Users },
-  { href: "/gestion/crm", label: "CRM", icon: ContactRound },
-  { href: "/gestion/contrats", label: "Contrats", icon: FileText },
-  { href: "/gestion/finances", label: "Finances", icon: Wallet },
-  { href: "/gestion/equipe", label: "Équipe", icon: UserCog },
-  { href: "/gestion/incidents", label: "Incidents", icon: Wrench },
-  { href: "/gestion/etats-des-lieux", label: "États des lieux", icon: ClipboardCheck },
+  { href: "/gestion/biens", label: "Biens", icon: Building2, domain: "catalogue" },
+  { href: "/gestion/reservations", label: "Réservations", icon: CalendarDays, domain: "reservations" },
+  { href: "/gestion/clients", label: "Clientèle", icon: Users, domain: "crm" },
+  { href: "/gestion/crm", label: "CRM", icon: ContactRound, domain: "crm" },
+  { href: "/gestion/contrats", label: "Contrats", icon: FileText, domain: "contracts" },
+  { href: "/gestion/finances", label: "Finances", icon: Wallet, domain: "finance" },
+  { href: "/gestion/equipe", label: "Équipe", icon: UserCog, domain: "administration" },
+  { href: "/gestion/incidents", label: "Incidents", icon: Wrench, domain: "maintenance" },
+  { href: "/gestion/etats-des-lieux", label: "États des lieux", icon: ClipboardCheck, domain: "maintenance" },
 ];
 
 export function GestionShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, profile, loading } = useAuth();
+  const [memberships, setMemberships] = useState<OrganizationMember[]>([]);
+  const [membershipsLoading, setMembershipsLoading] = useState(true);
+  const [membershipsUserId, setMembershipsUserId] = useState("");
   const isAdmin = user?.app_metadata?.role === "admin";
   const isVerifiedProfessional =
     profile?.identity_status === "verifie"
     && (profile.account_type === "proprietaire" || profile.account_type === "agence");
-  const visibleLinks = links.filter((link) =>
-    isAdmin
-    || profile?.account_type === "agence"
-    || !["/gestion/crm", "/gestion/equipe"].includes(link.href));
+  const isOrganizationMember = memberships.length > 0;
+  const memberDomains = useMemo(
+    () => new Set(memberships.flatMap((membership) => membership.functional_domains)),
+    [memberships],
+  );
 
-  if (loading) return <div className="p-12 text-center text-sm text-[#6a6a6a]">Ouverture de la gestion…</div>;
+  useEffect(() => {
+    if (!user) {
+      setMemberships([]);
+      setMembershipsUserId("");
+      setMembershipsLoading(false);
+      return;
+    }
+    setMembershipsLoading(true);
+    loadMyOrganizationMemberships()
+      .then(setMemberships)
+      .catch(() => setMemberships([]))
+      .finally(() => {
+        setMembershipsUserId(user.id);
+        setMembershipsLoading(false);
+      });
+  }, [user]);
 
-  if (!user || (!isAdmin && !isVerifiedProfessional)) {
+  function canOpen(link: GestionLink) {
+    if (!link.domain || isAdmin || profile?.account_type === "agence") return true;
+    if (isOrganizationMember) return memberDomains.has(link.domain);
+    return !["crm", "administration"].includes(link.domain);
+  }
+
+  const visibleLinks = links.filter(canOpen);
+  const currentLink = links.find((link) =>
+    link.exact ? pathname === link.href : pathname === link.href || pathname.startsWith(`${link.href}/`));
+  const currentAllowed = !currentLink || canOpen(currentLink);
+
+  if (loading || membershipsLoading || (user && membershipsUserId !== user.id)) {
+    return <div className="p-12 text-center text-sm text-[#6a6a6a]">Ouverture de la gestion…</div>;
+  }
+
+  if (!user || (!isAdmin && !isVerifiedProfessional && !isOrganizationMember)) {
     return (
       <div className="mx-auto max-w-xl px-6 py-24 text-center">
         <p className="text-sm text-[#6a6a6a]">Espace de gestion</p>
@@ -62,13 +107,24 @@ export function GestionShell({ children }: { children: React.ReactNode }) {
     );
   }
 
+  if (!currentAllowed) {
+    return (
+      <div className="mx-auto max-w-xl px-6 py-24 text-center">
+        <p className="text-sm text-[#6a6a6a]">Droits de l’équipe</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">Module non attribué</h1>
+        <p className="mt-3 text-[15px] leading-6 text-[#6a6a6a]">Le responsable de votre agence peut activer ce domaine fonctionnel depuis la gestion de l’équipe.</p>
+        <Link href="/gestion" className="mt-6 inline-flex rounded-full bg-[#222] px-5 py-2.5 text-sm font-medium text-white">Retour au tableau de bord</Link>
+      </div>
+    );
+  }
+
   return (
     <div className="grid min-h-[calc(100vh-5rem)] lg:grid-cols-[250px_1fr]">
       <aside className="no-print border-b border-[#ebebeb] bg-[#fafafa] lg:border-b-0 lg:border-r">
         <div className="px-4 py-5">
           <p className="text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">Gestion</p>
           <p className="mt-1 font-semibold">
-            {isAdmin ? "Administration" : profile?.account_type === "agence" ? "Agence vérifiée" : "Propriétaire vérifié"}
+            {isAdmin ? "Administration" : profile?.account_type === "agence" ? "Agence vérifiée" : isOrganizationMember ? "Collaborateur agence" : "Propriétaire vérifié"}
           </p>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:px-3">

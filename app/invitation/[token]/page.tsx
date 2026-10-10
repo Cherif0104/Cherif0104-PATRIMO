@@ -21,7 +21,7 @@ export default function InvitationPage() {
     setError("");
     try {
       await acceptOrganizationInvitation(token);
-      router.replace("/gestion/equipe");
+      router.replace("/gestion");
     } catch {
       setError("Cette invitation est invalide, expirée ou destinée à une autre adresse e-mail.");
     } finally {

@@ -11,7 +11,10 @@ test("le catalogue public est servi avec les éléments SEO", async ({ page }) =
 
   const sitemap = await page.request.get("/sitemap.xml");
   expect(sitemap.ok()).toBeTruthy();
-  expect(await sitemap.text()).toContain("<urlset");
+  const sitemapXml = await sitemap.text();
+  expect(sitemapXml).toContain("<urlset");
+  expect(sitemapXml).toContain("/services");
+  expect(sitemapXml).toContain("/telecharger");
 });
 
 test("les parcours privés redirigent les visiteurs vers la connexion", async ({ page }) => {

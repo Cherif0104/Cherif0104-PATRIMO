@@ -38,13 +38,6 @@ test("les anciens catalogues hors immobilier reviennent à l’accueil", async (
   }
 });
 
-test("les catalogues serveur gèrent proprement l’état vide", async ({ page }) => {
-  await page.goto("/experiences");
-  await expect(page.locator("body")).toContainText(/Expériences|expériences/);
-  await page.goto("/services");
-  await expect(page.locator("body")).toContainText(/Services|services/);
-});
-
 test("la recherche accepte une destination saisie et expose les filtres", async ({ page }) => {
   await page.goto("/");
   const search = page.locator('input[placeholder*="Appartement à Dakar"]:visible');

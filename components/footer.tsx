@@ -9,7 +9,7 @@ const columns = [
       ["Conditions d’utilisation", "/conditions"],
       ["Confidentialité", "/confidentialite"],
       ["Explorer la carte", "/explorer"],
-      ["Boutiques partenaires", "/boutiques"],
+      ["Partenaires et artisans", "/partenaires"],
       ["Publier un bien", "/publier"],
       ["Inscrire une agence", "/agences"],
     ],

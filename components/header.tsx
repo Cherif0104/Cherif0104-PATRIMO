@@ -82,7 +82,7 @@ export function Header() {
 
   const links = [
     { href: "/explorer", label: t("explore") },
-    { href: "/boutiques", label: "Boutiques" },
+    { href: "/partenaires", label: "Partenaires" },
     { href: "/gestion", label: "Gestion" },
     ...(state.role === "admin" ? [{ href: "/admin", label: "Réglages" }] : []),
   ];

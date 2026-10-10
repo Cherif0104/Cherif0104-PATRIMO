@@ -12,22 +12,28 @@ import type { Offer } from "@/lib/catalog";
 import { buildQuote } from "@/lib/quote";
 import {
   createAdminOffer,
+  createMarketplacePartner,
+  createPartnerProduct,
   loadListingsForReview,
+  loadMarketplacePartnersForReview,
   loadOfferRequests,
   loadOffersForReview,
+  loadPartnerApplications,
   loadVerificationRequests,
   loadVerificationDocuments,
   getVerificationDocumentUrl,
   reviewListing,
   reviewOffer,
+  reviewPartnerApplication,
   reviewVerificationRequest,
   savePlatformSettings,
   startAgencyOnboarding,
   updateOfferRequestStatus,
+  updateMarketplacePartnerStatus,
 } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
-import type { Ad, AdPlacement, CommissionRule, Listing, OfferRequest, Payer, Promo, VerificationRequest } from "@/lib/types";
+import type { Ad, AdPlacement, CommissionRule, Listing, MarketplacePartner, OfferRequest, PartnerApplication, PartnerCategory, Payer, Promo, VerificationRequest } from "@/lib/types";
 
 export default function AdminPage() {
   const { state, dispatch, storageWarning, ready } = useAmeena();
@@ -72,6 +78,7 @@ export default function AdminPage() {
       <ReviewQueue />
       <OperationsQueue />
       <AgencyOnboarding />
+      <PartnerMarketplaceAdmin />
       <OfferCatalogAdmin userId={user?.id} />
 
       <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
@@ -189,6 +196,197 @@ function AgencyOnboarding() {
         <button className={btnPrimary} disabled={busy}>{busy ? "Ouverture…" : "Ouvrir le parcours"}</button>
       </form>
       {message && <p className="mt-3 text-sm">{message}</p>}
+    </section>
+  );
+}
+
+const partnerCategories: Array<{ value: PartnerCategory; label: string }> = [
+  { value: "artisan", label: "Artisan" },
+  { value: "blanchisserie", label: "Blanchisserie" },
+  { value: "demenagement", label: "Déménagement" },
+  { value: "mobilite", label: "Taxi et mobilité" },
+  { value: "securite", label: "Sécurité" },
+  { value: "assurance", label: "Assurance" },
+  { value: "ameublement", label: "Ameublement" },
+  { value: "entretien", label: "Entretien" },
+  { value: "juridique", label: "Juridique et foncier" },
+  { value: "autre", label: "Autre métier immobilier" },
+];
+
+type AddressSuggestion = {
+  label: string;
+  city: string;
+  lat: number;
+  lng: number;
+};
+
+function PartnerMarketplaceAdmin() {
+  const [applications, setApplications] = useState<PartnerApplication[]>([]);
+  const [partners, setPartners] = useState<MarketplacePartner[]>([]);
+  const [selectedApplication, setSelectedApplication] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [category, setCategory] = useState<PartnerCategory>("artisan");
+  const [description, setDescription] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("Dakar");
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+  const [radius, setRadius] = useState(15);
+  const [imageUrl, setImageUrl] = useState("");
+  const [productName, setProductName] = useState("");
+  const [productPrice, setProductPrice] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    Promise.all([loadPartnerApplications(), loadMarketplacePartnersForReview()])
+      .then(([applicationRows, partnerRows]) => {
+        setApplications(applicationRows);
+        setPartners(partnerRows);
+      })
+      .catch(() => setMessage("Les candidatures partenaires ne peuvent pas être chargées."));
+  }, []);
+
+  useEffect(() => {
+    if (address.trim().length < 3 || (lat !== null && lng !== null)) {
+      setSuggestions([]);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      fetch(`/api/geocode?q=${encodeURIComponent(address)}`)
+        .then((response) => response.json())
+        .then((payload: { results?: AddressSuggestion[] }) => setSuggestions(payload.results ?? []))
+        .catch(() => setSuggestions([]));
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [address, lat, lng]);
+
+  function chooseApplication(id: string) {
+    setSelectedApplication(id);
+    const application = applications.find((item) => item.id === id);
+    if (!application) return;
+    setBusinessName(application.business_name);
+    setCategory(application.category);
+    setCity(application.city);
+    setPhone(application.phone);
+  }
+
+  async function setApplicationStatus(application: PartnerApplication, status: PartnerApplication["status"]) {
+    setBusy(true);
+    try {
+      const updated = await reviewPartnerApplication(application.id, status);
+      setApplications((rows) => status === "rejected" || status === "approved"
+        ? rows.filter((row) => row.id !== application.id)
+        : rows.map((row) => row.id === updated.id ? updated : row));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createPartner(event: React.FormEvent) {
+    event.preventDefault();
+    if (lat === null || lng === null) {
+      setMessage("Sélectionnez une adresse proposée par la carte avant de publier.");
+      return;
+    }
+    setBusy(true);
+    setMessage("");
+    try {
+      const application = applications.find((item) => item.id === selectedApplication);
+      const partner = await createMarketplacePartner({
+        owner_id: application?.requester_id ?? null,
+        status: "published",
+        business_name: businessName.trim(),
+        category,
+        description: description.trim(),
+        phone: phone.trim() || null,
+        whatsapp_e164: phone.trim() || null,
+        website: null,
+        address,
+        city,
+        lat,
+        lng,
+        service_radius_km: radius,
+        image_url: imageUrl.trim() || null,
+        verified: true,
+      });
+      if (productName.trim()) {
+        await createPartnerProduct({
+          partnerId: partner.id,
+          name: productName,
+          price: Number(productPrice) || undefined,
+        });
+      }
+      if (application) await reviewPartnerApplication(application.id, "approved");
+      setPartners((rows) => [partner, ...rows]);
+      setApplications((rows) => rows.filter((row) => row.id !== application?.id));
+      setBusinessName("");
+      setDescription("");
+      setPhone("");
+      setAddress("");
+      setLat(null);
+      setLng(null);
+      setProductName("");
+      setProductPrice("");
+      setSelectedApplication("");
+      setMessage("Partenaire vérifié et publié.");
+    } catch {
+      setMessage("Le partenaire n’a pas pu être publié.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function moderate(partner: MarketplacePartner, status: MarketplacePartner["status"]) {
+    const updated = await updateMarketplacePartnerStatus(partner.id, status, status === "published" && partner.verified);
+    setPartners((rows) => rows.map((row) => row.id === updated.id ? updated : row));
+  }
+
+  return (
+    <section className="mb-12 rounded-3xl border border-[#ebebeb] p-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-semibold">Marketplace partenaires</h2>
+          <p className="mt-2 text-sm text-[#6a6a6a]">Contrôlez les candidatures, l’adresse réelle, la zone d’intervention et la publication.</p>
+        </div>
+        <Pill tone={applications.length ? "warn" : "good"}>{applications.length} candidature{applications.length > 1 ? "s" : ""}</Pill>
+      </div>
+      {applications.length > 0 && (
+        <div className="mt-5 grid gap-2">
+          {applications.map((application) => (
+            <div key={application.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#f7f7f7] p-3 text-sm">
+              <span><strong>{application.business_name}</strong> · {application.category} · {application.city} · {application.phone}</span>
+              <span className="flex gap-2">
+                <button className={btnPrimary} disabled={busy} onClick={() => chooseApplication(application.id)}>Préparer</button>
+                <button className={btnSecondary} disabled={busy} onClick={() => void setApplicationStatus(application, "contacted")}>Contacté</button>
+                <button className={btnSecondary} disabled={busy} onClick={() => void setApplicationStatus(application, "rejected")}>Refuser</button>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      <form onSubmit={createPartner} className="mt-6 grid gap-3 rounded-2xl bg-[#FFFDF7] p-4 md:grid-cols-2">
+        <input className={fieldClass} value={businessName} onChange={(event) => setBusinessName(event.target.value)} placeholder="Nom de l’activité" minLength={2} required />
+        <select className={fieldClass} value={category} onChange={(event) => setCategory(event.target.value as PartnerCategory)}>
+          {partnerCategories.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+        </select>
+        <textarea className={`${fieldClass} min-h-20 md:col-span-2`} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Services, références et zone couverte" />
+        <input className={fieldClass} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+221 77 000 00 00" required />
+        <input className={fieldClass} value={city} onChange={(event) => setCity(event.target.value)} placeholder="Ville" required />
+        <div className="relative md:col-span-2">
+          <input className={fieldClass} value={address} onChange={(event) => { setAddress(event.target.value); setLat(null); setLng(null); }} placeholder="Adresse ou lieu réel" required />
+          {suggestions.length > 0 && <div className="absolute z-20 mt-1 w-full rounded-xl border bg-white p-1 shadow-lg">{suggestions.map((item) => <button type="button" key={`${item.lat}-${item.lng}`} className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[#f7f7f7]" onClick={() => { setAddress(item.label); setCity(item.city); setLat(item.lat); setLng(item.lng); setSuggestions([]); }}>{item.label}</button>)}</div>}
+        </div>
+        <input className={fieldClass} type="number" min={1} max={500} value={radius} onChange={(event) => setRadius(Number(event.target.value))} placeholder="Rayon km" />
+        <input className={fieldClass} type="url" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="Photo HTTPS (optionnelle)" />
+        <input className={fieldClass} value={productName} onChange={(event) => setProductName(event.target.value)} placeholder="Premier service ou article (optionnel)" />
+        <input className={fieldClass} inputMode="numeric" value={productPrice} onChange={(event) => setProductPrice(event.target.value.replace(/\D/g, ""))} placeholder="Prix FCFA (optionnel)" />
+        <button className={`${btnPrimary} md:col-span-2`} disabled={busy || lat === null}>{busy ? "Publication…" : "Vérifier et publier"}</button>
+      </form>
+      {message && <p className="mt-3 text-sm">{message}</p>}
+      {partners.length > 0 && <div className="mt-5 grid gap-2">{partners.map((partner) => <div key={partner.id} className="flex items-center justify-between gap-3 rounded-xl border border-[#ebebeb] p-3 text-sm"><span><strong>{partner.business_name}</strong> · {partner.status}</span><button className={btnSecondary} onClick={() => void moderate(partner, partner.status === "published" ? "suspended" : "published")}>{partner.status === "published" ? "Suspendre" : "Publier"}</button></div>)}</div>}
     </section>
   );
 }

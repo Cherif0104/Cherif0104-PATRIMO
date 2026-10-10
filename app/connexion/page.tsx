@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { BadgeCheck, Home, LockKeyhole, ShieldCheck, X } from "lucide-react";
+import { BadgeCheck, Building2, Home, LockKeyhole, Search, ShieldCheck, Store, X } from "lucide-react";
 import { btnPrimary, cx, fieldClass } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
@@ -17,6 +17,7 @@ function AuthForm() {
   const [mode, setMode] = useState<"connexion" | "inscription" | "oubli" | "nouveau">("connexion");
   const [fullName, setFullName] = useState("");
   const [accountType, setAccountType] = useState<AccountType>("voyageur");
+  const [signupIntent, setSignupIntent] = useState<"chercher" | "publier" | "partenaire">("chercher");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -50,8 +51,9 @@ function AuthForm() {
         if (authError) throw authError;
         router.replace(returnTo);
       } else if (mode === "inscription") {
+        const nextAfterSignup = signupIntent === "partenaire" ? "/partenaires?candidater=1" : returnTo;
         const callback = new URL("/auth/callback", window.location.origin);
-        callback.searchParams.set("next", returnTo);
+        callback.searchParams.set("next", nextAfterSignup);
         const { data, error: authError } = await supabase.auth.signUp({
           email,
           password,
@@ -61,7 +63,7 @@ function AuthForm() {
           },
         });
         if (authError) throw authError;
-        if (data.session) router.replace(returnTo);
+        if (data.session) router.replace(nextAfterSignup);
         else setMessage("Compte créé. Ouvrez l’e-mail de confirmation pour activer votre accès.");
       } else if (mode === "oubli") {
         const callback = new URL("/auth/callback", window.location.origin);
@@ -154,7 +156,7 @@ function AuthForm() {
             {mode === "connexion"
               ? "Retrouvez vos demandes et votre espace de gestion."
               : mode === "inscription"
-                ? "Commencez comme voyageur ou préparez un espace professionnel."
+                ? "Choisissez simplement ce que vous souhaitez faire aujourd’hui."
                 : mode === "oubli"
                   ? "Saisissez votre e-mail pour recevoir un lien sécurisé."
                   : "Choisissez un mot de passe d’au moins huit caractères."}
@@ -169,25 +171,33 @@ function AuthForm() {
                 </label>
                 <fieldset>
                   <legend className="text-sm font-medium">Je souhaite</legend>
-                  <div className="mt-2 grid grid-cols-3 gap-2">
+                  <div className="mt-2 grid gap-2 sm:grid-cols-3">
                     {([
-                      ["voyageur", "Voyager"],
-                      ["proprietaire", "Publier"],
-                      ["agence", "Gérer"],
-                    ] as const).map(([value, label]) => (
+                      { intent: "chercher", account: "voyageur", label: "Trouver un logement", note: "Séjour, location ou achat", icon: Search },
+                      { intent: "publier", account: "proprietaire", label: "Publier mon bien", note: "Pour un propriétaire particulier", icon: Building2 },
+                      { intent: "partenaire", account: "voyageur", label: "Proposer un service", note: "Artisan, boutique ou mobilité", icon: Store },
+                    ] as const).map(({ intent, account, label, note, icon: Icon }) => (
                       <button
                         type="button"
-                        key={value}
-                        onClick={() => setAccountType(value)}
+                        key={intent}
+                        onClick={() => {
+                          setSignupIntent(intent);
+                          setAccountType(account);
+                        }}
                         className={cx(
-                          "rounded-xl border px-3 py-3 text-sm",
-                          accountType === value ? "border-[#FF385C] bg-[#fff1f3] font-semibold text-[#C13515]" : "border-[#dddddd]",
+                          "rounded-xl border px-3 py-3 text-left text-sm",
+                          signupIntent === intent ? "border-[#FF4845] bg-[#FFF1EE] text-[#182A39]" : "border-[#dddddd]",
                         )}
                       >
-                        {label}
+                        <Icon className="mb-2 h-5 w-5" />
+                        <span className="block font-semibold">{label}</span>
+                        <span className="mt-1 block text-[11px] leading-4 text-[#6a6a6a]">{note}</span>
                       </button>
                     ))}
                   </div>
+                  <p className="mt-3 text-xs leading-5 text-[#6a6a6a]">
+                    Vous gérez plusieurs biens ? <Link href="/agences" className="font-semibold underline">L’espace agence ERP/CRM est ouvert par notre service client.</Link>
+                  </p>
                 </fieldset>
               </>
             )}

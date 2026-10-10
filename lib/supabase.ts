@@ -3,14 +3,20 @@ import type {
   AvailabilityBlock,
   Conversation,
   ConversationMessage,
+  CrmContact,
+  CrmInteraction,
+  CrmOpportunity,
   HostPublicProfile,
   Listing,
   MarketBooking,
+  MarketplacePartner,
   OfferRequest,
   Organization,
   OrganizationInvitation,
   OrganizationMember,
   PaymentOrder,
+  PartnerApplication,
+  PartnerProduct,
   PortfolioHolding,
   Payout,
   Profile,
@@ -911,6 +917,7 @@ export async function createOrganization(userId: string, name: string) {
     organization_id: data.id,
     user_id: userId,
     role: "owner",
+    functional_domains: ["catalogue", "crm", "reservations", "contracts", "finance", "maintenance", "administration"],
   });
   if (member.error) throw member.error;
   return data as Organization;
@@ -944,6 +951,7 @@ export async function createOrganizationInvitation(input: {
   userId: string;
   email: string;
   role: OrganizationInvitation["role"];
+  functionalDomains: OrganizationInvitation["functional_domains"];
 }) {
   if (!supabase) throw new Error("Supabase n'est pas configuré.");
   const { data, error } = await supabase
@@ -953,6 +961,7 @@ export async function createOrganizationInvitation(input: {
       invited_by: input.userId,
       email: input.email.trim().toLowerCase(),
       role: input.role,
+      functional_domains: input.functionalDomains,
     })
     .select("*")
     .single();
@@ -965,6 +974,310 @@ export async function acceptOrganizationInvitation(token: string) {
   const { data, error } = await supabase.rpc("accept_organization_invitation", { p_token: token });
   if (error) throw error;
   return data as string;
+}
+
+export async function loadCrmContacts(organizationId: string): Promise<CrmContact[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("crm_contacts")
+    .select("*")
+    .eq("organization_id", organizationId)
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as CrmContact[];
+}
+
+export async function createCrmContact(input: {
+  organizationId: string;
+  userId: string;
+  fullName: string;
+  email?: string;
+  phone?: string;
+  kind?: CrmContact["contact_kind"];
+  source?: CrmContact["source"];
+  notes?: string;
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("crm_contacts")
+    .insert({
+      organization_id: input.organizationId,
+      full_name: input.fullName.trim(),
+      email: input.email?.trim() || null,
+      phone: input.phone?.trim() || null,
+      contact_kind: input.kind ?? "prospect",
+      source: input.source ?? "manuel",
+      notes: input.notes?.trim() || "",
+      created_by: input.userId,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as CrmContact;
+}
+
+export async function importCrmContacts(
+  organizationId: string,
+  userId: string,
+  rows: Array<{ fullName: string; email?: string; phone?: string; kind?: string }>,
+) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const payload = rows.map((row) => ({
+    organization_id: organizationId,
+    full_name: row.fullName.trim(),
+    email: row.email?.trim() || null,
+    phone: row.phone?.trim() || null,
+    contact_kind: ["prospect", "client", "proprietaire", "investisseur", "partenaire"].includes(row.kind ?? "")
+      ? row.kind
+      : "prospect",
+    source: "import",
+    created_by: userId,
+  }));
+  const { data, error } = await supabase.from("crm_contacts").insert(payload).select("*");
+  if (error) throw error;
+  return (data ?? []) as CrmContact[];
+}
+
+export async function updateCrmContactQualification(
+  id: string,
+  qualification: CrmContact["qualification"],
+  score: number,
+) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("crm_contacts")
+    .update({ qualification, score, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as CrmContact;
+}
+
+export async function loadCrmInteractions(organizationId: string): Promise<CrmInteraction[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("crm_interactions")
+    .select("*")
+    .eq("organization_id", organizationId)
+    .order("occurred_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as CrmInteraction[];
+}
+
+export async function createCrmInteraction(input: {
+  organizationId: string;
+  contactId: string;
+  userId: string;
+  channel: CrmInteraction["channel"];
+  direction: CrmInteraction["direction"];
+  outcome: CrmInteraction["outcome"];
+  summary: string;
+  nextActionAt?: string;
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("crm_interactions")
+    .insert({
+      organization_id: input.organizationId,
+      contact_id: input.contactId,
+      channel: input.channel,
+      direction: input.direction,
+      outcome: input.outcome,
+      summary: input.summary.trim(),
+      next_action_at: input.nextActionAt || null,
+      created_by: input.userId,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as CrmInteraction;
+}
+
+export async function loadCrmOpportunities(organizationId: string): Promise<CrmOpportunity[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("crm_opportunities")
+    .select("*")
+    .eq("organization_id", organizationId)
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as CrmOpportunity[];
+}
+
+export async function createCrmOpportunity(input: {
+  organizationId: string;
+  contactId: string;
+  userId: string;
+  title: string;
+  value?: number;
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("crm_opportunities")
+    .insert({
+      organization_id: input.organizationId,
+      contact_id: input.contactId,
+      title: input.title.trim(),
+      value: input.value || null,
+      created_by: input.userId,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as CrmOpportunity;
+}
+
+export async function updateCrmOpportunityStage(id: string, stage: CrmOpportunity["stage"]) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const probability: Record<CrmOpportunity["stage"], number> = {
+    nouveau: 10,
+    qualifie: 30,
+    visite: 50,
+    negociation: 75,
+    gagne: 100,
+    perdu: 0,
+  };
+  const { data, error } = await supabase
+    .from("crm_opportunities")
+    .update({ stage, probability: probability[stage], updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as CrmOpportunity;
+}
+
+export async function loadPublishedPartners(): Promise<MarketplacePartner[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("marketplace_partners")
+    .select("*")
+    .eq("status", "published")
+    .order("verified", { ascending: false })
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as MarketplacePartner[];
+}
+
+export async function loadPartnerProducts(partnerIds: string[]): Promise<PartnerProduct[]> {
+  if (!supabase || partnerIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from("partner_products")
+    .select("*")
+    .in("partner_id", partnerIds)
+    .eq("active", true)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as PartnerProduct[];
+}
+
+export async function submitPartnerApplication(input: {
+  userId: string;
+  businessName: string;
+  category: PartnerApplication["category"];
+  city: string;
+  phone: string;
+  message: string;
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("partner_applications")
+    .insert({
+      requester_id: input.userId,
+      business_name: input.businessName.trim(),
+      category: input.category,
+      city: input.city.trim(),
+      phone: input.phone.trim(),
+      message: input.message.trim(),
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as PartnerApplication;
+}
+
+export async function loadPartnerApplications(): Promise<PartnerApplication[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("partner_applications")
+    .select("*")
+    .in("status", ["pending", "contacted"])
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as PartnerApplication[];
+}
+
+export async function createMarketplacePartner(
+  input: Omit<MarketplacePartner, "id" | "created_at" | "updated_at">,
+) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("marketplace_partners")
+    .insert(input)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as MarketplacePartner;
+}
+
+export async function loadMarketplacePartnersForReview(): Promise<MarketplacePartner[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("marketplace_partners")
+    .select("*")
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as MarketplacePartner[];
+}
+
+export async function updateMarketplacePartnerStatus(
+  id: string,
+  status: MarketplacePartner["status"],
+  verified: boolean,
+) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("marketplace_partners")
+    .update({ status, verified, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as MarketplacePartner;
+}
+
+export async function createPartnerProduct(input: {
+  partnerId: string;
+  name: string;
+  description?: string;
+  price?: number;
+}) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("partner_products")
+    .insert({
+      partner_id: input.partnerId,
+      name: input.name.trim(),
+      description: input.description?.trim() || "",
+      price: input.price ?? null,
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as PartnerProduct;
+}
+
+export async function reviewPartnerApplication(id: string, status: PartnerApplication["status"]) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("partner_applications")
+    .update({ status, reviewed_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as PartnerApplication;
 }
 
 export async function loadUserNotifications(): Promise<UserNotification[]> {

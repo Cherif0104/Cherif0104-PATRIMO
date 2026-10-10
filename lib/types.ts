@@ -359,6 +359,7 @@ export type OrganizationMember = {
   organization_id: string;
   user_id: string;
   role: "owner" | "manager" | "agent" | "viewer";
+  functional_domains: FunctionalDomain[];
   created_at: string;
   profile?: Pick<Profile, "full_name" | "avatar_url"> | null;
 };
@@ -368,10 +369,128 @@ export type OrganizationInvitation = {
   organization_id: string;
   email: string;
   role: "manager" | "agent" | "viewer";
+  functional_domains: FunctionalDomain[];
   token: string;
   invited_by: string;
   expires_at: string;
   accepted_at: string | null;
+  created_at: string;
+};
+
+export type FunctionalDomain =
+  | "catalogue"
+  | "crm"
+  | "reservations"
+  | "contracts"
+  | "finance"
+  | "maintenance"
+  | "administration";
+
+export type CrmContact = {
+  id: string;
+  organization_id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  contact_kind: "prospect" | "client" | "proprietaire" | "investisseur" | "partenaire";
+  qualification: "nouveau" | "a_qualifier" | "qualifie" | "prioritaire" | "inactif";
+  source: "manuel" | "site" | "whatsapp" | "telephone" | "recommandation" | "import";
+  score: number;
+  tags: string[];
+  assigned_to: string | null;
+  notes: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CrmInteraction = {
+  id: string;
+  organization_id: string;
+  contact_id: string;
+  channel: "appel" | "whatsapp" | "email" | "visite" | "message" | "note";
+  direction: "entrant" | "sortant" | "interne";
+  outcome: "information" | "a_relancer" | "rendez_vous" | "interesse" | "non_interesse" | "conclu";
+  summary: string;
+  occurred_at: string;
+  next_action_at: string | null;
+  created_by: string;
+  created_at: string;
+};
+
+export type CrmOpportunity = {
+  id: string;
+  organization_id: string;
+  contact_id: string;
+  listing_id: string | null;
+  title: string;
+  stage: "nouveau" | "qualifie" | "visite" | "negociation" | "gagne" | "perdu";
+  value: number | null;
+  currency: Currency;
+  probability: number;
+  expected_close_date: string | null;
+  assigned_to: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PartnerCategory =
+  | "artisan"
+  | "blanchisserie"
+  | "demenagement"
+  | "mobilite"
+  | "securite"
+  | "assurance"
+  | "ameublement"
+  | "entretien"
+  | "juridique"
+  | "autre";
+
+export type MarketplacePartner = {
+  id: string;
+  owner_id: string | null;
+  status: "pending_review" | "published" | "suspended" | "archived";
+  business_name: string;
+  category: PartnerCategory;
+  description: string;
+  phone: string | null;
+  whatsapp_e164: string | null;
+  website: string | null;
+  address: string;
+  city: string;
+  lat: number;
+  lng: number;
+  service_radius_km: number;
+  image_url: string | null;
+  verified: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PartnerProduct = {
+  id: string;
+  partner_id: string;
+  name: string;
+  description: string;
+  price: number | null;
+  currency: Currency;
+  image_url: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PartnerApplication = {
+  id: string;
+  requester_id: string;
+  business_name: string;
+  category: PartnerCategory;
+  city: string;
+  phone: string;
+  message: string;
+  status: "pending" | "contacted" | "approved" | "rejected";
+  reviewed_at: string | null;
   created_at: string;
 };
 

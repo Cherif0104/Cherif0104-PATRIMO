@@ -34,6 +34,24 @@ const defaultPlace = {
   lng: -17.52,
 };
 
+const AMENITY_OPTIONS = [
+  "Wifi",
+  "Climatisation",
+  "Cuisine",
+  "Stationnement",
+  "Gardien",
+  "Groupe électrogène",
+  "Réserve d’eau",
+  "Piscine",
+  "Terrasse",
+  "Balcon",
+  "Ascenseur",
+  "Vue mer",
+  "Accès routier",
+  "Électricité à proximité",
+  "Eau à proximité",
+];
+
 export default function PublishPage() {
   const { dispatch } = useAmeena();
   const { user, profile, loading } = useAuth();
@@ -51,6 +69,10 @@ export default function PublishPage() {
   const [currency, setCurrency] = useState<Currency>("XOF");
   const [guests, setGuests] = useState(2);
   const [bedrooms, setBedrooms] = useState(1);
+  const [beds, setBeds] = useState(1);
+  const [baths, setBaths] = useState(1);
+  const [surface, setSurface] = useState(40);
+  const [amenities, setAmenities] = useState<string[]>(["Wifi"]);
   const [description, setDescription] = useState("");
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [memberships, setMemberships] = useState<OrganizationMember[]>([]);
@@ -71,6 +93,8 @@ export default function PublishPage() {
   const delegatedPublisher = memberships.some((membership) =>
     membership.role !== "viewer" && membership.functional_domains.includes("catalogue"));
   const professional = verifiedProfessional || delegatedPublisher || user?.app_metadata?.role === "admin";
+  const isLand = type === "terrain" || type === "champ";
+  const isProfessionalProperty = ["bureau", "commerce", "immeuble"].includes(type);
 
   useEffect(() => {
     if (!user) {
@@ -135,18 +159,18 @@ export default function PublishPage() {
         managementMandate,
         price: Number(price) || 0,
         currency,
-        guests,
-        bedrooms,
-        beds: bedrooms,
-        baths: 1,
-        surface: 40,
+        guests: isLand ? 1 : guests,
+        bedrooms: isLand ? 0 : bedrooms,
+        beds: isLand || isProfessionalProperty ? 0 : beds,
+        baths: isLand ? 0 : baths,
+        surface,
         rating: 5,
         reviewsCount: 0,
         images,
         lat,
         lng,
         description: description.trim() || "Bien publié en direct sur Se Loger au Sénégal.",
-        amenities: ["Wifi"],
+        amenities,
         hostId: `user-${user.id}`,
         managedByPlatform: managementMandate === "plateforme",
         reviews: [],
@@ -232,18 +256,28 @@ export default function PublishPage() {
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm font-medium">
             Marché
-            <select className={`${fieldClass} mt-1`} value={purpose} onChange={(event) => setPurpose(event.target.value as ListingPurpose)}>
+            <select
+              className={`${fieldClass} mt-1`}
+              value={purpose}
+              onChange={(event) => {
+                const next = event.target.value as ListingPurpose;
+                setPurpose(next);
+                if (next === "vente") setMode("location");
+              }}
+            >
               <option value="location">Location</option>
               <option value="vente">Vente</option>
             </select>
           </label>
-          <label className="text-sm font-medium">
-            Rythme de location
-            <select className={`${fieldClass} mt-1`} value={mode} onChange={(event) => setMode(event.target.value as Mode)}>
-              <option value="sejour">Séjour</option>
-              <option value="location">Location longue durée</option>
-            </select>
-          </label>
+          {purpose === "location" && (
+            <label className="text-sm font-medium">
+              Rythme de location
+              <select className={`${fieldClass} mt-1`} value={mode} onChange={(event) => setMode(event.target.value as Mode)}>
+                <option value="sejour">Séjour journalier ou courte durée</option>
+                <option value="location">Location longue durée</option>
+              </select>
+            </label>
+          )}
           {purpose === "location" && (
             <label className="text-sm font-medium">
               Durée
@@ -256,26 +290,52 @@ export default function PublishPage() {
           )}
           <label className="text-sm font-medium">
             Type de bien
-            <select className={`${fieldClass} mt-1`} value={type} onChange={(event) => setType(event.target.value as PropertyType)}>
-              <option value="appartement">Appartement</option>
-              <option value="villa">Villa</option>
-              <option value="maison">Maison</option>
-              <option value="studio">Studio</option>
-              <option value="riad">Riad</option>
-              <option value="ecolodge">Écolodge</option>
-              <option value="duplex">Duplex</option>
-              <option value="rooftop">Rooftop</option>
-              <option value="hotel">Hôtel</option>
-              <option value="terrain">Terrain</option>
-              <option value="immeuble">Immeuble</option>
-              <option value="bureau">Bureau</option>
-              <option value="commerce">Commerce</option>
+            <select
+              className={`${fieldClass} mt-1`}
+              value={type}
+              onChange={(event) => {
+                const next = event.target.value as PropertyType;
+                setType(next);
+                if (next === "terrain" || next === "champ") {
+                  setBedrooms(0);
+                  setBeds(0);
+                  setBaths(0);
+                  setGuests(1);
+                  setAmenities([]);
+                }
+              }}
+            >
+              <optgroup label="Habitation">
+                <option value="appartement">Appartement</option>
+                <option value="studio">Studio</option>
+                <option value="maison">Maison</option>
+                <option value="villa">Villa</option>
+                <option value="duplex">Duplex</option>
+                <option value="rooftop">Rooftop</option>
+                <option value="riad">Riad</option>
+                <option value="ecolodge">Écolodge</option>
+              </optgroup>
+              <optgroup label="Foncier">
+                <option value="terrain">Terrain ou parcelle</option>
+                <option value="champ">Champ agricole</option>
+              </optgroup>
+              <optgroup label="Professionnel">
+                <option value="immeuble">Immeuble</option>
+                <option value="bureau">Bureau</option>
+                <option value="commerce">Local commercial</option>
+                <option value="hotel">Hôtel ou résidence</option>
+              </optgroup>
             </select>
           </label>
         </div>
         </>}
         {step === 2 && <>
         <div className="grid gap-3 sm:grid-cols-2">
+          <label className="text-sm font-medium">
+            Surface en m²
+            <input className={`${fieldClass} mt-1`} type="number" min={1} value={surface} onChange={(event) => setSurface(Number(event.target.value))} />
+          </label>
+          {!isLand && (
           <label className="text-sm font-medium">
             Ameublement
             <select className={`${fieldClass} mt-1`} value={furnishing} onChange={(event) => setFurnishing(event.target.value as Furnishing)}>
@@ -284,6 +344,7 @@ export default function PublishPage() {
               <option value="non_meuble">Non meublé</option>
             </select>
           </label>
+          )}
           <label className="text-sm font-medium">
             Standing
             <select className={`${fieldClass} mt-1`} value={standing} onChange={(event) => setStanding(event.target.value as Standing)}>
@@ -303,7 +364,7 @@ export default function PublishPage() {
             </select>
           </label>
           <label className="text-sm font-medium">
-            Prix {mode === "sejour" ? "par nuit" : "par mois"}
+            {purpose === "vente" ? "Prix de vente" : `Prix ${mode === "sejour" ? "par nuit" : "par mois"}`}
             <input className={`${fieldClass} mt-1`} type="number" min={1} value={price} onChange={(event) => setPrice(Number(event.target.value))} />
           </label>
           <label className="text-sm font-medium">
@@ -313,15 +374,47 @@ export default function PublishPage() {
               <option value="EUR">Euro</option>
             </select>
           </label>
-          <label className="text-sm font-medium">
-            Voyageurs
-            <input className={`${fieldClass} mt-1`} type="number" min={1} value={guests} onChange={(event) => setGuests(Number(event.target.value))} />
-          </label>
-          <label className="text-sm font-medium">
-            Chambres
-            <input className={`${fieldClass} mt-1`} type="number" min={0} value={bedrooms} onChange={(event) => setBedrooms(Number(event.target.value))} />
-          </label>
+          {!isLand && <>
+            {!isProfessionalProperty && (
+              <label className="text-sm font-medium">
+                Capacité d’accueil
+                <input className={`${fieldClass} mt-1`} type="number" min={1} value={guests} onChange={(event) => setGuests(Number(event.target.value))} />
+              </label>
+            )}
+            <label className="text-sm font-medium">
+              Chambres ou pièces
+              <input className={`${fieldClass} mt-1`} type="number" min={0} value={bedrooms} onChange={(event) => setBedrooms(Number(event.target.value))} />
+            </label>
+            {!isProfessionalProperty && (
+              <label className="text-sm font-medium">
+                Lits
+                <input className={`${fieldClass} mt-1`} type="number" min={0} value={beds} onChange={(event) => setBeds(Number(event.target.value))} />
+              </label>
+            )}
+            <label className="text-sm font-medium">
+              Salles d’eau
+              <input className={`${fieldClass} mt-1`} type="number" min={0} value={baths} onChange={(event) => setBaths(Number(event.target.value))} />
+            </label>
+          </>}
         </div>
+        <fieldset>
+          <legend className="text-sm font-medium">Équipements et accès</legend>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {AMENITY_OPTIONS.map((amenity) => {
+              const selected = amenities.includes(amenity);
+              return (
+                <button
+                  key={amenity}
+                  type="button"
+                  onClick={() => setAmenities((items) => selected ? items.filter((item) => item !== amenity) : [...items, amenity])}
+                  className={`rounded-full border px-3 py-2 text-xs font-medium ${selected ? "border-[#FF4845] bg-[#FFF1EE] text-[#182A39]" : "border-[#dddddd]"}`}
+                >
+                  {amenity}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
         </>}
         {step === 3 && <>
         <label className="text-sm font-medium">

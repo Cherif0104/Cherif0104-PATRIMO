@@ -107,6 +107,7 @@ export function DiscoveryHeader({
             <option value="rooftop">Rooftop</option>
             <option value="hotel">Hôtel</option>
             <option value="terrain">Terrain</option>
+            <option value="champ">Champ agricole</option>
           </select>
           <input value={minPrice} onChange={(event) => setMinPrice(event.target.value.replace(/\D/g, ""))} inputMode="numeric" placeholder="Budget min." className="rounded-xl border border-[#dddddd] bg-transparent px-3 py-2.5 text-sm" />
           <input value={maxPrice} onChange={(event) => setMaxPrice(event.target.value.replace(/\D/g, ""))} inputMode="numeric" placeholder="Budget max." className="rounded-xl border border-[#dddddd] bg-transparent px-3 py-2.5 text-sm" />

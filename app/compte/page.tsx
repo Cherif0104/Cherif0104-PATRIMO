@@ -65,6 +65,15 @@ export default function AccountPage() {
   }, [profile]);
 
   useEffect(() => {
+    const syncViewFromHash = () => {
+      if (window.location.hash === "#certification") setView("profile");
+    };
+    syncViewFromHash();
+    window.addEventListener("hashchange", syncViewFromHash);
+    return () => window.removeEventListener("hashchange", syncViewFromHash);
+  }, []);
+
+  useEffect(() => {
     if (!user) return;
     setBookingsLoading(true);
     loadMyBookings()
@@ -263,7 +272,11 @@ export default function AccountPage() {
         </div>
       </div>
 
-      <RoleActions accountType={profile?.account_type ?? "voyageur"} />
+      <RoleActions
+        accountType={profile?.account_type ?? "voyageur"}
+        requestedAccountType={profile?.requested_account_type ?? "voyageur"}
+        verified={profile?.identity_status === "verifie"}
+      />
 
       <div className="mt-6 grid grid-cols-2 rounded-full bg-[#f2f2f2] p-1 text-sm">
         <button onClick={() => setView("activity")} className={cx("rounded-full px-4 py-2.5 font-medium", view === "activity" && "bg-white shadow-sm")}>Activité</button>
@@ -328,7 +341,7 @@ export default function AccountPage() {
           </div>
         </section>}
 
-        {view === "profile" && <aside className="mx-auto max-w-2xl rounded-[20px] border border-[#dddddd] p-6 shadow-[0_4px_16px_rgba(0,0,0,.06)]">
+        {view === "profile" && <aside id="certification" className="mx-auto max-w-2xl scroll-mt-28 rounded-[20px] border border-[#dddddd] p-6 shadow-[0_4px_16px_rgba(0,0,0,.06)]">
           <div className="flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-full bg-[#1F6F66] font-semibold text-white">
               {(profile?.full_name || user.email || "A").slice(0, 1).toUpperCase()}
@@ -455,10 +468,19 @@ export default function AccountPage() {
   );
 }
 
-function RoleActions({ accountType }: { accountType: AccountType }) {
+function RoleActions({
+  accountType,
+  requestedAccountType,
+  verified,
+}: {
+  accountType: AccountType;
+  requestedAccountType: AccountType;
+  verified: boolean;
+}) {
   const actions = accountType === "agence"
     ? [
         { href: "/gestion", label: "Piloter l’agence", icon: Home },
+        { href: "/publier", label: "Publier un bien", icon: Upload },
         { href: "/gestion/crm", label: "Ouvrir le CRM", icon: MessageCircle },
         { href: "/gestion/equipe", label: "Gérer l’équipe", icon: Settings },
       ]
@@ -468,14 +490,24 @@ function RoleActions({ accountType }: { accountType: AccountType }) {
           { href: "/publier", label: "Publier un bien", icon: Upload },
           { href: "/messages", label: "Voir les messages", icon: MessageCircle },
         ]
-      : [
+      : requestedAccountType === "proprietaire"
+        ? [
+          {
+            href: verified ? "/publier" : "/compte#certification",
+            label: verified ? "Publier un bien" : "Activer la publication",
+            icon: Upload,
+          },
+          { href: "/explorer", label: "Voir le marché", icon: Home },
+          { href: "/messages", label: "Mes messages", icon: MessageCircle },
+        ]
+        : [
           { href: "/explorer", label: "Trouver un logement", icon: Home },
           { href: "/voyages", label: "Mes dossiers", icon: CalendarDays },
           { href: "/messages", label: "Mes messages", icon: MessageCircle },
         ];
 
   return (
-    <nav className="mt-7 grid gap-2 sm:grid-cols-3" aria-label="Actions principales">
+    <nav className={`mt-7 grid gap-2 sm:grid-cols-2 ${actions.length > 3 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`} aria-label="Actions principales">
       {actions.map(({ href, label, icon: Icon }) => (
         <Link key={href} href={href} className="flex items-center gap-3 rounded-2xl border border-[#e5e5e5] bg-white p-4 text-sm font-semibold hover:shadow-sm">
           <Icon className="h-5 w-5 text-[#C13515]" />

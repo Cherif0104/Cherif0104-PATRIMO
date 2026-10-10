@@ -14,6 +14,7 @@ export type PropertyType =
   | "rooftop"
   | "hotel"
   | "terrain"
+  | "champ"
   | "immeuble"
   | "bureau"
   | "commerce";

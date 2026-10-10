@@ -54,7 +54,7 @@ function match(listing: Listing, params: URLSearchParams) {
   if (category === "appartement" && listing.type !== "appartement") return false;
   if (category === "studio" && listing.type !== "studio") return false;
   if (category === "maison" && !["villa", "maison", "duplex", "riad"].includes(listing.type)) return false;
-  if (category === "terrain" && listing.type !== "terrain") return false;
+  if (category === "terrain" && !["terrain", "champ"].includes(listing.type)) return false;
   if (category === "vente" && listing.purpose !== "vente") return false;
   if (category === "longue-duree" && listing.mode !== "location") return false;
   if (category === "premium" && !["premium", "luxe", "presidentiel"].includes(listing.standing ?? "")) return false;
@@ -254,7 +254,8 @@ function Explorer() {
                 <option value="duplex">Duplex</option>
                 <option value="rooftop">Rooftop</option>
                 <option value="hotel">Hôtel</option>
-                <option value="terrain">Terrain ou champ</option>
+                <option value="terrain">Terrain</option>
+                <option value="champ">Champ agricole</option>
                 <option value="bureau">Bureau</option>
                 <option value="commerce">Commerce</option>
               </select>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Photo } from "@/components/photo";
-import { Empty, PageHead, Pill } from "@/components/ui";
+import { PageHead, Pill } from "@/components/ui";
 import { btnSecondary, formatMoney } from "@/lib/format";
 import { MODE_LABEL } from "@/lib/labels";
 import { loadPropertyIncidents, loadPropertyInspections } from "@/lib/supabase";
@@ -36,7 +36,13 @@ export default function BiensPage() {
         action={<Link href="/publier" className={btnSecondary}>Publier</Link>}
       />
       {scope.listings.length === 0 ? (
-        <Empty title="Aucun bien dans cet espace" text="Publiez un logement, ou passez sur l'autre portefeuille." />
+        <div className="rounded-2xl border border-dashed border-[#dddddd] px-6 py-14 text-center">
+          <p className="text-lg font-semibold">Aucun bien dans cet espace</p>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#6a6a6a]">
+            Créez votre première annonce pour la soumettre au contrôle de la plateforme.
+          </p>
+          <Link href="/publier" className={`${btnSecondary} mt-5`}>Publier mon premier bien</Link>
+        </div>
       ) : (
         <div className="grid gap-4">
           {scope.listings.map((listing) => {

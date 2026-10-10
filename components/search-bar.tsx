@@ -155,6 +155,7 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
               <option value="rooftop">Rooftop</option>
               <option value="hotel">Hôtel</option>
               <option value="terrain">Terrain</option>
+              <option value="champ">Champ agricole</option>
               <option value="bureau">Bureau</option>
             </select>
           </label>

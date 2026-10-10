@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Download, FileText, Heart, Home, MessageSquare, Search, UserRound, Wrench } from "lucide-react";
+import { Building2, FileText, Heart, Home, LayoutDashboard, MessageSquare, PlusCircle, Search, UserRound, Wrench } from "lucide-react";
 import { cx } from "@/lib/format";
 import { usePreferences } from "@/lib/preferences";
 import { useAuth } from "@/lib/auth";
@@ -10,29 +10,55 @@ import { useAuth } from "@/lib/auth";
 export function BottomNav() {
   const pathname = usePathname();
   const { t } = usePreferences();
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   if (pathname.startsWith("/gestion") || pathname.startsWith("/admin") || pathname.startsWith("/logements/")) return null;
 
   const publicItems = [
     { href: "/", label: "Accueil", icon: Home, active: pathname === "/" },
     { href: "/explorer", label: "Explorer", icon: Search, active: pathname.startsWith("/explorer") || pathname.startsWith("/logements") },
     { href: "/services", label: "Services", icon: Wrench, active: pathname.startsWith("/services") },
-    { href: "/telecharger", label: "Installer", icon: Download, active: pathname.startsWith("/telecharger") },
+    { href: "/publier", label: "Publier", icon: PlusCircle, active: pathname.startsWith("/publier") },
     { href: "/connexion", label: "Connexion", icon: UserRound, active: pathname.startsWith("/connexion") },
   ];
-  const privateItems = [
+  const travelerItems = [
     { href: "/", label: "Accueil", icon: Home, active: pathname === "/" || pathname.startsWith("/explorer") },
     { href: "/favoris", label: t("favorites"), icon: Heart, active: pathname.startsWith("/favoris") },
     { href: "/voyages", label: "Dossiers", icon: FileText, active: pathname.startsWith("/voyages") },
     { href: "/messages", label: t("messages"), icon: MessageSquare, active: pathname.startsWith("/messages") },
-    { href: "/telecharger", label: "Installer", icon: Download, active: pathname.startsWith("/telecharger") },
     { href: "/compte", label: t("profile"), icon: UserRound, active: pathname.startsWith("/compte") },
   ];
-  const items = !loading && user ? privateItems : publicItems;
+  const ownerItems = [
+    { href: "/", label: "Accueil", icon: Home, active: pathname === "/" || pathname.startsWith("/explorer") },
+    {
+      href: profile?.identity_status === "verifie" ? "/publier" : "/compte#certification",
+      label: profile?.identity_status === "verifie" ? "Publier" : "Activer",
+      icon: PlusCircle,
+      active: pathname.startsWith("/publier"),
+    },
+    { href: "/gestion/biens", label: "Mes biens", icon: Building2, active: pathname.startsWith("/gestion/biens") },
+    { href: "/messages", label: t("messages"), icon: MessageSquare, active: pathname.startsWith("/messages") },
+    { href: "/compte", label: t("profile"), icon: UserRound, active: pathname.startsWith("/compte") },
+  ];
+  const agencyItems = [
+    { href: "/", label: "Accueil", icon: Home, active: pathname === "/" },
+    { href: "/gestion", label: "Pilotage", icon: LayoutDashboard, active: pathname === "/gestion" },
+    { href: "/publier", label: "Publier", icon: PlusCircle, active: pathname.startsWith("/publier") },
+    { href: "/gestion/biens", label: "Parc", icon: Building2, active: pathname.startsWith("/gestion/biens") },
+    { href: "/compte", label: t("profile"), icon: UserRound, active: pathname.startsWith("/compte") },
+  ];
+  const publisherIntent = profile?.account_type === "proprietaire"
+    || profile?.requested_account_type === "proprietaire";
+  const items = !loading && user
+    ? profile?.account_type === "agence"
+      ? agencyItems
+      : publisherIntent
+        ? ownerItems
+        : travelerItems
+    : publicItems;
 
   return (
     <nav className="app-surface theme-border fixed inset-x-0 bottom-0 z-[1200] border-t border-[#e5e5e5] lg:hidden" aria-label="Navigation principale">
-      <ul className={`grid h-[68px] ${items.length === 6 ? "grid-cols-6" : "grid-cols-5"} px-1 pb-[max(5px,env(safe-area-inset-bottom))] pt-1`}>
+      <ul className="grid h-[68px] grid-cols-5 px-1 pb-[max(5px,env(safe-area-inset-bottom))] pt-1">
         {items.map((item) => {
           const Icon = item.icon;
           return (

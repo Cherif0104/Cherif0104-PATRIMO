@@ -46,7 +46,8 @@ test("la navigation publique masque les données privées", async ({ page }) => 
   await expect(page.locator('nav[aria-label="Navigation principale"] a[href="/favoris"]')).toHaveCount(0);
   await expect(page.locator('nav[aria-label="Navigation principale"] a[href="/messages"]')).toHaveCount(0);
   await expect(page.locator('nav[aria-label="Navigation principale"] a[href="/services"]')).toHaveCount(1);
-  await expect(page.locator('nav[aria-label="Navigation principale"] a[href="/telecharger"]')).toHaveCount(1);
+  await expect(page.locator('nav[aria-label="Navigation principale"] a[href="/publier"]')).toHaveCount(1);
+  await expect(page.locator('nav[aria-label="Navigation principale"] a[href="/telecharger"]')).toHaveCount(0);
 });
 
 test("le centre de téléchargement explique chaque plateforme", async ({ page }) => {

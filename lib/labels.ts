@@ -25,6 +25,7 @@ export const TYPE_LABEL: Record<PropertyType, string> = {
   rooftop: "Rooftop",
   hotel: "Hôtel",
   terrain: "Terrain",
+  champ: "Champ",
   immeuble: "Immeuble",
   bureau: "Bureau",
   commerce: "Commerce",

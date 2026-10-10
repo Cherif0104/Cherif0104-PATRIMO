@@ -53,7 +53,7 @@ test("la recherche accepte une destination saisie et expose les filtres", async 
 test("les catégories ouvrent directement un catalogue minimaliste", async ({ page }) => {
   await page.goto("/explorer?categorie=terrain");
   await expect(page.getByRole("heading", { name: "Terrains & champs" })).toBeVisible();
-  await expect(page.getByText(/bien/).first()).toBeVisible();
+  await expect(page.getByText(/^\d+ biens?$/)).toBeVisible();
   await expect(page.getByText("Démonstration").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Afficher les filtres" })).toBeVisible();
   await expect(page.getByPlaceholder("Budget minimum")).toHaveCount(0);

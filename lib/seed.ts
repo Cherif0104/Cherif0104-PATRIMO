@@ -66,7 +66,7 @@ const img = {
   ],
   loft: [
     photo("photo-1600210492486-724fe5c67fb0"),
-    photo("photo-1600607687644-c7171b42498b"),
+    photo("photo-1615874959474-d609969a20ed"),
     photo("photo-1600566753086-00f18fb6b3ea"),
     photo("photo-1600585154526-990dced4db0d"),
   ],
@@ -74,7 +74,7 @@ const img = {
     photo("photo-1564013799919-ab600027ffc6"),
     photo("photo-1570129477492-45c003edd2be"),
     photo("photo-1600585154340-be6161a56a0c"),
-    photo("photo-1600047509807-ba8f99d2cdbc"),
+    photo("photo-1600566753190-17f0baa2a6c3"),
   ],
   studio: [
     photo("photo-1536376072261-38c75010e6c9"),

@@ -1,26 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, CarFront, ChevronRight } from "lucide-react";
-import { AdSlot } from "@/components/ad-slot";
+import { Building2, ChevronRight, Home, KeyRound } from "lucide-react";
 import { DiscoveryHeader } from "@/components/discovery-header";
-import { OfferCard } from "@/components/offer-card";
 import { PropertyCard } from "@/components/property-card";
 import { SearchBar } from "@/components/search-bar";
 import { TrustStrip } from "@/components/trust-strip";
 import { usePreferences } from "@/lib/preferences";
 import { useAmeena } from "@/lib/store";
-import { usePublishedOffers } from "@/lib/use-offers";
 import type { Listing } from "@/lib/types";
 
 export default function HomePage() {
   const { state } = useAmeena();
-  const { offers } = usePublishedOffers();
   const { t } = usePreferences();
   const listings = state.listings.filter((listing) => listing.publicationStatus === "published");
-  const experiences = offers.filter((offer) => offer.kind === "experience");
-  const services = offers.filter((offer) => offer.kind === "service");
-  const shops = state.settings.ads.filter((ad) => ad.active && ad.placement === "boutique");
   const destinations = [...new Map(listings.map((listing) => [listing.city, listing])).values()].slice(0, 6);
   const cities = [...new Set(listings.map((listing) => listing.city))].slice(0, 4);
 
@@ -68,77 +61,28 @@ export default function HomePage() {
         </section>
       )}
 
-      <div className="mx-4 my-8 md:mx-10 xl:mx-16">
-        <AdSlot placement="accueil-bandeau" />
-      </div>
-
       <section className="section-champagne px-4 py-10 md:px-10 xl:px-16">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="premium-title text-[22px] md:text-2xl">{t("experienceWeekend")}</h2>
-          <Link href="/experiences" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f2f2f2]" aria-label="Voir les expériences">
-            <ChevronRight className="h-5 w-5" />
-          </Link>
-        </div>
-        <div className="mobile-rail -mx-4 px-4 pb-2 md:mx-0 md:px-0">
-          {experiences.map((offer) => (
-            <div key={offer.id}>
-              <OfferCard offer={offer} />
-            </div>
-          ))}
+        <div className="mx-auto max-w-6xl">
+          <p className="text-sm font-semibold uppercase tracking-[.14em] text-[#C13515]">Votre projet immobilier</p>
+          <h2 className="premium-title mt-2 text-[26px] md:text-3xl">Une plateforme, trois parcours clairs.</h2>
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            <ProjectLink href="/explorer" icon={<Home />} title="Trouver un logement" text="Séjour, location longue durée ou achat." />
+            <ProjectLink href="/publier" icon={<KeyRound />} title="Valoriser mon bien" text="Publiez un bien unique après vérification." />
+            <ProjectLink href="/agences" icon={<Building2 />} title="Gérer un parc immobilier" text="ERP/CRM multi-agents ouvert par notre équipe." />
+          </div>
         </div>
       </section>
-
-      <section className="section-pearl px-4 py-10 md:px-10 xl:px-16">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="premium-title text-[22px] md:text-2xl">{t("stayServices")}</h2>
-          <Link href="/services" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f2f2f2]" aria-label="Voir les services">
-            <ChevronRight className="h-5 w-5" />
-          </Link>
-        </div>
-        <Link href="/services#mobilite" className="mb-5 flex items-center gap-4 rounded-[24px] border border-[#e5e5e5] bg-white p-5 shadow-[0_6px_20px_rgba(0,0,0,.08)]">
-          <span className="gold-ring grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#fff1f3] text-[#C13515]">
-            <CarFront className="h-8 w-8" />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-lg font-semibold">{t("mobility")}</span>
-            <span className="theme-muted mt-1 block text-sm text-[#6a6a6a]">AIBD, Dakar, Petite Côte · {t("verifiedDrivers")}</span>
-          </span>
-          <ArrowRight className="ml-auto h-5 w-5 shrink-0" />
-        </Link>
-        <div className="mobile-rail -mx-4 px-4 pb-2 md:mx-0 md:px-0">
-          {services.map((offer) => (
-            <div key={offer.id}>
-              <OfferCard offer={offer} />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {shops.length > 0 && (
-        <section className="px-4 pb-16 md:px-10 xl:px-16">
-          <div className="mb-5 flex items-end justify-between">
-            <h2 className="text-2xl font-semibold tracking-tight">Boutiques partenaires</h2>
-            <Link href="/boutiques" className="text-sm font-medium underline">
-              Tout voir
-            </Link>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            {shops.map((shop) => (
-              <Link key={shop.id} href="/boutiques" className="overflow-hidden rounded-3xl border border-[#ebebeb]">
-                <div className="relative h-44">
-                  <img src={shop.image} alt="" className="h-full w-full object-cover" />
-                </div>
-                <div className="p-4">
-                  <p className="text-xs text-[#6a6a6a]">{shop.partner}</p>
-                  <p className="mt-1 font-semibold">{shop.title}</p>
-                  {shop.offer && <p className="mt-2 text-sm">{shop.offer}</p>}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
+  );
+}
+
+function ProjectLink({ href, icon, title, text }: { href: string; icon: React.ReactNode; title: string; text: string }) {
+  return (
+    <Link href={href} className="rounded-[22px] border border-[#eadfcb] bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-md">
+      <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#FFF1EE] text-[#C13515]">{icon}</span>
+      <span className="mt-4 block font-semibold">{title}</span>
+      <span className="mt-1 block text-sm leading-6 text-[#6a6a6a]">{text}</span>
+    </Link>
   );
 }
 

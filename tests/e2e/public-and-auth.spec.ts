@@ -22,21 +22,20 @@ test("les parcours privés redirigent les visiteurs vers la connexion", async ({
   await expect(page.getByRole("heading", { name: "Bienvenue" })).toBeVisible();
 });
 
-test("l’inscription sépare logement, propriétaire et partenaire", async ({ page }) => {
+test("l’inscription sépare recherche de logement et propriétaire", async ({ page }) => {
   await page.goto("/connexion");
   await page.getByRole("button", { name: "inscription" }).click();
   await expect(page.getByText("Trouver un logement", { exact: true })).toBeVisible();
   await expect(page.getByText("Publier mon bien", { exact: true })).toBeVisible();
-  await expect(page.getByText("Proposer un service", { exact: true })).toBeVisible();
-  await expect(page.getByText(/ERP\/CRM est ouvert par notre service client/)).toBeVisible();
+  await expect(page.getByText("Proposer un service", { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/ERP\/CRM est ouvert par le service commercial Impulcia Afrique/)).toBeVisible();
 });
 
-test("la marketplace partenaires est publique et la candidature est contrôlée", async ({ page }) => {
-  await page.goto("/partenaires?candidater=1");
-  await expect(page.getByRole("heading", { name: /Professionnels et boutiques/ })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Candidature partenaire" })).toBeVisible();
-  await expect(page.getByText(/Créez un compte pour transmettre/)).toBeVisible();
-  await expect(page.getByPlaceholder("Plombier, blanchisserie, taxi…")).toBeVisible();
+test("les anciens catalogues hors immobilier reviennent à l’accueil", async ({ page }) => {
+  for (const route of ["/partenaires", "/boutiques", "/services", "/experiences"]) {
+    await page.goto(route);
+    await expect(page).toHaveURL((url) => url.pathname === "/");
+  }
 });
 
 test("les catalogues serveur gèrent proprement l’état vide", async ({ page }) => {

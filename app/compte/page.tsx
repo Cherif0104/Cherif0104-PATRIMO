@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BadgeCheck, Bell, CalendarDays, CreditCard, Home, LogOut, MessageCircle, ShieldCheck, Upload, UserRound } from "lucide-react";
+import { BadgeCheck, CalendarDays, CreditCard, Home, LogOut, MessageCircle, Settings, ShieldCheck, Upload, UserRound } from "lucide-react";
 import { InstallAppCard } from "@/components/install-app-card";
 import { PreferencesPanel } from "@/components/preference-controls";
 import { useAuth } from "@/lib/auth";
@@ -50,6 +50,7 @@ export default function AccountPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [paymentBusy, setPaymentBusy] = useState("");
+  const [view, setView] = useState<"activity" | "profile">("activity");
   useTitle("Mon compte · Se Loger au Sénégal");
 
   useEffect(() => {
@@ -238,19 +239,13 @@ export default function AccountPage() {
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
       <div className="mb-7 lg:hidden">
         <div className="flex items-center justify-between">
-          <h1 className="text-[30px] font-semibold tracking-[-0.04em]">Profil</h1>
-          <span className="grid h-11 w-11 place-items-center rounded-full bg-[#f7f7f7]"><Bell className="h-5 w-5" /></span>
-        </div>
-        <div className="mt-7 rounded-[24px] border border-[#e8e8e8] p-7 text-center shadow-[0_8px_24px_rgba(0,0,0,.08)]">
-          <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-[#e7f4f2] text-4xl font-semibold text-[#1F6F66]">
-            {(profile?.full_name || user.email || "A").slice(0, 1).toUpperCase()}
+          <div>
+            <p className="text-sm text-[#6a6a6a]">Mon espace</p>
+            <h1 className="text-[28px] font-semibold tracking-[-0.04em]">{profile?.full_name || user.email}</h1>
           </div>
-          <p className="mt-4 text-3xl font-semibold">{profile?.full_name || user.email}</p>
-          <p className="mt-1 text-[#6a6a6a]">{profile?.account_type === "voyageur" ? "Voyageur" : profile?.account_type === "agence" ? "Agence" : "Propriétaire"}</p>
-          <Link href="/portefeuille" className={`${btnSecondary} mt-5 w-full`}>Mon portefeuille</Link>
-          <button className={`${btnSecondary} mt-2 w-full`} onClick={() => void signOut()}>
-            <LogOut className="h-4 w-4" /> Se déconnecter
-          </button>
+          <span className="grid h-12 w-12 place-items-center rounded-full bg-[#e7f4f2] text-xl font-semibold text-[#1F6F66]">
+            {(profile?.full_name || user.email || "A").slice(0, 1).toUpperCase()}
+          </span>
         </div>
       </div>
 
@@ -268,8 +263,15 @@ export default function AccountPage() {
         </div>
       </div>
 
-      <div className="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,1.3fr)_380px]">
-        <section>
+      <RoleActions accountType={profile?.account_type ?? "voyageur"} />
+
+      <div className="mt-6 grid grid-cols-2 rounded-full bg-[#f2f2f2] p-1 text-sm">
+        <button onClick={() => setView("activity")} className={cx("rounded-full px-4 py-2.5 font-medium", view === "activity" && "bg-white shadow-sm")}>Activité</button>
+        <button onClick={() => setView("profile")} className={cx("rounded-full px-4 py-2.5 font-medium", view === "profile" && "bg-white shadow-sm")}>Profil et sécurité</button>
+      </div>
+
+      <div className="mt-7">
+        {view === "activity" && <section>
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-semibold tracking-tight">Mes demandes</h2>
@@ -324,9 +326,9 @@ export default function AccountPage() {
               </article>
             ))}
           </div>
-        </section>
+        </section>}
 
-        <aside className="rounded-[20px] border border-[#dddddd] p-6 shadow-[0_4px_16px_rgba(0,0,0,.06)]">
+        {view === "profile" && <aside className="mx-auto max-w-2xl rounded-[20px] border border-[#dddddd] p-6 shadow-[0_4px_16px_rgba(0,0,0,.06)]">
           <div className="flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-full bg-[#1F6F66] font-semibold text-white">
               {(profile?.full_name || user.email || "A").slice(0, 1).toUpperCase()}
@@ -380,7 +382,7 @@ export default function AccountPage() {
             {accountType !== "agence" && (
               <div className="rounded-2xl bg-[#FFF8ED] p-4 text-sm">
                 <p className="font-semibold text-[#182A39]">Vous représentez une agence immobilière ?</p>
-                <p className="mt-1 leading-5 text-[#6a6a6a]">Les comptes agences sont ouverts par notre équipe après contrôle des documents professionnels.</p>
+                <p className="mt-1 leading-5 text-[#6a6a6a]">Les comptes agences sont ouverts par le service commercial Impulcia Afrique après contrôle des documents professionnels.</p>
                 <a href="https://wa.me/221788324069?text=Bonjour%2C%20je%20souhaite%20inscrire%20mon%20agence%20sur%20Se%20Loger%20au%20S%C3%A9n%C3%A9gal." target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex font-semibold text-[#16836f] underline">
                   WhatsApp : +221 78 832 40 69
                 </a>
@@ -438,14 +440,48 @@ export default function AccountPage() {
               <p className="mt-3 text-xs leading-5 text-[#6a6a6a]">La certification repose aujourd’hui sur une vérification documentaire. Aucun abonnement n’est facturé tant que l’offre Pro n’est pas définie.</p>
             </>
           )}
-        </aside>
+          <button className={`${btnSecondary} mt-5 w-full`} onClick={() => void signOut()}>
+            <LogOut className="h-4 w-4" /> Se déconnecter
+          </button>
+        </aside>}
       </div>
-      <div className="mt-6 lg:ml-auto lg:w-[380px]">
+      {view === "profile" && <div className="mx-auto mt-6 max-w-2xl">
         <div className="grid gap-4">
           <PreferencesPanel />
           <InstallAppCard />
         </div>
-      </div>
+      </div>}
     </div>
+  );
+}
+
+function RoleActions({ accountType }: { accountType: AccountType }) {
+  const actions = accountType === "agence"
+    ? [
+        { href: "/gestion", label: "Piloter l’agence", icon: Home },
+        { href: "/gestion/crm", label: "Ouvrir le CRM", icon: MessageCircle },
+        { href: "/gestion/equipe", label: "Gérer l’équipe", icon: Settings },
+      ]
+    : accountType === "proprietaire"
+      ? [
+          { href: "/gestion", label: "Gérer mon bien", icon: Home },
+          { href: "/publier", label: "Publier un bien", icon: Upload },
+          { href: "/messages", label: "Voir les messages", icon: MessageCircle },
+        ]
+      : [
+          { href: "/explorer", label: "Trouver un logement", icon: Home },
+          { href: "/voyages", label: "Mes dossiers", icon: CalendarDays },
+          { href: "/messages", label: "Mes messages", icon: MessageCircle },
+        ];
+
+  return (
+    <nav className="mt-7 grid gap-2 sm:grid-cols-3" aria-label="Actions principales">
+      {actions.map(({ href, label, icon: Icon }) => (
+        <Link key={href} href={href} className="flex items-center gap-3 rounded-2xl border border-[#e5e5e5] bg-white p-4 text-sm font-semibold hover:shadow-sm">
+          <Icon className="h-5 w-5 text-[#C13515]" />
+          {label}
+        </Link>
+      ))}
+    </nav>
   );
 }

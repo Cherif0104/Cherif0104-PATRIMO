@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, BadgeCheck, Bath, BedDouble, Heart, MapPin, MessageCircle, Ruler, Share2, Star, X } from "lucide-react";
-import { AdSlot } from "@/components/ad-slot";
 import { BookingCard } from "@/components/booking-card";
 import { MapView } from "@/components/map";
 import { MediaCarousel } from "@/components/media-carousel";
@@ -265,7 +264,6 @@ export default function ListingPage() {
               ))}
             </div>
           </div>
-          <AdSlot placement="fiche" />
         </div>
         {listing.purpose === "vente" ? (
           <aside id="reservation" className="rounded-[24px] border border-[#dddddd] p-6 shadow-[0_8px_28px_rgba(0,0,0,.08)]">

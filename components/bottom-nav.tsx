@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, Luggage, MessageSquare, Search, UserRound } from "lucide-react";
+import { FileText, Heart, Home, MessageSquare, UserRound } from "lucide-react";
 import { cx } from "@/lib/format";
 import { usePreferences } from "@/lib/preferences";
 
@@ -12,9 +12,9 @@ export function BottomNav() {
   if (pathname.startsWith("/gestion") || pathname.startsWith("/admin") || pathname.startsWith("/logements/")) return null;
 
   const items = [
-    { href: "/", label: t("explore"), icon: Search, active: pathname === "/" || pathname.startsWith("/explorer") || pathname.startsWith("/logements") || pathname.startsWith("/experiences") || pathname.startsWith("/services") },
+    { href: "/", label: "Accueil", icon: Home, active: pathname === "/" || pathname.startsWith("/explorer") || pathname.startsWith("/logements") },
     { href: "/favoris", label: t("favorites"), icon: Heart, active: pathname.startsWith("/favoris") },
-    { href: "/voyages", label: t("trips"), icon: Luggage, active: pathname.startsWith("/voyages") },
+    { href: "/voyages", label: "Dossiers", icon: FileText, active: pathname.startsWith("/voyages") },
     { href: "/messages", label: t("messages"), icon: MessageSquare, active: pathname.startsWith("/messages") },
     { href: "/compte", label: t("profile"), icon: UserRound, active: pathname.startsWith("/compte") || pathname.startsWith("/connexion") },
   ];

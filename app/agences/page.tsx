@@ -13,9 +13,9 @@ export default function AgenciesPage() {
     <main className="bg-[#FFFDF7] px-4 py-12 md:px-10 lg:py-20">
       <div className="mx-auto max-w-5xl">
         <div className="max-w-3xl">
-          <p className="text-sm font-bold uppercase tracking-[.14em] text-[#FF4845]">Partenaires professionnels</p>
+          <p className="text-sm font-bold uppercase tracking-[.14em] text-[#FF4845]">Service commercial · Impulcia Afrique</p>
           <h1 className="mt-3 text-4xl font-extrabold tracking-[-.045em] text-[#182A39] md:text-6xl">Votre agence, vérifiée et opérationnelle.</h1>
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-[#5f6870]">Les agences ne créent pas leur accès en libre-service. Notre équipe contrôle l’existence légale, les mandats et les responsables avant d’ouvrir le panel de gestion.</p>
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-[#5f6870]">Les agences ne créent pas leur accès en libre-service. Le service commercial Impulcia Afrique contrôle l’existence légale, les mandats et les responsables avant d’ouvrir le panel de gestion.</p>
           <div className="mt-7 flex flex-wrap gap-3">
             <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-[#16836f] px-5 py-3 text-sm font-semibold text-white">
               <MessageCircle className="h-4 w-4" /> WhatsApp : +221 78 832 40 69

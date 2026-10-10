@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AdSlot } from "@/components/ad-slot";
 import { Photo } from "@/components/photo";
 import { PageHead, Pill } from "@/components/ui";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -40,14 +39,12 @@ export default function DashboardPage() {
   return (
     <div>
       <PageHead
-        eyebrow="Système d'exploitation du parc"
+        eyebrow={profile?.account_type === "agence" ? "Pilotage de l’agence" : "Gestion de votre bien"}
         title={`Bonjour ${profile?.full_name?.split(" ")[0] || "partenaire"}`}
-        text="Les indicateurs ci-dessous proviennent exclusivement des annonces et demandes persistées sur le serveur."
+        text="L’essentiel de votre activité immobilière, puis les actions qui demandent votre attention."
+        action={<Link href="/gestion/biens" className="rounded-full bg-[#222] px-4 py-2.5 text-sm font-semibold text-white">Gérer les biens</Link>}
       />
       {error && <p role="alert" className="mb-4 rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
-      <div className="mb-8">
-        <AdSlot placement="gestion" compact />
-      </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="Biens" value={String(scope.listings.length)} href="/gestion/biens" />
         <Stat label="Demandes actives" value={String(activeBookings.length)} href="/gestion/reservations" />

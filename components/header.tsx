@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Bell, Compass, ConciergeBell, Home, UserRound } from "lucide-react";
+import { Bell, Building2, Home, KeyRound, UserRound } from "lucide-react";
 import { btnGhost, cx, formatDateTime } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
 import { loadUserNotifications, markNotificationsRead, supabase } from "@/lib/supabase";
@@ -81,9 +81,9 @@ export function Header() {
   }
 
   const links = [
-    { href: "/explorer", label: t("explore") },
-    { href: "/partenaires", label: "Partenaires" },
-    { href: "/gestion", label: "Gestion" },
+    { href: "/explorer", label: "Tous les biens" },
+    ...(state.role !== "voyageur" ? [{ href: "/gestion", label: "Gérer mes biens" }] : []),
+    { href: "/agences", label: "Espace agences" },
     ...(state.role === "admin" ? [{ href: "/admin", label: "Réglages" }] : []),
   ];
 
@@ -96,21 +96,21 @@ export function Header() {
           {[
             {
               href: "/",
-              label: t("stays"),
+              label: "Accueil",
               icon: Home,
               active: pathname === "/" || pathname.startsWith("/logements") || pathname.startsWith("/explorer"),
             },
             {
-              href: "/experiences",
-              label: t("experiences"),
-              icon: Compass,
-              active: pathname.startsWith("/experiences"),
+              href: "/explorer?marche=location",
+              label: "Louer",
+              icon: KeyRound,
+              active: pathname.startsWith("/explorer") && pathname.includes("marche=location"),
             },
             {
-              href: "/services",
-              label: t("services"),
-              icon: ConciergeBell,
-              active: pathname.startsWith("/services"),
+              href: "/explorer?marche=vente",
+              label: "Acheter",
+              icon: Building2,
+              active: pathname.startsWith("/explorer") && pathname.includes("marche=vente"),
             },
           ].map((item) => {
             const Icon = item.icon;

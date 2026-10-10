@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Photo } from "@/components/photo";
 import { PageHead, Pill } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
@@ -70,18 +71,25 @@ export default function AdminPage() {
     <div className="mx-auto max-w-6xl px-4 py-10 md:px-8">
       <PageHead
         eyebrow="Administration"
-        title="Qualité, catalogue et opérations"
-        text="Pilotez les annonces, certifications, services, commissions et partenaires depuis un panel de gouvernance unique."
+        title="Pilotage immobilier à 360°"
+        text="Traitez les annonces, certifications, agences et règles commerciales depuis une vue opérationnelle unique."
       />
+      <nav className="sticky top-20 z-30 mb-8 flex gap-2 overflow-x-auto rounded-2xl border border-[#ebebeb] bg-white/95 p-2 shadow-sm backdrop-blur" aria-label="Administration">
+        <Link href="/" className="shrink-0 rounded-full px-3 py-2 text-sm font-semibold">Accueil</Link>
+        {[
+          ["#annonces", "Annonces"],
+          ["#operations", "Opérations"],
+          ["#agences", "Agences"],
+          ["#regles", "Règles"],
+        ].map(([href, label]) => <a key={href} href={href} className="shrink-0 rounded-full bg-[#f7f7f7] px-3 py-2 text-sm">{label}</a>)}
+      </nav>
       {storageWarning && <p className="mb-4 rounded-2xl bg-[#fff4e5] px-4 py-3 text-sm">{storageWarning}</p>}
       {settingsStatus && <p className="mb-4 text-right text-xs text-[#6a6a6a]">{settingsStatus}</p>}
       <ReviewQueue />
       <OperationsQueue />
       <AgencyOnboarding />
-      <PartnerMarketplaceAdmin />
-      <OfferCatalogAdmin userId={user?.id} />
 
-      <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <section id="regles" className="scroll-mt-40 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-4">
           <label className="block rounded-3xl border border-[#ebebeb] p-5 text-sm">
             Mois d&apos;avance demandés au locataire
@@ -137,28 +145,6 @@ export default function AdminPage() {
         />
       </section>
 
-      <section className="mt-12">
-        <h2 className="text-2xl font-semibold tracking-tight">Publicités et boutiques</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6a6a6a]">
-          Chaque emplacement accueille une offre partenaire : accueil, carte, fiche logement, espace de gestion, ou boutique.
-        </p>
-        <div className="mt-4 grid gap-4">
-          {settings.ads.map((ad) => (
-            <AdCard
-              key={ad.id}
-              ad={ad}
-              onChange={(partial) =>
-                save({
-                  ...settings,
-                  ads: settings.ads.map((item) => (item.id === ad.id ? { ...item, ...partial } : item)),
-                })
-              }
-              onRemove={() => save({ ...settings, ads: settings.ads.filter((item) => item.id !== ad.id) })}
-            />
-          ))}
-        </div>
-        <AddAd onAdd={(ad) => save({ ...settings, ads: [...settings.ads, ad] })} />
-      </section>
     </div>
   );
 }
@@ -187,7 +173,7 @@ function AgencyOnboarding() {
   }
 
   return (
-    <section className="mb-12 rounded-3xl border border-[#ebebeb] bg-[#FFFDF7] p-5">
+    <section id="agences" className="scroll-mt-40 mb-12 rounded-3xl border border-[#ebebeb] bg-[#FFFDF7] p-5">
       <h2 className="text-2xl font-semibold">Ouvrir un compte agence</h2>
       <p className="mt-2 text-sm text-[#6a6a6a]">Le responsable crée d’abord un compte client. L’administration ouvre ensuite son parcours documentaire agence.</p>
       <form onSubmit={submit} className="mt-5 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
@@ -345,7 +331,7 @@ function PartnerMarketplaceAdmin() {
   }
 
   return (
-    <section className="mb-12 rounded-3xl border border-[#ebebeb] p-5">
+    <section id="partenaires-admin" className="scroll-mt-40 mb-12 rounded-3xl border border-[#ebebeb] p-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-2xl font-semibold">Marketplace partenaires</h2>
@@ -453,7 +439,7 @@ function OfferCatalogAdmin({ userId }: { userId?: string }) {
   }
 
   return (
-    <section className="mb-12 rounded-3xl border border-[#ebebeb] p-5">
+    <section id="catalogue-offres" className="scroll-mt-40 mb-12 rounded-3xl border border-[#ebebeb] p-5">
       <h2 className="text-2xl font-semibold">Catalogue expériences et services</h2>
       <p className="mt-2 text-sm text-[#6a6a6a]">Les offres publiées ici deviennent immédiatement visibles dans le catalogue public serveur.</p>
       <form onSubmit={create} className="mt-5 grid gap-3 md:grid-cols-2">
@@ -489,17 +475,13 @@ function OfferCatalogAdmin({ userId }: { userId?: string }) {
 
 function OperationsQueue() {
   const [verifications, setVerifications] = useState<VerificationRequest[]>([]);
-  const [offers, setOffers] = useState<OfferRequest[]>([]);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [documentLinks, setDocumentLinks] = useState<Record<string, Array<{ label: string; url: string }>>>({});
 
   useEffect(() => {
-    Promise.all([loadVerificationRequests(), loadOfferRequests()])
-      .then(([verificationRows, offerRows]) => {
-        setVerifications(verificationRows);
-        setOffers(offerRows);
-      })
+    loadVerificationRequests()
+      .then(setVerifications)
       .catch(() => setError("Les demandes opérationnelles ne peuvent pas être chargées."));
   }, []);
 
@@ -535,26 +517,9 @@ function OperationsQueue() {
     }
   }
 
-  async function setOfferStatus(request: OfferRequest, status: "contacted" | "confirmed" | "declined" | "completed") {
-    setBusy(request.id);
-    setError("");
-    try {
-      await updateOfferRequestStatus(request.id, status);
-      setOffers((rows) =>
-        status === "declined" || status === "completed"
-          ? rows.filter((row) => row.id !== request.id)
-          : rows.map((row) => row.id === request.id ? { ...row, status } : row),
-      );
-    } catch {
-      setError("Le statut de la demande n’a pas été enregistré.");
-    } finally {
-      setBusy("");
-    }
-  }
-
   return (
-    <section className="mb-12 grid gap-8 lg:grid-cols-2">
-      <div>
+    <section id="operations" className="scroll-mt-40 mb-12">
+      <div className="max-w-3xl">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-2xl font-semibold tracking-tight">Certifications</h2>
           <Pill tone={verifications.length ? "warn" : "good"}>{verifications.length} à traiter</Pill>
@@ -593,29 +558,7 @@ function OperationsQueue() {
         </div>
       </div>
 
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-2xl font-semibold tracking-tight">Expériences et services</h2>
-          <Pill tone={offers.length ? "warn" : "good"}>{offers.length} ouvertes</Pill>
-        </div>
-        <div className="mt-4 grid gap-3">
-          {offers.map((request) => (
-            <article key={request.id} className="rounded-[20px] border border-[#e5e5e5] p-4">
-              <p className="text-xs font-semibold uppercase tracking-[.12em] text-[#FF385C]">{request.offer_kind}</p>
-              <p className="mt-1 font-semibold">{request.offer_title}</p>
-              <p className="mt-1 text-sm text-[#6a6a6a]">{request.customer_name} · {request.preferred_date} · {request.people} personne{request.people > 1 ? "s" : ""}</p>
-              {request.customer_phone && <a className="mt-2 block text-sm font-medium underline" href={`tel:${request.customer_phone}`}>{request.customer_phone}</a>}
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button className={btnPrimary} disabled={busy === request.id} onClick={() => void setOfferStatus(request, "contacted")}>Contacté</button>
-                <button className={btnSecondary} disabled={busy === request.id} onClick={() => void setOfferStatus(request, "confirmed")}>Confirmer</button>
-                <button className={btnSecondary} disabled={busy === request.id} onClick={() => void setOfferStatus(request, "declined")}>Refuser</button>
-              </div>
-            </article>
-          ))}
-          {offers.length === 0 && <p className="rounded-2xl border border-dashed border-[#cccccc] p-5 text-sm text-[#6a6a6a]">Aucune demande de service ouverte.</p>}
-        </div>
-      </div>
-      {error && <p role="alert" className="lg:col-span-2 rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
+      {error && <p role="alert" className="mt-4 rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
     </section>
   );
 }
@@ -652,7 +595,7 @@ function ReviewQueue() {
   }
 
   return (
-    <section className="mb-12">
+    <section id="annonces" className="scroll-mt-40 mb-12">
       <div className="flex items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Gouvernance des annonces</h2>

@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   Building2,
   CalendarDays,
   ClipboardCheck,
   ContactRound,
   FileText,
+  Home,
   LayoutDashboard,
   UserCog,
   Users,
@@ -32,11 +34,16 @@ const links = [
 
 export function GestionShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, profile, loading } = useAuth();
   const isAdmin = user?.app_metadata?.role === "admin";
   const isVerifiedProfessional =
     profile?.identity_status === "verifie"
     && (profile.account_type === "proprietaire" || profile.account_type === "agence");
+  const visibleLinks = links.filter((link) =>
+    isAdmin
+    || profile?.account_type === "agence"
+    || !["/gestion/crm", "/gestion/equipe"].includes(link.href));
 
   if (loading) return <div className="p-12 text-center text-sm text-[#6a6a6a]">Ouverture de la gestion…</div>;
 
@@ -65,7 +72,7 @@ export function GestionShell({ children }: { children: React.ReactNode }) {
           </p>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:px-3">
-          {links.map((link) => {
+          {visibleLinks.map((link) => {
             const active = link.exact ? pathname === link.href : pathname === link.href || pathname.startsWith(`${link.href}/`);
             const Icon = link.icon;
             return (
@@ -84,7 +91,17 @@ export function GestionShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
       </aside>
-      <div className="px-4 py-8 md:px-8 lg:px-10">{children}</div>
+      <div className="min-w-0 px-4 py-5 md:px-8 lg:px-10 lg:py-8">
+        <div className="mb-5 flex items-center justify-between lg:hidden">
+          <button onClick={() => router.back()} className="inline-flex items-center gap-2 rounded-full border border-[#dddddd] px-3 py-2 text-sm font-medium">
+            <ArrowLeft className="h-4 w-4" /> Retour
+          </button>
+          <Link href="/" className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium">
+            <Home className="h-4 w-4" /> Accueil
+          </Link>
+        </div>
+        {children}
+      </div>
     </div>
   );
 }

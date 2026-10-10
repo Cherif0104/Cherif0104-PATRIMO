@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { PickMap } from "@/components/map";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { PageHead } from "@/components/ui";
@@ -58,6 +59,7 @@ export default function PublishPage() {
   const [error, setError] = useState("");
   const [lat, setLat] = useState(defaultPlace.lat);
   const [lng, setLng] = useState(defaultPlace.lng);
+  const [step, setStep] = useState(1);
   useTitle("Publier un bien · Se Loger au Sénégal");
 
   const professional = profile?.account_type === "proprietaire" || profile?.account_type === "agence" || user?.app_metadata?.role === "admin";
@@ -157,7 +159,7 @@ export default function PublishPage() {
     return (
       <div className="mx-auto max-w-xl px-4 py-24 text-center">
         <h1 className="text-3xl font-semibold">Activez votre profil propriétaire</h1>
-        <p className="mt-3 text-[#6a6a6a]">Les propriétaires passent par la vérification documentaire. Les agences sont créées et activées uniquement par notre équipe.</p>
+        <p className="mt-3 text-[#6a6a6a]">Les propriétaires passent par la vérification documentaire. Les agences sont créées et activées uniquement par le service commercial Impulcia Afrique.</p>
         <div className="mt-7 flex flex-wrap justify-center gap-2">
           <Link href="/compte" className={btnPrimary}>Demander la vérification</Link>
           <a href="https://wa.me/221788324069?text=Bonjour%2C%20je%20souhaite%20inscrire%20mon%20agence%20sur%20Se%20Loger%20au%20S%C3%A9n%C3%A9gal." target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-full border border-[#dddddd] px-5 py-2.5 text-sm font-semibold">Contacter l’équipe sur WhatsApp</a>
@@ -174,6 +176,15 @@ export default function PublishPage() {
         text="Le logement est envoyé en validation. Une annonce ne devient publique qu'après contrôle de son contenu et de son propriétaire."
       />
       <div className="grid gap-4">
+        <div className="mb-2 grid grid-cols-3 gap-2" aria-label={`Étape ${step} sur 3`}>
+          {["Projet", "Caractéristiques", "Photos et validation"].map((label, index) => (
+            <div key={label} className="text-center">
+              <div className={`h-1.5 rounded-full ${step >= index + 1 ? "bg-[#FF4845]" : "bg-[#e5e5e5]"}`} />
+              <p className={`mt-2 text-xs ${step === index + 1 ? "font-semibold" : "text-[#6a6a6a]"}`}>{label}</p>
+            </div>
+          ))}
+        </div>
+        {step === 1 && <>
         <label className="text-sm font-medium">
           Titre
           <input className={`${fieldClass} mt-1`} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Appartement lumineux à ..." />
@@ -237,6 +248,10 @@ export default function PublishPage() {
               <option value="commerce">Commerce</option>
             </select>
           </label>
+        </div>
+        </>}
+        {step === 2 && <>
+        <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm font-medium">
             Ameublement
             <select className={`${fieldClass} mt-1`} value={furnishing} onChange={(event) => setFurnishing(event.target.value as Furnishing)}>
@@ -283,6 +298,8 @@ export default function PublishPage() {
             <input className={`${fieldClass} mt-1`} type="number" min={0} value={bedrooms} onChange={(event) => setBedrooms(Number(event.target.value))} />
           </label>
         </div>
+        </>}
+        {step === 3 && <>
         <label className="text-sm font-medium">
           Description
           <textarea className={`${fieldClass} mt-1 min-h-28`} value={description} onChange={(event) => setDescription(event.target.value)} />
@@ -309,9 +326,23 @@ export default function PublishPage() {
           </div>
         )}
         {error && <p role="alert" className="rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
-        <button className={`${btnPrimary} mt-2`} disabled={submitting || uploading || title.trim().length < 10 || price <= 0 || images.length < 3} onClick={() => void publish()}>
-          {submitting ? "Envoi en validation…" : "Envoyer en validation"}
-        </button>
+        </>}
+        <div className="mt-4 flex items-center justify-between border-t border-[#eeeeee] pt-4">
+          {step > 1 ? (
+            <button className="inline-flex items-center gap-2 rounded-full border border-[#dddddd] px-4 py-2.5 text-sm font-semibold" onClick={() => setStep((value) => value - 1)}>
+              <ArrowLeft className="h-4 w-4" /> Retour
+            </button>
+          ) : <Link href="/compte" className="inline-flex items-center gap-2 px-2 py-2.5 text-sm font-semibold"><ArrowLeft className="h-4 w-4" /> Quitter</Link>}
+          {step < 3 ? (
+            <button className={btnPrimary} disabled={step === 1 && title.trim().length < 10} onClick={() => setStep((value) => value + 1)}>
+              Continuer <ArrowRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button className={btnPrimary} disabled={submitting || uploading || title.trim().length < 10 || price <= 0 || images.length < 3} onClick={() => void publish()}>
+              {submitting ? "Envoi en validation…" : "Envoyer en validation"}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

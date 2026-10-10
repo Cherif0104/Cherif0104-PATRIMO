@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { BadgeCheck, Building2, Home, LockKeyhole, Search, ShieldCheck, Store, X } from "lucide-react";
+import { BadgeCheck, Building2, Home, LockKeyhole, Search, ShieldCheck, X } from "lucide-react";
 import { btnPrimary, cx, fieldClass } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
@@ -17,7 +17,7 @@ function AuthForm() {
   const [mode, setMode] = useState<"connexion" | "inscription" | "oubli" | "nouveau">("connexion");
   const [fullName, setFullName] = useState("");
   const [accountType, setAccountType] = useState<AccountType>("voyageur");
-  const [signupIntent, setSignupIntent] = useState<"chercher" | "publier" | "partenaire">("chercher");
+  const [signupIntent, setSignupIntent] = useState<"chercher" | "publier">("chercher");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -51,7 +51,7 @@ function AuthForm() {
         if (authError) throw authError;
         router.replace(returnTo);
       } else if (mode === "inscription") {
-        const nextAfterSignup = signupIntent === "partenaire" ? "/partenaires?candidater=1" : returnTo;
+        const nextAfterSignup = returnTo;
         const callback = new URL("/auth/callback", window.location.origin);
         callback.searchParams.set("next", nextAfterSignup);
         const { data, error: authError } = await supabase.auth.signUp({
@@ -171,11 +171,10 @@ function AuthForm() {
                 </label>
                 <fieldset>
                   <legend className="text-sm font-medium">Je souhaite</legend>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
                     {([
                       { intent: "chercher", account: "voyageur", label: "Trouver un logement", note: "Séjour, location ou achat", icon: Search },
                       { intent: "publier", account: "proprietaire", label: "Publier mon bien", note: "Pour un propriétaire particulier", icon: Building2 },
-                      { intent: "partenaire", account: "voyageur", label: "Proposer un service", note: "Artisan, boutique ou mobilité", icon: Store },
                     ] as const).map(({ intent, account, label, note, icon: Icon }) => (
                       <button
                         type="button"
@@ -196,7 +195,7 @@ function AuthForm() {
                     ))}
                   </div>
                   <p className="mt-3 text-xs leading-5 text-[#6a6a6a]">
-                    Vous gérez plusieurs biens ? <Link href="/agences" className="font-semibold underline">L’espace agence ERP/CRM est ouvert par notre service client.</Link>
+                    Vous gérez plusieurs biens ? <Link href="/agences" className="font-semibold underline">L’espace agence ERP/CRM est ouvert par le service commercial Impulcia Afrique.</Link>
                   </p>
                 </fieldset>
               </>

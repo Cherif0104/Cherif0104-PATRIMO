@@ -30,7 +30,7 @@ export default function FavoritesPage() {
           </span>
           <h2 className="mt-6 text-2xl font-semibold">Créez votre première sélection</h2>
           <p className="mt-2 text-[15px] leading-6 text-[#6a6a6a]">
-            Touchez le cœur d’un logement, d’une expérience ou d’un service pour le retrouver ici.
+            Touchez le cœur d’un logement pour le retrouver ici.
           </p>
           <Link href="/" className={`${btnPrimary} mt-6`}>Commencer à explorer</Link>
         </section>

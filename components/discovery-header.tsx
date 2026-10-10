@@ -7,21 +7,19 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { LocationSearchInput } from "@/components/location-search-input";
 import { cx } from "@/lib/format";
-import { usePreferences } from "@/lib/preferences";
 
 const tabs = [
-  { href: "/", labelKey: "all", key: "all" },
-  { href: "/#logements", labelKey: "stays", key: "stays" },
-  { href: "/experiences", labelKey: "experiences", key: "experiences" },
-  { href: "/services", labelKey: "services", key: "services" },
+  { href: "/", label: "Tous", key: "all" },
+  { href: "/explorer?marche=location", label: "À louer", key: "stays" },
+  { href: "/explorer?marche=vente", label: "À vendre", key: "sale" },
+  { href: "/explorer?type=terrain", label: "Terrains", key: "land" },
 ] as const;
 
 export function DiscoveryHeader({
   active = "all",
 }: {
-  active?: "all" | "stays" | "experiences" | "services";
+  active?: "all" | "stays" | "sale" | "land";
 }) {
-  const { t } = usePreferences();
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -127,7 +125,7 @@ export function DiscoveryHeader({
                 : "theme-border app-card border-[#e6e6e6]",
             )}
           >
-            {t(tab.labelKey)}
+            {tab.label}
           </Link>
         ))}
       </nav>

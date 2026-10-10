@@ -9,6 +9,8 @@ const columns = [
       ["Conditions d’utilisation", "/conditions"],
       ["Confidentialité", "/confidentialite"],
       ["Explorer la carte", "/explorer"],
+      ["Services immobiliers", "/services"],
+      ["Télécharger l’application", "/telecharger"],
       ["Publier un bien", "/publier"],
       ["Inscrire une agence", "/agences"],
     ],
@@ -25,12 +27,13 @@ const columns = [
     ],
   },
   {
-    title: "Gestion",
+    title: "Professionnels",
     links: [
-      ["Espace propriétaire", "/gestion"],
-      ["Finances", "/gestion/finances"],
-      ["Incidents", "/gestion/incidents"],
-      ["États des lieux", "/gestion/etats-des-lieux"],
+      ["Trouver un expert", "/services"],
+      ["Nettoyage & conciergerie", "/services?categorie=entretien"],
+      ["Artisans & dépannage", "/services?categorie=artisan"],
+      ["Juridique & topographie", "/services?categorie=juridique"],
+      ["Rejoindre l’annuaire", "/services?rejoindre=1"],
     ],
   },
 ];

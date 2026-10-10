@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, ChevronRight, Home, KeyRound } from "lucide-react";
+import { Building2, ChevronRight, Home, KeyRound, Wrench } from "lucide-react";
 import { DiscoveryHeader } from "@/components/discovery-header";
 import { PropertyCard } from "@/components/property-card";
 import { SearchBar } from "@/components/search-bar";
@@ -66,11 +66,12 @@ export default function HomePage() {
       <section className="section-champagne px-4 py-10 md:px-10 xl:px-16">
         <div className="mx-auto max-w-6xl">
           <p className="text-sm font-semibold uppercase tracking-[.14em] text-[#C13515]">Votre projet immobilier</p>
-          <h2 className="premium-title mt-2 text-[26px] md:text-3xl">Une plateforme, trois parcours clairs.</h2>
-          <div className="mt-6 grid gap-3 md:grid-cols-3">
+          <h2 className="premium-title mt-2 text-[26px] md:text-3xl">Une plateforme, quatre parcours clairs.</h2>
+          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <ProjectLink href="/explorer" icon={<Home />} title="Trouver un logement" text="Séjour, location longue durée ou achat." />
             <ProjectLink href="/publier" icon={<KeyRound />} title="Valoriser mon bien" text="Publiez un bien unique après vérification." />
             <ProjectLink href="/agences" icon={<Building2 />} title="Gérer un parc immobilier" text="ERP/CRM multi-agents ouvert par notre équipe." />
+            <ProjectLink href="/services" icon={<Wrench />} title="Trouver un professionnel" text="Artisans, entretien, topographie et conciergerie." />
           </div>
         </div>
       </section>

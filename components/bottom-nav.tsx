@@ -2,26 +2,37 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Heart, Home, MessageSquare, UserRound } from "lucide-react";
+import { Download, FileText, Heart, Home, MessageSquare, Search, UserRound, Wrench } from "lucide-react";
 import { cx } from "@/lib/format";
 import { usePreferences } from "@/lib/preferences";
+import { useAuth } from "@/lib/auth";
 
 export function BottomNav() {
   const pathname = usePathname();
   const { t } = usePreferences();
+  const { user, loading } = useAuth();
   if (pathname.startsWith("/gestion") || pathname.startsWith("/admin") || pathname.startsWith("/logements/")) return null;
 
-  const items = [
-    { href: "/", label: "Accueil", icon: Home, active: pathname === "/" || pathname.startsWith("/explorer") || pathname.startsWith("/logements") },
+  const publicItems = [
+    { href: "/", label: "Accueil", icon: Home, active: pathname === "/" },
+    { href: "/explorer", label: "Explorer", icon: Search, active: pathname.startsWith("/explorer") || pathname.startsWith("/logements") },
+    { href: "/services", label: "Services", icon: Wrench, active: pathname.startsWith("/services") },
+    { href: "/telecharger", label: "Installer", icon: Download, active: pathname.startsWith("/telecharger") },
+    { href: "/connexion", label: "Connexion", icon: UserRound, active: pathname.startsWith("/connexion") },
+  ];
+  const privateItems = [
+    { href: "/", label: "Accueil", icon: Home, active: pathname === "/" || pathname.startsWith("/explorer") },
     { href: "/favoris", label: t("favorites"), icon: Heart, active: pathname.startsWith("/favoris") },
     { href: "/voyages", label: "Dossiers", icon: FileText, active: pathname.startsWith("/voyages") },
     { href: "/messages", label: t("messages"), icon: MessageSquare, active: pathname.startsWith("/messages") },
-    { href: "/compte", label: t("profile"), icon: UserRound, active: pathname.startsWith("/compte") || pathname.startsWith("/connexion") },
+    { href: "/telecharger", label: "Installer", icon: Download, active: pathname.startsWith("/telecharger") },
+    { href: "/compte", label: t("profile"), icon: UserRound, active: pathname.startsWith("/compte") },
   ];
+  const items = !loading && user ? privateItems : publicItems;
 
   return (
     <nav className="app-surface theme-border fixed inset-x-0 bottom-0 z-[1200] border-t border-[#e5e5e5] lg:hidden" aria-label="Navigation principale">
-      <ul className="grid h-[68px] grid-cols-5 px-1 pb-[max(5px,env(safe-area-inset-bottom))] pt-1">
+      <ul className={`grid h-[68px] ${items.length === 6 ? "grid-cols-6" : "grid-cols-5"} px-1 pb-[max(5px,env(safe-area-inset-bottom))] pt-1`}>
         {items.map((item) => {
           const Icon = item.icon;
           return (

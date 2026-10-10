@@ -15,7 +15,7 @@ test("le catalogue public est servi avec les éléments SEO", async ({ page }) =
 });
 
 test("les parcours privés redirigent les visiteurs vers la connexion", async ({ page }) => {
-  for (const route of ["/compte", "/voyages", "/messages", "/publier", "/portefeuille", "/gestion", "/gestion/contrats", "/gestion/crm", "/admin"]) {
+  for (const route of ["/compte", "/favoris", "/voyages", "/messages", "/publier", "/portefeuille", "/gestion", "/gestion/contrats", "/gestion/crm", "/admin"]) {
     await page.goto(route);
     await expect(page).toHaveURL((url) => url.pathname === "/connexion" && url.searchParams.get("retour") === route);
   }
@@ -31,11 +31,39 @@ test("l’inscription sépare recherche de logement et propriétaire", async ({ 
   await expect(page.getByText(/ERP\/CRM est ouvert par le service commercial Impulcia Afrique/)).toBeVisible();
 });
 
-test("les anciens catalogues hors immobilier reviennent à l’accueil", async ({ page }) => {
-  for (const route of ["/partenaires", "/boutiques", "/services", "/experiences"]) {
+test("les anciens catalogues hors périmètre reviennent à l’accueil", async ({ page }) => {
+  for (const route of ["/partenaires", "/boutiques", "/experiences"]) {
     await page.goto(route);
     await expect(page).toHaveURL((url) => url.pathname === "/");
   }
+});
+
+test("la navigation publique masque les données privées", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('nav[aria-label="Navigation principale"] a[href="/favoris"]')).toHaveCount(0);
+  await expect(page.locator('nav[aria-label="Navigation principale"] a[href="/messages"]')).toHaveCount(0);
+  await expect(page.locator('nav[aria-label="Navigation principale"] a[href="/services"]')).toHaveCount(1);
+  await expect(page.locator('nav[aria-label="Navigation principale"] a[href="/telecharger"]')).toHaveCount(1);
+});
+
+test("le centre de téléchargement explique chaque plateforme", async ({ page }) => {
+  await page.goto("/telecharger");
+  await expect(page.getByRole("heading", { name: /Votre immobilier sénégalais/ })).toBeVisible();
+  for (const platform of ["Android", "iPhone & iPad", "Windows", "macOS & Linux"]) {
+    await expect(page.getByRole("heading", { name: platform })).toBeVisible();
+  }
+});
+
+test("l’annuaire immobilier propose recherche, filtres et WhatsApp", async ({ page }) => {
+  await page.goto("/services");
+  await expect(page.getByRole("heading", { name: /Trouvez le bon professionnel/ })).toBeVisible();
+  await expect(page.getByPlaceholder("Plombier, géomètre, nettoyage…")).toBeVisible();
+  await expect(page.getByPlaceholder("Ville ou quartier")).toHaveCount(0);
+  await page.getByRole("button", { name: "Afficher les filtres" }).click();
+  await expect(page.getByPlaceholder("Ville ou quartier")).toBeVisible();
+  await page.getByRole("link", { name: /Sunu Plan Topographie/ }).first().click();
+  await expect(page).toHaveURL(/\/services\/topographie-sunu-plan/);
+  await expect(page.getByRole("link", { name: /Contacter sur WhatsApp/ })).toHaveAttribute("href", /wa\.me\/221788324069/);
 });
 
 test("la recherche accepte une destination saisie et expose les filtres", async ({ page }) => {

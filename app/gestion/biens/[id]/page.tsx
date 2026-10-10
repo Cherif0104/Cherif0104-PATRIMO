@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarOff, Save, Trash2, UserPlus } from "lucide-react";
+import { CalendarOff, CheckCircle2, Save, Trash2, UserPlus } from "lucide-react";
 import { PageHead, Pill } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { btnPrimary, btnSecondary, fieldClass, formatDate } from "@/lib/format";
 import {
   createAvailabilityBlock,
   addPropertyStakeholderByEmail,
+  confirmListingAvailability,
   deleteAvailabilityBlock,
   loadAvailabilityBlocks,
   loadPropertyStakeholders,
@@ -149,6 +150,27 @@ export default function ManageListingPage() {
     }
   }
 
+  async function confirmAvailability(outcome: "available" | "rented" | "sold") {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const updated = await confirmListingAvailability(listing!, outcome);
+      dispatch({ type: "merge-marketplace-listings", listings: [updated] });
+      setMessage(
+        outcome === "available"
+          ? "Disponibilité confirmée. L’annonce reste visible."
+          : outcome === "sold"
+            ? "Bien marqué comme vendu et annonce retirée."
+            : "Bien marqué comme loué et annonce retirée.",
+      );
+    } catch {
+      setError("La disponibilité n’a pas pu être confirmée.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function addStakeholder(event: React.FormEvent) {
     event.preventDefault();
     if (!stakeholderEmail.trim()) return;
@@ -183,6 +205,28 @@ export default function ManageListingPage() {
       />
       {error && <p role="alert" className="mb-4 rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
       {message && <p className="mb-4 rounded-xl bg-[#e7f4f2] px-4 py-3 text-sm text-[#145e57]">{message}</p>}
+
+      {listing.publicationStatus === "published" && (
+        <section className="mb-6 rounded-[24px] border border-[#eadfcb] bg-[#FFF8ED] p-5">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#16836f]" />
+            <div className="flex-1">
+              <h2 className="font-semibold">Cette annonce est-elle toujours disponible ?</h2>
+              <p className="mt-1 text-sm leading-6 text-[#6a6a6a]">
+                Nous vous le redemandons automatiquement après 14 jours afin de garder un catalogue fiable.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button type="button" disabled={busy} onClick={() => void confirmAvailability("available")} className={btnPrimary}>
+                  Toujours disponible
+                </button>
+                <button type="button" disabled={busy} onClick={() => void confirmAvailability(listing.purpose === "vente" ? "sold" : "rented")} className={btnSecondary}>
+                  {listing.purpose === "vente" ? "Le bien est vendu" : "Le bien est loué"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className="grid gap-8 xl:grid-cols-[1fr_420px]">
         <form onSubmit={saveListing} className="grid gap-4 rounded-3xl border border-[#ebebeb] p-5">

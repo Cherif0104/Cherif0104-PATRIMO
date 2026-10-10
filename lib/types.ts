@@ -30,6 +30,9 @@ export type Listing = {
   organizationId?: string;
   manageable?: boolean;
   publicationStatus?: "draft" | "pending_review" | "published" | "suspended" | "archived";
+  availabilityStatus?: "available" | "rented" | "sold";
+  lastAvailabilityConfirmedAt?: string;
+  lastAvailabilityPromptAt?: string;
   title: string;
   city: string;
   country: string;
@@ -479,6 +482,17 @@ export type PartnerProduct = {
   active: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type PartnerReview = {
+  id: string;
+  partner_id: string;
+  author_id: string;
+  rating: number;
+  body: string;
+  created_at: string;
+  updated_at: string;
+  profiles?: { full_name: string } | null;
 };
 
 export type PartnerApplication = {

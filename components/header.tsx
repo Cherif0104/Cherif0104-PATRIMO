@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Bell, Building2, Home, KeyRound, UserRound } from "lucide-react";
+import { Bell, Building2, Home, KeyRound, UserRound, Wrench } from "lucide-react";
 import { btnGhost, cx, formatDateTime } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
 import { loadUserNotifications, markNotificationsRead, supabase } from "@/lib/supabase";
@@ -111,6 +111,12 @@ export function Header() {
               label: "Acheter",
               icon: Building2,
               active: pathname.startsWith("/explorer") && pathname.includes("marche=vente"),
+            },
+            {
+              href: "/services",
+              label: "Services",
+              icon: Wrench,
+              active: pathname.startsWith("/services"),
             },
           ].map((item) => {
             const Icon = item.icon;

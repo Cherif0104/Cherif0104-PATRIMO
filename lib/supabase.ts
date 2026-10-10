@@ -17,6 +17,7 @@ import type {
   PaymentOrder,
   PartnerApplication,
   PartnerProduct,
+  PartnerReview,
   PortfolioHolding,
   Payout,
   Profile,
@@ -64,7 +65,7 @@ export async function loadPublishedListings(): Promise<Listing[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("marketplace_listings")
-    .select("id, owner_id, organization_id, status, data")
+    .select("id, owner_id, organization_id, status, availability_status, last_availability_confirmed_at, last_availability_prompt_at, data")
     .eq("status", "published")
     .order("published_at", { ascending: false });
   if (error) throw error;
@@ -74,6 +75,9 @@ export async function loadPublishedListings(): Promise<Listing[]> {
     ownerUserId: row.owner_id,
     organizationId: row.organization_id ?? undefined,
     publicationStatus: row.status,
+    availabilityStatus: row.availability_status,
+    lastAvailabilityConfirmedAt: row.last_availability_confirmed_at ?? undefined,
+    lastAvailabilityPromptAt: row.last_availability_prompt_at ?? undefined,
   }));
 }
 
@@ -81,7 +85,7 @@ export async function loadOwnedListings(userId: string): Promise<Listing[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("marketplace_listings")
-    .select("id, owner_id, organization_id, status, data")
+    .select("id, owner_id, organization_id, status, availability_status, last_availability_confirmed_at, last_availability_prompt_at, data")
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row) => ({
@@ -91,6 +95,9 @@ export async function loadOwnedListings(userId: string): Promise<Listing[]> {
     organizationId: row.organization_id ?? undefined,
     manageable: row.owner_id === userId || Boolean(row.organization_id),
     publicationStatus: row.status,
+    availabilityStatus: row.availability_status,
+    lastAvailabilityConfirmedAt: row.last_availability_confirmed_at ?? undefined,
+    lastAvailabilityPromptAt: row.last_availability_prompt_at ?? undefined,
   }));
 }
 
@@ -146,6 +153,39 @@ export async function setOwnedListingStatus(listing: Listing, status: "archived"
     organizationId: row.organization_id ?? undefined,
     manageable: true,
     publicationStatus: row.status,
+  } as Listing;
+}
+
+export async function confirmListingAvailability(
+  listing: Listing,
+  outcome: "available" | "rented" | "sold",
+) {
+  if (!supabase || !listing.databaseId) throw new Error("Annonce persistante introuvable.");
+  const { data, error } = await supabase.rpc("confirm_listing_availability", {
+    p_listing_id: listing.databaseId,
+    p_outcome: outcome,
+  });
+  if (error) throw error;
+  const row = data as {
+    id: string;
+    owner_id: string;
+    organization_id: string | null;
+    status: Listing["publicationStatus"];
+    availability_status: Listing["availabilityStatus"];
+    last_availability_confirmed_at: string | null;
+    last_availability_prompt_at: string | null;
+    data: Listing;
+  };
+  return {
+    ...row.data,
+    databaseId: row.id,
+    ownerUserId: row.owner_id,
+    organizationId: row.organization_id ?? undefined,
+    manageable: true,
+    publicationStatus: row.status,
+    availabilityStatus: row.availability_status,
+    lastAvailabilityConfirmedAt: row.last_availability_confirmed_at ?? undefined,
+    lastAvailabilityPromptAt: row.last_availability_prompt_at ?? undefined,
   } as Listing;
 }
 
@@ -1180,6 +1220,39 @@ export async function loadPartnerProducts(partnerIds: string[]): Promise<Partner
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as PartnerProduct[];
+}
+
+export async function loadPartnerReviews(partnerId: string): Promise<PartnerReview[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("partner_reviews")
+    .select("*")
+    .eq("partner_id", partnerId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as PartnerReview[];
+}
+
+export async function savePartnerReview(input: {
+  partnerId: string;
+  authorId: string;
+  rating: number;
+  body: string;
+}): Promise<PartnerReview> {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase
+    .from("partner_reviews")
+    .upsert({
+      partner_id: input.partnerId,
+      author_id: input.authorId,
+      rating: input.rating,
+      body: input.body.trim(),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "partner_id,author_id" })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as PartnerReview;
 }
 
 export async function submitPartnerApplication(input: {

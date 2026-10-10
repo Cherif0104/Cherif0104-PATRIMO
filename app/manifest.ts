@@ -2,15 +2,15 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Se Loger au Sénégal — Voyager au Sénégal",
+    name: "Se Loger au Sénégal",
     short_name: "Se Loger au Sénégal",
-    description: "Logements, expériences, services et transferts au Sénégal.",
+    description: "Logements, gestion immobilière et professionnels de l’habitat au Sénégal.",
     start_url: "/",
     display: "standalone",
     background_color: "#FFFDF7",
     theme_color: "#FF4845",
     lang: "fr",
-    categories: ["travel", "lifestyle"],
+    categories: ["business", "lifestyle", "travel"],
     icons: [
       {
         src: "/icon-192.png",

@@ -14,7 +14,7 @@ function redirectWithCookies(request: NextRequest, response: NextResponse, pathn
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const retiredCatalogs = ["/services", "/experiences", "/partenaires", "/boutiques"];
+  const retiredCatalogs = ["/experiences", "/partenaires", "/boutiques"];
   if (retiredCatalogs.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
     const target = request.nextUrl.clone();
     target.pathname = "/";
@@ -23,6 +23,7 @@ export async function proxy(request: NextRequest) {
   }
   const requiresAuth = [
     "/compte",
+    "/favoris",
     "/messages",
     "/voyages",
     "/portefeuille",

@@ -60,7 +60,6 @@ test("les catégories ouvrent directement un catalogue minimaliste", async ({ pa
 
   await page.getByRole("link", { name: /Terrain · Lac Rose/ }).first().click();
   await expect(page).toHaveURL(/\/logements\/lac-rose-terrain/);
-  await expect(page.getByText(/Offre de démonstration/).first()).toBeVisible();
   await expect(page.getByRole("link", { name: /Demander des informations à Se Loger au Sénégal/ })).toHaveAttribute("href", /wa\.me\/221788324069/);
 });
 

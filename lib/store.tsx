@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
 import { createInitial, hostById, hostIdForRole } from "./seed";
+import { demoDataEnabled } from "./runtime-flags";
 import { loadFavorites, loadOwnedListings, loadPlatformSettings, loadPublishedListings, setFavorite } from "./supabase";
 import type {
   Ad,
@@ -163,8 +164,10 @@ function hydrate(saved: Partial<AppState> | null): AppState {
 }
 
 function createRuntimeInitial(): AppState {
+  const initial = createInitial();
   return {
-    ...createInitial(),
+    ...initial,
+    listings: demoDataEnabled ? initial.listings : [],
     reservations: [],
     invoices: [],
     expenses: [],
@@ -172,6 +175,10 @@ function createRuntimeInitial(): AppState {
     incidents: [],
     inspections: [],
     notifications: [],
+    settings: {
+      ...initial.settings,
+      ads: demoDataEnabled ? initial.settings.ads : [],
+    },
   };
 }
 
@@ -313,7 +320,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         try {
           dispatch({ type: "hydrate", payload: JSON.parse(raw) as Partial<AppState> });
         } catch {
-          setStorageWarning("Les données locales étaient illisibles. La démonstration repart des exemples.");
+          setStorageWarning("Vos préférences locales étaient illisibles et ont été réinitialisées.");
         }
       }
       try {

@@ -59,16 +59,15 @@ test("le centre de téléchargement explique chaque plateforme", async ({ page }
   }
 });
 
-test("l’annuaire immobilier propose recherche, filtres et WhatsApp", async ({ page }) => {
+test("l’annuaire immobilier ne mélange pas les profils de démonstration", async ({ page }) => {
   await page.goto("/services");
   await expect(page.getByRole("heading", { name: /Trouvez le bon professionnel/ })).toBeVisible();
   await expect(page.getByPlaceholder("Plombier, géomètre, nettoyage…")).toBeVisible();
   await expect(page.getByPlaceholder("Ville ou quartier")).toHaveCount(0);
   await page.getByRole("button", { name: "Afficher les filtres" }).click();
   await expect(page.getByPlaceholder("Ville ou quartier")).toBeVisible();
-  await page.getByRole("link", { name: /Sunu Plan Topographie/ }).first().click();
-  await expect(page).toHaveURL(/\/services\/topographie-sunu-plan/);
-  await expect(page.getByRole("link", { name: /Contacter sur WhatsApp/ })).toHaveAttribute("href", /wa\.me\/221788324069/);
+  await expect(page.getByText("Démonstration")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Référencer mon activité" })).toBeVisible();
 });
 
 test("la recherche accepte une destination saisie et expose les filtres", async ({ page }) => {
@@ -94,17 +93,12 @@ test("la navigation desktop n’active qu’un seul marché", async ({ page }) =
   await expect(offers.locator('a[href="/explorer?marche=location"]')).not.toHaveAttribute("aria-current", "page");
 });
 
-test("les catégories ouvrent directement un catalogue minimaliste", async ({ page }) => {
+test("les catégories n’exposent que le catalogue réel publié", async ({ page }) => {
   await page.goto("/explorer?categorie=terrain");
   await expect(page.getByRole("heading", { name: "Terrains & champs" })).toBeVisible();
-  await expect(page.getByText(/^\d+ biens?$/)).toBeVisible();
-  await expect(page.getByText("Démonstration").first()).toBeVisible();
+  await expect(page.getByText("Démonstration")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Afficher les filtres" })).toBeVisible();
   await expect(page.getByPlaceholder("Budget minimum")).toHaveCount(0);
-
-  await page.getByRole("link", { name: /Terrain · Lac Rose/ }).first().click();
-  await expect(page).toHaveURL(/\/logements\/lac-rose-terrain/);
-  await expect(page.getByRole("link", { name: /Demander des informations à Se Loger au Sénégal/ })).toHaveAttribute("href", /wa\.me\/221788324069/);
 });
 
 test("le manifeste expose les icônes de la nouvelle marque", async ({ page }) => {

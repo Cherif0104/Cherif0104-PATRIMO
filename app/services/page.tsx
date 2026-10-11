@@ -14,6 +14,7 @@ import {
   professionalCategoryLabel,
   type Professional,
 } from "@/lib/professionals";
+import { demoDataEnabled } from "@/lib/runtime-flags";
 import { loadPartnerProducts, loadPublishedPartners, submitPartnerApplication } from "@/lib/supabase";
 import type { MarketplacePartner, PartnerCategory, PartnerProduct } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
@@ -42,7 +43,8 @@ function fromDatabase(partner: MarketplacePartner, products: PartnerProduct[]): 
 function ServicesContent() {
   const params = useSearchParams();
   const { user } = useAuth();
-  const [professionals, setProfessionals] = useState<Professional[]>(DEMO_PROFESSIONALS);
+  const demoProfessionals = demoDataEnabled ? DEMO_PROFESSIONALS : [];
+  const [professionals, setProfessionals] = useState<Professional[]>(demoProfessionals);
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("");
   const [category, setCategory] = useState<PartnerCategory | "tous">(
@@ -67,9 +69,9 @@ function ServicesContent() {
     loadPublishedPartners()
       .then(async (partners) => {
         const products = await loadPartnerProducts(partners.map((partner) => partner.id));
-        setProfessionals([...partners.map((partner) => fromDatabase(partner, products)), ...DEMO_PROFESSIONALS]);
+        setProfessionals([...partners.map((partner) => fromDatabase(partner, products)), ...demoProfessionals]);
       })
-      .catch(() => setProfessionals(DEMO_PROFESSIONALS));
+      .catch(() => setProfessionals(demoProfessionals));
   }, []);
 
   const visible = useMemo(() => professionals.filter((professional) => {

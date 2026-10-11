@@ -13,6 +13,7 @@ import {
   professionalCategoryLabel,
   type Professional,
 } from "@/lib/professionals";
+import { demoDataEnabled } from "@/lib/runtime-flags";
 import { loadPartnerProducts, loadPartnerReviews, loadPublishedPartners, savePartnerReview } from "@/lib/supabase";
 import type { MarketplacePartner, PartnerProduct, PartnerReview } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
@@ -41,7 +42,9 @@ function fromDatabase(partner: MarketplacePartner, products: PartnerProduct[]): 
 export default function ProfessionalPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const initial = DEMO_PROFESSIONALS.find((item) => item.id === id) ?? null;
+  const initial = demoDataEnabled
+    ? DEMO_PROFESSIONALS.find((item) => item.id === id) ?? null
+    : null;
   const [professional, setProfessional] = useState<Professional | null>(initial);
   const [reviews, setReviews] = useState<PartnerReview[]>([]);
   const [rating, setRating] = useState(5);

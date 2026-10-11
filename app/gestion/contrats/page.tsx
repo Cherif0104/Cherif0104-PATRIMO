@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileCheck2, Send } from "lucide-react";
+import { Download, FileCheck2, Send } from "lucide-react";
 import { PageHead, Pill } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { btnPrimary, btnSecondary, fieldClass, formatDate, formatMoney } from "@/lib/format";
@@ -138,11 +138,17 @@ export default function ContractsPage() {
                   <Pill tone={contract.status === "active" || contract.status === "signed" ? "good" : contract.status === "cancelled" ? "warn" : "neutral"}>{contract.status}</Pill>
                 </div>
                 {contract.monthly_amount && <p className="mt-3 text-sm font-semibold">{formatMoney(contract.monthly_amount, contract.currency)}</p>}
+                {contract.tenant_accepted_at && (
+                  <p className="mt-2 text-xs text-[#52706c]">Accepté par le locataire le {formatDate(contract.tenant_accepted_at)}</p>
+                )}
                 <div className="mt-4 flex flex-wrap gap-2">
                   {contract.status === "draft" && <button className={btnPrimary} disabled={busy} onClick={() => void changeStatus(contract, "sent")}><Send className="h-4 w-4" /> Envoyer</button>}
-                  {contract.status === "sent" && <button className={btnSecondary} disabled={busy} onClick={() => void changeStatus(contract, "signed")}>Marquer signé</button>}
+                  {contract.status === "sent" && <span className="inline-flex items-center rounded-full bg-[#fff4dd] px-3 py-2 text-xs font-semibold text-[#7a4c00]">En attente du locataire</span>}
                   {contract.status === "signed" && <button className={btnPrimary} disabled={busy} onClick={() => void changeStatus(contract, "active")}>Activer</button>}
                   {contract.status === "active" && <button className={btnSecondary} disabled={busy} onClick={() => void changeStatus(contract, "ended")}>Clôturer</button>}
+                  <a href={`/api/contracts/${contract.id}/pdf`} className={btnSecondary}>
+                    <Download className="h-4 w-4" /> Télécharger la fiche PDF
+                  </a>
                 </div>
               </article>
             );

@@ -471,6 +471,16 @@ export async function updatePropertyContractStatus(id: string, status: PropertyC
   return data as PropertyContract;
 }
 
+export async function acceptPropertyContract(id: string) {
+  if (!supabase) throw new Error("Supabase n'est pas configuré.");
+  const { data, error } = await supabase.rpc("accept_property_contract", {
+    p_contract_id: id,
+    p_acceptance_version: "contract-summary-v1",
+  }).single();
+  if (error) throw error;
+  return data as PropertyContract;
+}
+
 export async function loadPropertyStakeholders(): Promise<PropertyStakeholder[]> {
   if (!supabase) return [];
   const { data, error } = await supabase

@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CalendarDays, CreditCard, FileText, Home, MapPinned } from "lucide-react";
+import { CalendarDays, CheckCircle2, CreditCard, Download, FileText, Home, MapPinned } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { btnPrimary, btnSecondary, formatDate, formatMoney } from "@/lib/format";
-import { loadMyBookings, loadPropertyContracts, supabase } from "@/lib/supabase";
+import { acceptPropertyContract, loadMyBookings, loadPropertyContracts, supabase } from "@/lib/supabase";
 import type { MarketBooking, PropertyContract } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
@@ -15,6 +15,8 @@ export default function TripsPage() {
   const [contracts, setContracts] = useState<PropertyContract[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [paymentBusy, setPaymentBusy] = useState("");
+  const [contractBusy, setContractBusy] = useState("");
+  const [acceptedContractTerms, setAcceptedContractTerms] = useState<string[]>([]);
   const [error, setError] = useState("");
   useTitle("Mes dossiers · Se Loger au Sénégal");
 
@@ -59,6 +61,19 @@ export default function TripsPage() {
     }
   }
 
+  async function acceptContract(contract: PropertyContract) {
+    setContractBusy(contract.id);
+    setError("");
+    try {
+      const accepted = await acceptPropertyContract(contract.id);
+      setContracts((rows) => rows.map((row) => row.id === accepted.id ? accepted : row));
+    } catch {
+      setError("Le contrat n’a pas pu être accepté. Rechargez la page puis réessayez.");
+    } finally {
+      setContractBusy("");
+    }
+  }
+
   return (
     <main className="mobile-page px-4 py-7 md:px-10 lg:py-12 xl:px-16">
       <h1 className="text-[30px] font-semibold tracking-[-0.04em]">Mes dossiers</h1>
@@ -77,6 +92,35 @@ export default function TripsPage() {
                   <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold">{contract.status}</span>
                 </div>
                 {contract.monthly_amount && <p className="mt-3 text-sm font-semibold">{formatMoney(contract.monthly_amount, contract.currency)}</p>}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {contract.status === "sent" && (
+                    <div className="w-full rounded-2xl border border-[#e5e5e5] bg-white p-3">
+                      <label className="flex items-start gap-2 text-xs leading-5">
+                        <input
+                          className="mt-1"
+                          type="checkbox"
+                          checked={acceptedContractTerms.includes(contract.id)}
+                          onChange={(event) => setAcceptedContractTerms((ids) =>
+                            event.target.checked
+                              ? [...ids, contract.id]
+                              : ids.filter((id) => id !== contract.id))}
+                        />
+                        J’ai téléchargé la fiche contractuelle, vérifié les informations et j’accepte cette version.
+                      </label>
+                      <button
+                        className={`${btnPrimary} mt-3`}
+                        disabled={contractBusy === contract.id || !acceptedContractTerms.includes(contract.id)}
+                        onClick={() => void acceptContract(contract)}
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        {contractBusy === contract.id ? "Acceptation…" : "Accepter le contrat"}
+                      </button>
+                    </div>
+                  )}
+                  <a href={`/api/contracts/${contract.id}/pdf`} className={btnSecondary}>
+                    <Download className="h-4 w-4" /> Télécharger le PDF
+                  </a>
+                </div>
               </article>
             ))}
           </div>

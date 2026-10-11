@@ -23,6 +23,9 @@ test("les parcours privés redirigent les visiteurs vers la connexion", async ({
     await expect(page).toHaveURL((url) => url.pathname === "/connexion" && url.searchParams.get("retour") === route);
   }
   await expect(page.getByRole("heading", { name: "Bienvenue" })).toBeVisible();
+
+  const contractPdf = await page.request.get("/api/contracts/00000000-0000-0000-0000-000000000000/pdf");
+  expect(contractPdf.status()).toBe(401);
 });
 
 test("l’inscription sépare recherche de logement et propriétaire", async ({ page }) => {

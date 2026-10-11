@@ -91,6 +91,9 @@ export type PropertyContract = {
   monthly_amount: number | null;
   currency: Currency;
   storage_path: string | null;
+  sent_at?: string | null;
+  tenant_accepted_at?: string | null;
+  tenant_acceptance_version?: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;

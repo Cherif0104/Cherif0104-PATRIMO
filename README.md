@@ -1,6 +1,6 @@
 # Se Loger au Sénégal
 
-Marketplace immobilière et outil de gestion. Séjours, locations longue durée, expériences, services, commissions réglables, finances, incidents et états des lieux.
+Marketplace immobilière et outil de gestion. Séjours, locations longue durée, ventes, services, commissions réglables, finances, incidents et états des lieux.
 
 ```bash
 npm install
@@ -19,6 +19,8 @@ npm run dev
 - Comptabilité : ledger équilibré en partie double, remboursements et reversements séparés.
 
 Le changement de rôle de la démonstration a été retiré. Les accès affichés dépendent maintenant du compte authentifié.
+La matrice V2 des profils, capacités et responsabilités est décrite dans
+[`docs/v2-role-blueprint.md`](docs/v2-role-blueprint.md).
 
 Le projet Supabase dédié est **Se Loger au Sénégal** (`https://isqcndswkzlfjangjcpv.supabase.co`, région Paris). Copiez `.env.example` vers `.env.local` et renseignez l’URL et la clé publiable. Sans ces variables, l’authentification et les écritures de marché sont désactivées. Les données d’exemple ne sont chargées que si `NEXT_PUBLIC_ENABLE_DEMO_DATA=true` ; cette option doit rester désactivée en production.
 

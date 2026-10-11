@@ -6,12 +6,18 @@ import { Building2, FileText, Heart, Home, LayoutDashboard, MessageSquare, PlusC
 import { cx } from "@/lib/format";
 import { usePreferences } from "@/lib/preferences";
 import { useAuth } from "@/lib/auth";
+import { useAmeena } from "@/lib/store";
 
 export function BottomNav() {
   const pathname = usePathname();
   const { t } = usePreferences();
   const { user, profile, loading } = useAuth();
+  const { state } = useAmeena();
   if (pathname.startsWith("/gestion") || pathname.startsWith("/admin") || pathname.startsWith("/logements/")) return null;
+  const hasActiveIndividualListing = state.listings.some((listing) =>
+    listing.ownerUserId === user?.id
+    && !listing.organizationId
+    && listing.publicationStatus !== "archived");
 
   const publicItems = [
     { href: "/", label: "Accueil", icon: Home, active: pathname === "/" },
@@ -30,12 +36,16 @@ export function BottomNav() {
   const ownerItems = [
     { href: "/", label: "Accueil", icon: Home, active: pathname === "/" || pathname.startsWith("/explorer") },
     {
-      href: profile?.identity_status === "verifie" ? "/publier" : "/compte#certification",
-      label: profile?.identity_status === "verifie" ? "Publier" : "Activer",
-      icon: PlusCircle,
-      active: pathname.startsWith("/publier"),
+      href: hasActiveIndividualListing
+        ? "/gestion/biens"
+        : profile?.identity_status === "verifie" ? "/publier" : "/compte#certification",
+      label: hasActiveIndividualListing
+        ? "Mon bien"
+        : profile?.identity_status === "verifie" ? "Publier" : "Activer",
+      icon: hasActiveIndividualListing ? Building2 : PlusCircle,
+      active: pathname.startsWith("/publier") || (hasActiveIndividualListing && pathname.startsWith("/gestion/biens")),
     },
-    { href: "/gestion/biens", label: "Mes biens", icon: Building2, active: pathname.startsWith("/gestion/biens") },
+    { href: "/explorer", label: "Explorer", icon: Search, active: pathname.startsWith("/explorer") },
     { href: "/messages", label: t("messages"), icon: MessageSquare, active: pathname.startsWith("/messages") },
     { href: "/compte", label: t("profile"), icon: UserRound, active: pathname.startsWith("/compte") },
   ];

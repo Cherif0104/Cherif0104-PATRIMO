@@ -195,7 +195,7 @@ function AuthForm() {
                     ))}
                   </div>
                   <p className="mt-3 text-xs leading-5 text-[#6a6a6a]">
-                    Vous gérez plusieurs biens ? <Link href="/agences" className="font-semibold underline">L’espace agence ERP/CRM est ouvert par le service commercial Impulcia Afrique.</Link>
+                    Le compte particulier permet de publier et gérer un seul bien actif.
                   </p>
                 </fieldset>
               </>

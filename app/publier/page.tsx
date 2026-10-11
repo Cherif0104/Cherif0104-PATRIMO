@@ -9,7 +9,7 @@ import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { PageHead } from "@/components/ui";
 import { btnPrimary, fieldClass, uid } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
-import { loadMyOrganizationMemberships, loadOrganizations, submitListing, uploadListingPhoto } from "@/lib/supabase";
+import { loadMyOrganizationMemberships, loadOrganizations, loadOwnedListings, submitListing, uploadListingPhoto } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
 import type {
@@ -78,6 +78,7 @@ export default function PublishPage() {
   const [memberships, setMemberships] = useState<OrganizationMember[]>([]);
   const [membershipsLoaded, setMembershipsLoaded] = useState(false);
   const [membershipsUserId, setMembershipsUserId] = useState("");
+  const [existingIndividualListing, setExistingIndividualListing] = useState<{ id: string; title: string } | null>(null);
   const [organizationId, setOrganizationId] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -100,19 +101,28 @@ export default function PublishPage() {
     if (!user) {
       setMemberships([]);
       setMembershipsUserId("");
+      setExistingIndividualListing(null);
       setMembershipsLoaded(true);
       return;
     }
     setMembershipsLoaded(false);
-    Promise.all([loadMyOrganizationMemberships(), loadOrganizations()])
-      .then(([membershipRows, organizationRows]) => {
+    Promise.all([loadMyOrganizationMemberships(), loadOrganizations(), loadOwnedListings(user.id)])
+      .then(([membershipRows, organizationRows, listingRows]) => {
         setMemberships(membershipRows);
         setOrganizations(organizationRows);
         setOrganizationId(organizationRows[0]?.id ?? "");
+        const individualListing = listingRows.find((listing) =>
+          listing.ownerUserId === user.id
+          && !listing.organizationId
+          && listing.publicationStatus !== "archived");
+        setExistingIndividualListing(
+          individualListing ? { id: individualListing.id, title: individualListing.title } : null,
+        );
       })
       .catch(() => {
         setMemberships([]);
         setOrganizations([]);
+        setExistingIndividualListing(null);
       })
       .finally(() => setMembershipsLoaded(true));
     setMembershipsUserId(user.id);
@@ -182,8 +192,15 @@ export default function PublishPage() {
         listing: { ...listing, databaseId: saved.id, publicationStatus: saved.status },
       });
       router.push(`/logements/${id}`);
-    } catch {
-      setError("La publication n’a pas pu être enregistrée. Vérifiez les informations puis réessayez.");
+    } catch (cause) {
+      const message = typeof cause === "object" && cause && "message" in cause
+        ? String(cause.message)
+        : "";
+      setError(
+        message.includes("marketplace_listings_one_active_individual_idx")
+          ? "Votre compte particulier possède déjà un bien actif. Archivez-le avant d’en publier un autre."
+          : "La publication n’a pas pu être enregistrée. Vérifiez les informations puis réessayez.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -207,10 +224,26 @@ export default function PublishPage() {
     return (
       <div className="mx-auto max-w-xl px-4 py-24 text-center">
         <h1 className="text-3xl font-semibold">Activez votre profil propriétaire</h1>
-        <p className="mt-3 text-[#6a6a6a]">Les propriétaires passent par la vérification documentaire. Les agences sont créées et activées uniquement par le service commercial Impulcia Afrique.</p>
+        <p className="mt-3 text-[#6a6a6a]">La vérification documentaire protège les propriétaires, les visiteurs et la qualité du catalogue.</p>
+        <Link href="/compte#certification" className={`${btnPrimary} mt-7`}>Demander la vérification</Link>
+      </div>
+    );
+  }
+
+  if (
+    profile?.account_type === "proprietaire"
+    && user.app_metadata?.role !== "admin"
+    && existingIndividualListing
+  ) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-24 text-center">
+        <h1 className="text-3xl font-semibold">Votre bien est déjà enregistré</h1>
+        <p className="mt-3 text-[#6a6a6a]">
+          Un compte propriétaire particulier gère un seul bien actif. Vous pouvez modifier, suivre ou archiver « {existingIndividualListing.title} » depuis son espace.
+        </p>
         <div className="mt-7 flex flex-wrap justify-center gap-2">
-          <Link href="/compte" className={btnPrimary}>Demander la vérification</Link>
-          <a href="https://wa.me/221788324069?text=Bonjour%2C%20je%20souhaite%20inscrire%20mon%20agence%20sur%20Se%20Loger%20au%20S%C3%A9n%C3%A9gal." target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-full border border-[#dddddd] px-5 py-2.5 text-sm font-semibold">Contacter l’équipe sur WhatsApp</a>
+          <Link href={`/gestion/biens/${existingIndividualListing.id}`} className={btnPrimary}>Gérer mon bien</Link>
+          <Link href="/gestion/biens" className="inline-flex items-center justify-center rounded-full border border-[#dddddd] px-5 py-2.5 text-sm font-semibold">Voir mon espace</Link>
         </div>
       </div>
     );

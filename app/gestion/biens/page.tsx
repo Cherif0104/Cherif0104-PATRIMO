@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Photo } from "@/components/photo";
 import { PageHead, Pill } from "@/components/ui";
+import { useAuth } from "@/lib/auth";
 import { btnSecondary, formatMoney } from "@/lib/format";
 import { MODE_LABEL } from "@/lib/labels";
 import { loadPropertyIncidents, loadPropertyInspections } from "@/lib/supabase";
@@ -12,6 +13,7 @@ import type { PropertyIncident, PropertyInspection } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
 export default function BiensPage() {
+  const { profile } = useAuth();
   const scope = useScope();
   const [incidents, setIncidents] = useState<PropertyIncident[]>([]);
   const [inspections, setInspections] = useState<PropertyInspection[]>([]);
@@ -31,9 +33,15 @@ export default function BiensPage() {
   return (
     <div>
       <PageHead
-        title="Biens"
-        text="Chaque fiche ouvre le dossier : public pour la marketplace, privé pour les incidents et les états des lieux."
-        action={<Link href="/publier" className={btnSecondary}>Publier</Link>}
+        title={profile?.account_type === "agence" ? "Parc immobilier" : "Mon bien"}
+        text={profile?.account_type === "agence"
+          ? "Pilotez les annonces et les dossiers privés de tous les biens de l’agence."
+          : "Retrouvez ici la publication, les demandes, les incidents et les états des lieux de votre bien."}
+        action={profile?.account_type === "agence" || scope.listings.length === 0
+          ? <Link href="/publier" className={btnSecondary}>
+              {profile?.account_type === "agence" ? "Ajouter un bien" : "Publier mon bien"}
+            </Link>
+          : undefined}
       />
       {scope.listings.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#dddddd] px-6 py-14 text-center">

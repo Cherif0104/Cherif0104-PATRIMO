@@ -18,6 +18,7 @@ import {
   updateProfile,
   uploadVerificationDocument,
 } from "@/lib/supabase";
+import { useAmeena } from "@/lib/store";
 import type { AccountType, MarketBooking, VerificationDocument, VerificationRequest } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
@@ -34,6 +35,7 @@ const STATUS: Record<MarketBooking["status"], string> = {
 
 export default function AccountPage() {
   const { user, profile, loading, refreshProfile, signOut } = useAuth();
+  const { state } = useAmeena();
   const [bookings, setBookings] = useState<MarketBooking[]>([]);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -244,6 +246,12 @@ export default function AccountPage() {
     }
   }
 
+  const activeOwnedListing = state.listings.find((listing) =>
+    listing.ownerUserId === user.id
+    && !listing.organizationId
+    && listing.publicationStatus !== "archived");
+  const isIndividualPublisher = profile?.account_type === "proprietaire";
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
       <div className="mb-7 lg:hidden">
@@ -276,6 +284,7 @@ export default function AccountPage() {
         accountType={profile?.account_type ?? "voyageur"}
         requestedAccountType={profile?.requested_account_type ?? "voyageur"}
         verified={profile?.identity_status === "verifie"}
+        hasActiveListing={Boolean(activeOwnedListing)}
       />
 
       <div className="mt-6 grid grid-cols-2 rounded-full bg-[#f2f2f2] p-1 text-sm">
@@ -284,7 +293,38 @@ export default function AccountPage() {
       </div>
 
       <div className="mt-7">
-        {view === "activity" && <section>
+        {view === "activity" && (isIndividualPublisher ? (
+          <section>
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">Mon activité propriétaire</h2>
+              <p className="mt-1 text-sm text-[#6a6a6a]">Un espace simple pour publier et suivre votre bien unique.</p>
+            </div>
+            {activeOwnedListing ? (
+              <article className="mt-5 rounded-[20px] border border-[#e5e5e5] p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#1F6F66]">
+                  {activeOwnedListing.publicationStatus === "published"
+                    ? "En ligne"
+                    : activeOwnedListing.publicationStatus === "suspended"
+                      ? "Suspendu"
+                      : "En cours de validation"}
+                </p>
+                <h3 className="mt-2 text-lg font-semibold">{activeOwnedListing.title}</h3>
+                <p className="mt-1 text-sm text-[#6a6a6a]">{activeOwnedListing.neighborhood}, {activeOwnedListing.city}</p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Link href="/gestion/biens" className={btnPrimary}>Gérer mon bien</Link>
+                  <Link href="/gestion/reservations" className={btnSecondary}>Voir les demandes reçues</Link>
+                </div>
+              </article>
+            ) : (
+              <div className="mt-5 rounded-[20px] border border-dashed border-[#cccccc] p-8 text-center">
+                <Home className="mx-auto text-[#6a6a6a]" />
+                <p className="mt-3 font-semibold">Aucun bien publié</p>
+                <p className="mt-1 text-sm text-[#6a6a6a]">Créez votre annonce puis suivez sa validation depuis cet espace.</p>
+                <Link href="/publier" className={`${btnPrimary} mt-5`}>Publier mon bien</Link>
+              </div>
+            )}
+          </section>
+        ) : <section>
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-semibold tracking-tight">Mes demandes</h2>
@@ -339,7 +379,7 @@ export default function AccountPage() {
               </article>
             ))}
           </div>
-        </section>}
+        </section>)}
 
         {view === "profile" && <aside id="certification" className="mx-auto max-w-2xl scroll-mt-28 rounded-[20px] border border-[#dddddd] p-6 shadow-[0_4px_16px_rgba(0,0,0,.06)]">
           <div className="flex items-center gap-3">
@@ -362,8 +402,8 @@ export default function AccountPage() {
             {(accountType === "proprietaire" || accountType === "agence") && (
               <>
                 <label className="text-sm font-medium">
-                  Nom commercial <span className="font-normal text-[#6a6a6a]">· facultatif</span>
-                  <input className={`${fieldClass} mt-1`} value={businessName} onChange={(event) => setBusinessName(event.target.value)} maxLength={120} placeholder="Agence Teranga Immobilier" />
+                  Nom d’affichage <span className="font-normal text-[#6a6a6a]">· facultatif</span>
+                  <input className={`${fieldClass} mt-1`} value={businessName} onChange={(event) => setBusinessName(event.target.value)} maxLength={120} placeholder="Nom visible sur l’annonce" />
                 </label>
                 <label className="text-sm font-medium">
                   Présentation publique
@@ -385,22 +425,13 @@ export default function AccountPage() {
             <label className="text-sm font-medium">
               Utilisation principale
               <select className={`${fieldClass} mt-1`} value={accountType} onChange={(event) => setAccountType(event.target.value as AccountType)}>
-                <option value="voyageur">Voyageur</option>
-                <option value="proprietaire">Propriétaire</option>
+                <option value="voyageur">Je cherche un logement</option>
+                <option value="proprietaire">Je publie mon bien</option>
                 {(accountType === "agence" || profile?.account_type === "agence" || profile?.requested_account_type === "agence") && (
-                  <option value="agence">Agence</option>
+                  <option value="agence">Compte agence</option>
                 )}
               </select>
             </label>
-            {accountType !== "agence" && (
-              <div className="rounded-2xl bg-[#FFF8ED] p-4 text-sm">
-                <p className="font-semibold text-[#182A39]">Vous représentez une agence immobilière ?</p>
-                <p className="mt-1 leading-5 text-[#6a6a6a]">Les comptes agences sont ouverts par le service commercial Impulcia Afrique après contrôle des documents professionnels.</p>
-                <a href="https://wa.me/221788324069?text=Bonjour%2C%20je%20souhaite%20inscrire%20mon%20agence%20sur%20Se%20Loger%20au%20S%C3%A9n%C3%A9gal." target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex font-semibold text-[#16836f] underline">
-                  WhatsApp : +221 78 832 40 69
-                </a>
-              </div>
-            )}
             {saved && <p className="text-sm text-[#145e57]">Profil enregistré.</p>}
             {error && <p role="alert" className="text-sm text-[#a52a12]">{error}</p>}
             <button className={`${btnPrimary} w-full`}>Enregistrer</button>
@@ -408,7 +439,12 @@ export default function AccountPage() {
           {(accountType === "proprietaire" || accountType === "agence") && (
             <>
               {profile?.identity_status === "verifie" && (
-                <Link href="/publier" className={`${btnSecondary} mt-3 w-full`}>Publier un bien</Link>
+                <Link
+                  href={accountType === "proprietaire" && activeOwnedListing ? "/gestion/biens" : "/publier"}
+                  className={`${btnSecondary} mt-3 w-full`}
+                >
+                  {accountType === "proprietaire" && activeOwnedListing ? "Gérer mon bien" : "Publier mon bien"}
+                </Link>
               )}
               {profile?.identity_status !== "verifie" && (
                 <button
@@ -450,7 +486,7 @@ export default function AccountPage() {
                   <p className="mt-2 text-xs text-[#6a6a6a]">{verificationDocuments.length} document{verificationDocuments.length > 1 ? "s" : ""} envoyé{verificationDocuments.length > 1 ? "s" : ""}</p>
                 </div>
               )}
-              <p className="mt-3 text-xs leading-5 text-[#6a6a6a]">La certification repose aujourd’hui sur une vérification documentaire. Aucun abonnement n’est facturé tant que l’offre Pro n’est pas définie.</p>
+              <p className="mt-3 text-xs leading-5 text-[#6a6a6a]">La certification repose sur une vérification documentaire avant toute mise en ligne.</p>
             </>
           )}
           <button className={`${btnSecondary} mt-5 w-full`} onClick={() => void signOut()}>
@@ -472,10 +508,12 @@ function RoleActions({
   accountType,
   requestedAccountType,
   verified,
+  hasActiveListing,
 }: {
   accountType: AccountType;
   requestedAccountType: AccountType;
   verified: boolean;
+  hasActiveListing: boolean;
 }) {
   const actions = accountType === "agence"
     ? [
@@ -485,11 +523,17 @@ function RoleActions({
         { href: "/gestion/equipe", label: "Gérer l’équipe", icon: Settings },
       ]
     : accountType === "proprietaire"
-      ? [
-          { href: "/gestion", label: "Gérer mon bien", icon: Home },
-          { href: "/publier", label: "Publier un bien", icon: Upload },
-          { href: "/messages", label: "Voir les messages", icon: MessageCircle },
-        ]
+      ? hasActiveListing
+        ? [
+            { href: "/gestion/biens", label: "Gérer mon bien", icon: Home },
+            { href: "/gestion/reservations", label: "Demandes reçues", icon: CalendarDays },
+            { href: "/messages", label: "Voir les messages", icon: MessageCircle },
+          ]
+        : [
+            { href: "/publier", label: "Publier mon bien", icon: Upload },
+            { href: "/explorer", label: "Voir le marché", icon: Home },
+            { href: "/messages", label: "Voir les messages", icon: MessageCircle },
+          ]
       : requestedAccountType === "proprietaire"
         ? [
           {

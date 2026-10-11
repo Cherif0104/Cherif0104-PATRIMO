@@ -31,7 +31,8 @@ test("l’inscription sépare recherche de logement et propriétaire", async ({ 
   await expect(page.getByText("Trouver un logement", { exact: true })).toBeVisible();
   await expect(page.getByText("Publier mon bien", { exact: true })).toBeVisible();
   await expect(page.getByText("Proposer un service", { exact: true })).toHaveCount(0);
-  await expect(page.getByText(/ERP\/CRM est ouvert par le service commercial Impulcia Afrique/)).toBeVisible();
+  await expect(page.getByText(/un seul bien actif/)).toBeVisible();
+  await expect(page.getByText(/agence ERP\/CRM/i)).toHaveCount(0);
 });
 
 test("les anciens catalogues hors périmètre reviennent à l’accueil", async ({ page }) => {

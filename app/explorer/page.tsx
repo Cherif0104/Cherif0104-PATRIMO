@@ -183,6 +183,21 @@ function Explorer() {
     setFiltersOpen(false);
   }
 
+  function resetFilters() {
+    setQuery("");
+    setMinPrice("");
+    setMaxPrice("");
+    setType("");
+    setBedrooms("");
+    setVerifiedOnly(false);
+    setPurpose("");
+    setFurnishing("");
+    setStanding("");
+    setManagedOnly(false);
+    setMode("");
+    router.push("/explorer");
+  }
+
   async function loadMore() {
     const offset = state.listings.filter((listing) =>
       Boolean(listing.databaseId) && listing.publicationStatus === "published").length;
@@ -307,7 +322,7 @@ function Explorer() {
                 <input type="checkbox" checked={managedOnly} onChange={(event) => setManagedOnly(event.target.checked)} className="accent-[#FF4845]" />
                 Géré par la plateforme
               </label>
-              <button type="button" onClick={() => router.push("/explorer")} className="ml-auto text-sm font-semibold underline">Tout effacer</button>
+              <button type="button" onClick={resetFilters} className="ml-auto text-sm font-semibold underline">Tout effacer</button>
               <button type="button" onClick={applyFilters} className="rounded-full bg-[#222] px-5 py-2.5 text-sm font-semibold text-white">Afficher les résultats</button>
             </div>
           </div>
@@ -338,7 +353,17 @@ function Explorer() {
             ))}
           </div>
           {listings.length === 0 && (
-            <p className="py-20 text-center text-[#6a6a6a]">Aucun bien ne correspond. Élargissez la destination ou le prix.</p>
+            <div className="py-20 text-center">
+              <p className="text-[#6a6a6a]">Aucun bien publié ne correspond encore à cette recherche.</p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <button type="button" onClick={resetFilters} className="rounded-full border border-[#222] bg-white px-5 py-2.5 text-sm font-semibold">
+                  Effacer la recherche
+                </button>
+                <Link href="/publier" className="rounded-full bg-[#222] px-5 py-2.5 text-sm font-semibold text-white">
+                  Publier un bien
+                </Link>
+              </div>
+            </div>
           )}
           {hasMore && state.listings.filter((listing) => Boolean(listing.databaseId)).length >= 48 && (
             <div className="py-8 text-center">

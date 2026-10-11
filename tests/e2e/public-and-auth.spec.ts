@@ -79,6 +79,23 @@ test("l’annuaire immobilier ne mélange pas les profils de démonstration", as
   await expect(page.getByRole("button", { name: "Référencer mon activité" })).toBeVisible();
 });
 
+test("les états vides proposent toujours une action fonctionnelle", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "Proposer un bien" })).toHaveAttribute("href", "/publier");
+
+  await page.goto("/explorer");
+  await page.getByPlaceholder("Appartement, terrain, Dakar…").fill("destination-introuvable-987654");
+  await expect(page.getByText("Aucun bien publié ne correspond encore à cette recherche.")).toBeVisible();
+  await page.getByRole("button", { name: "Effacer la recherche" }).click();
+  await expect(page.getByPlaceholder("Appartement, terrain, Dakar…")).toHaveValue("");
+
+  await page.goto("/services");
+  await page.getByPlaceholder("Plombier, géomètre, nettoyage…").fill("profession-introuvable-987654");
+  await page.getByRole("button", { name: "Proposer mon activité" }).click();
+  await expect(page.getByRole("heading", { name: "Rejoindre le réseau professionnel" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Se connecter pour candidater" })).toBeVisible();
+});
+
 test("la recherche accepte une destination saisie et expose les filtres", async ({ page }) => {
   await page.goto("/");
   const search = page.locator('input[placeholder*="Appartement à Dakar"]:visible');

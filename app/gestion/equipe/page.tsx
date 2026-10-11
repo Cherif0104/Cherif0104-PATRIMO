@@ -37,6 +37,7 @@ export default function TeamPage() {
   const [functionalDomains, setFunctionalDomains] = useState<FunctionalDomain[]>(["catalogue", "crm"]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [copiedInvitationId, setCopiedInvitationId] = useState("");
   useTitle("Équipe · Se Loger au Sénégal");
   const canCreateOrganization = user?.app_metadata?.role === "admin" || profile?.account_type === "agence";
 
@@ -99,6 +100,16 @@ export default function TeamPage() {
       setMessage("L’invitation n’a pas pu être créée. Seul le propriétaire de l’organisation peut inviter.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function copyInvitation(id: string, link: string) {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiedInvitationId(id);
+      setMessage("Lien d’invitation copié.");
+    } catch {
+      setMessage(`Copie automatique indisponible. Lien : ${link}`);
     }
   }
 
@@ -176,7 +187,9 @@ export default function TeamPage() {
                     <div key={invitation.id} className="rounded-2xl bg-[#f7f7f7] p-3 text-sm">
                       <p className="font-medium">{invitation.email} · {invitation.role}</p>
                       <p className="mt-1 text-xs text-[#6a6a6a]">{invitation.functional_domains.map((domain) => domains.find((item) => item.value === domain)?.label ?? domain).join(" · ")}</p>
-                      <button className={`${btnSecondary} mt-2`} onClick={() => void navigator.clipboard.writeText(link)}>Copier le lien</button>
+                      <button className={`${btnSecondary} mt-2`} onClick={() => void copyInvitation(invitation.id, link)}>
+                        {copiedInvitationId === invitation.id ? "Lien copié" : "Copier le lien"}
+                      </button>
                     </div>
                   );
                 })}

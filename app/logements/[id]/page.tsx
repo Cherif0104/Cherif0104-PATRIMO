@@ -26,6 +26,7 @@ export default function ListingPage() {
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [publicHost, setPublicHost] = useState<HostPublicProfile | null>(null);
   const [contactError, setContactError] = useState("");
+  const [actionStatus, setActionStatus] = useState("");
   const [contactBusy, setContactBusy] = useState(false);
   useTitle(listing ? `${listing.title} · Se Loger au Sénégal` : "Logement · Se Loger au Sénégal");
 
@@ -93,12 +94,34 @@ export default function ListingPage() {
   }
 
   async function toggleSaved() {
+    if (!user) {
+      router.push(`/connexion?retour=${encodeURIComponent(`/logements/${currentListing.id}`)}`);
+      return;
+    }
     dispatch({ type: "toggle-save", id: currentListing.id });
-    if (!user) return;
+    setActionStatus("");
     try {
       await setFavorite(user.id, currentListing.id, !saved);
+      setActionStatus(saved ? "Bien retiré de vos favoris." : "Bien ajouté à vos favoris.");
     } catch {
       dispatch({ type: "toggle-save", id: currentListing.id });
+      setActionStatus("Le favori n’a pas pu être enregistré. Réessayez.");
+    }
+  }
+
+  async function shareListing() {
+    setActionStatus("");
+    const share = { title: currentListing.title, url: window.location.href };
+    try {
+      if (navigator.share) {
+        await navigator.share(share);
+        return;
+      }
+      await navigator.clipboard.writeText(share.url);
+      setActionStatus("Lien copié. Vous pouvez maintenant le partager.");
+    } catch (cause) {
+      if (cause instanceof DOMException && cause.name === "AbortError") return;
+      setActionStatus("Le partage automatique est indisponible. Copiez l’adresse de cette page.");
     }
   }
 
@@ -143,14 +166,20 @@ export default function ListingPage() {
           counter
           onOpen={(index) => setLightbox(index)}
         />
-        <Link href="/" aria-label="Retour" className="absolute left-4 top-4 z-20 grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm">
+        <button
+          type="button"
+          aria-label="Retour"
+          onClick={() => window.history.length > 1 ? router.back() : router.push("/explorer")}
+          className="absolute left-4 top-4 z-20 grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm"
+        >
           <ArrowLeft className="h-5 w-5" />
-        </Link>
+        </button>
         <div className="absolute right-4 top-4 z-20 flex gap-3">
-          <button aria-label="Partager" onClick={() => void navigator.share?.({ title: listing.title, url: window.location.href })} className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm"><Share2 className="h-5 w-5" /></button>
+          <button aria-label="Partager" onClick={() => void shareListing()} className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm"><Share2 className="h-5 w-5" /></button>
           <button aria-label={saved ? "Retirer des favoris" : "Enregistrer"} onClick={() => void toggleSaved()} className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm"><Heart className={saved ? "h-5 w-5 fill-[#FF385C] text-[#FF385C]" : "h-5 w-5"} /></button>
         </div>
       </div>
+      {actionStatus && <p role="status" className="mx-4 mt-3 rounded-xl bg-[#f7f7f7] px-4 py-3 text-center text-sm md:mx-0">{actionStatus}</p>}
       <section className="relative z-10 -mt-3 rounded-t-[30px] bg-white px-6 pb-2 pt-9 text-center md:hidden">
         {!listing.databaseId && (
           <p className="mx-auto mb-5 w-fit rounded-full bg-[#fff4dd] px-3 py-1.5 text-xs font-semibold text-[#7a4c00]">

@@ -477,6 +477,12 @@ export default function PublishPage() {
         )}
         {error && <p role="alert" className="rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
         </>}
+        {step === 1 && title.trim().length < 10 && (
+          <p className="text-sm text-[#6a6a6a]">Saisissez un titre précis d’au moins 10 caractères pour continuer.</p>
+        )}
+        {step === 3 && images.length < 3 && (
+          <p className="text-sm text-[#6a6a6a]">Ajoutez encore {3 - images.length} photo{3 - images.length > 1 ? "s" : ""} pour envoyer l’annonce en validation.</p>
+        )}
         <div className="mt-4 flex items-center justify-between border-t border-[#eeeeee] pt-4">
           {step > 1 ? (
             <button className="inline-flex items-center gap-2 rounded-full border border-[#dddddd] px-4 py-2.5 text-sm font-semibold" onClick={() => setStep((value) => value - 1)}>

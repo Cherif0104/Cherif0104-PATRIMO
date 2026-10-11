@@ -65,6 +65,16 @@ function ServicesContent() {
   const [busy, setBusy] = useState(false);
   useTitle("Services immobiliers · Se Loger au Sénégal");
 
+  function openApplication() {
+    setJoinOpen(true);
+    window.setTimeout(() => {
+      document.getElementById("candidature-professionnelle")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 0);
+  }
+
   useEffect(() => {
     loadPublishedPartners()
       .then(async (partners) => {
@@ -119,8 +129,8 @@ function ServicesContent() {
                 leurs prestations et un contact direct.
               </p>
             </div>
-            <button onClick={() => setJoinOpen((value) => !value)} className="rounded-full border border-[#222] bg-white px-5 py-3 text-sm font-semibold">
-              Référencer mon activité
+            <button onClick={joinOpen ? () => setJoinOpen(false) : openApplication} className="rounded-full border border-[#222] bg-white px-5 py-3 text-sm font-semibold">
+              {joinOpen ? "Fermer la candidature" : "Référencer mon activité"}
             </button>
           </div>
 
@@ -181,7 +191,7 @@ function ServicesContent() {
       </section>
 
       {joinOpen && (
-        <section className="section-ivory px-4 py-8 md:px-10 xl:px-16">
+        <section id="candidature-professionnelle" className="section-ivory scroll-mt-24 px-4 py-8 md:px-10 xl:px-16">
           <div className="mx-auto max-w-3xl rounded-[28px] border border-[#eadfcb] bg-white p-6">
             <h2 className="text-2xl font-semibold">Rejoindre le réseau professionnel</h2>
             <p className="mt-2 text-sm leading-6 text-[#6a6a6a]">Chaque activité est contrôlée par notre équipe avant d’être visible publiquement.</p>
@@ -218,7 +228,19 @@ function ServicesContent() {
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {visible.map((professional) => <ProfessionalCard key={professional.id} professional={professional} />)}
           </div>
-          {visible.length === 0 && <p className="rounded-[24px] bg-white p-10 text-center text-sm text-[#6a6a6a]">Aucun professionnel ne correspond encore à cette recherche.</p>}
+          {visible.length === 0 && (
+            <div className="rounded-[24px] bg-white p-10 text-center">
+              <p className="text-sm text-[#6a6a6a]">Aucun professionnel ne correspond encore à cette recherche.</p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <button type="button" onClick={() => { setQuery(""); setCity(""); setCategory("tous"); setRadius(""); setVerifiedOnly(false); }} className="rounded-full border border-[#222] px-5 py-2.5 text-sm font-semibold">
+                  Effacer les filtres
+                </button>
+                <button type="button" onClick={openApplication} className="rounded-full bg-[#222] px-5 py-2.5 text-sm font-semibold text-white">
+                  Proposer mon activité
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </main>

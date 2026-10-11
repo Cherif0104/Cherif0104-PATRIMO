@@ -59,7 +59,7 @@ export default function HomePage() {
         <section className="px-4 py-12 text-center md:px-10 xl:px-16">
           <h2 className="text-2xl font-semibold">Les premières annonces vérifiées arrivent</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm text-[#6a6a6a]">Le catalogue public affiche uniquement les biens validés par l’équipe.</p>
-          <Link href="/compte" className="mt-5 inline-block font-semibold underline">Proposer un bien</Link>
+          <Link href="/publier" className="mt-5 inline-block font-semibold underline">Proposer un bien</Link>
         </section>
       )}
 

@@ -61,13 +61,16 @@ export async function setFavorite(userId: string, listingKey: string, saved: boo
   if (error) throw error;
 }
 
-export async function loadPublishedListings(): Promise<Listing[]> {
+export async function loadPublishedListingsPage(offset = 0, limit = 48): Promise<Listing[]> {
   if (!supabase) return [];
+  const safeLimit = Math.min(Math.max(limit, 1), 100);
+  const safeOffset = Math.max(offset, 0);
   const { data, error } = await supabase
     .from("marketplace_listings")
     .select("id, owner_id, organization_id, status, availability_status, last_availability_confirmed_at, last_availability_prompt_at, data")
     .eq("status", "published")
-    .order("published_at", { ascending: false });
+    .order("published_at", { ascending: false })
+    .range(safeOffset, safeOffset + safeLimit - 1);
   if (error) throw error;
   return (data ?? []).map((row) => ({
     ...(row.data as Listing),
@@ -79,6 +82,10 @@ export async function loadPublishedListings(): Promise<Listing[]> {
     lastAvailabilityConfirmedAt: row.last_availability_confirmed_at ?? undefined,
     lastAvailabilityPromptAt: row.last_availability_prompt_at ?? undefined,
   }));
+}
+
+export function loadPublishedListings(): Promise<Listing[]> {
+  return loadPublishedListingsPage(0, 48);
 }
 
 export async function loadOwnedListings(userId: string): Promise<Listing[]> {

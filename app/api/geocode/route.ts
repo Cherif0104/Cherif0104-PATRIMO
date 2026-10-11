@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, requestIp } from "@/lib/rate-limit";
 import { serverLog } from "@/lib/server-log";
 
 type PhotonFeature = {
@@ -17,6 +18,21 @@ type PhotonFeature = {
 
 export async function GET(request: NextRequest) {
   const startedAt = Date.now();
+  const rate = checkRateLimit(`geocode:${requestIp(request.headers)}`, {
+    limit: 30,
+    windowMs: 60_000,
+  });
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { results: [], error: "Trop de recherches. Réessayez dans un instant." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.max(1, Math.ceil((rate.resetAt - Date.now()) / 1000))),
+        },
+      },
+    );
+  }
   const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
   if (query.length < 3 || query.length > 160) {
     return NextResponse.json({ results: [] });

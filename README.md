@@ -20,12 +20,14 @@ npm run dev
 
 Le changement de rôle de la démonstration a été retiré. Les accès affichés dépendent maintenant du compte authentifié.
 
-Le projet Supabase dédié est **Se Loger au Sénégal** (`https://isqcndswkzlfjangjcpv.supabase.co`, région Paris). Copiez `.env.example` vers `.env.local` et renseignez l’URL et la clé publiable. Sans ces variables, l’authentification et les écritures de marché sont désactivées ; le catalogue d’exemple reste consultable.
+Le projet Supabase dédié est **Se Loger au Sénégal** (`https://isqcndswkzlfjangjcpv.supabase.co`, région Paris). Copiez `.env.example` vers `.env.local` et renseignez l’URL et la clé publiable. Sans ces variables, l’authentification et les écritures de marché sont désactivées. Les données d’exemple ne sont chargées que si `NEXT_PUBLIC_ENABLE_DEMO_DATA=true` ; cette option doit rester désactivée en production.
 
 Le checkout requiert aussi, côté serveur uniquement, `SUPABASE_SERVICE_ROLE_KEY`, `APP_URL` et les clés PayDunya. Si une seule valeur manque, l’API répond `PAYMENTS_NOT_CONFIGURED` et ne simule jamais un succès. Le webhook PayDunya vérifie le hash SHA-512 puis revalide la facture auprès de l’API PayDunya avant de confirmer la réservation.
 
-Les exemples de catalogue restent locaux pour la démonstration. Les nouvelles annonces et demandes passent par les tables normalisées de Supabase. L’ancien document public `ameena_state` a été supprimé.
+Les nouvelles annonces et demandes passent par les tables normalisées de Supabase. L’ancien document public `ameena_state` a été supprimé.
 
 ## Avant l’ouverture commerciale
 
 La plateforme ne simule jamais un débit. Il reste à fournir et valider les identifiants PayDunya, l’entité juridique exploitante, les mentions légales, les CGU/CGV finalisées et le canal de vérification d’identité. Ces données ne doivent pas être inventées dans le code.
+
+La procédure complète de mise en service, de recette paiement, de sauvegarde et de restauration est décrite dans [`docs/production-runbook.md`](docs/production-runbook.md).

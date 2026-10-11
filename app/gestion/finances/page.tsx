@@ -77,6 +77,12 @@ export default function FinancesPage() {
         title="Finances"
         text="Les paiements, remboursements et reversements réels proviennent exclusivement du registre PSP sécurisé."
       />
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <FinanceMetric label="Paiements confirmés" value={payments.filter((item) => item.status === "paid").length} />
+        <FinanceMetric label="Paiements à contrôler" value={payments.filter((item) => ["created", "pending", "failed"].includes(item.status)).length} tone="warn" />
+        <FinanceMetric label="Reversements en attente" value={payouts.filter((item) => ["scheduled", "processing", "held"].includes(item.status)).length} />
+        <FinanceMetric label="Remboursements ouverts" value={refunds.filter((item) => ["requested", "processing", "failed"].includes(item.status)).length} tone="warn" />
+      </div>
       <section className="rounded-3xl border border-[#d8e8e5] bg-[#f6fbfa] p-5">
         <h2 className="text-xl font-semibold">Flux réels PSP</h2>
         <p className="mt-1 text-sm text-[#52706c]">Aucun statut ne peut être marqué payé manuellement depuis cet écran.</p>
@@ -158,6 +164,23 @@ export default function FinancesPage() {
           {expenses.length === 0 && <p className="rounded-2xl border border-dashed border-[#cccccc] p-4 text-sm text-[#6a6a6a]">Aucune dépense enregistrée.</p>}
         </div>
       </section>
+    </div>
+  );
+}
+
+function FinanceMetric({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string;
+  value: number;
+  tone?: "neutral" | "warn";
+}) {
+  return (
+    <div className={`rounded-2xl border p-4 ${tone === "warn" && value > 0 ? "border-[#f1d49a] bg-[#fff8e8]" : "border-[#e5e5e5] bg-white"}`}>
+      <p className="text-xs font-medium text-[#6a6a6a]">{label}</p>
+      <p className="mt-2 text-2xl font-semibold">{value}</p>
     </div>
   );
 }

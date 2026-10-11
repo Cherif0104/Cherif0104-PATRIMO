@@ -8,7 +8,7 @@ import { MapView } from "@/components/map";
 import { PropertyCard } from "@/components/property-card";
 import { LocationSearchInput } from "@/components/location-search-input";
 import { fieldClass, nightsBetween } from "@/lib/format";
-import { loadBlockedListingIds } from "@/lib/supabase";
+import { loadBlockedListingIds, loadPublishedListingsPage } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
 import { useTitle } from "@/lib/use-title";
 import type { Listing, Mode } from "@/lib/types";
@@ -65,7 +65,7 @@ function match(listing: Listing, params: URLSearchParams) {
 function Explorer() {
   const params = useSearchParams();
   const router = useRouter();
-  const { state } = useAmeena();
+  const { state, dispatch } = useAmeena();
   const [hovered, setHovered] = useState<string | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
@@ -82,6 +82,8 @@ function Explorer() {
   const [mode, setMode] = useState(params.get("mode") ?? "");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [blockedIds, setBlockedIds] = useState<string[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   useTitle("Explorer · Se Loger au Sénégal");
 
   const arrival = params.get("arrivee") ?? "";
@@ -179,6 +181,19 @@ function Explorer() {
     else next.delete("gere");
     router.push(`/explorer${next.size ? `?${next.toString()}` : ""}`);
     setFiltersOpen(false);
+  }
+
+  async function loadMore() {
+    const offset = state.listings.filter((listing) =>
+      Boolean(listing.databaseId) && listing.publicationStatus === "published").length;
+    setLoadingMore(true);
+    try {
+      const next = await loadPublishedListingsPage(offset, 48);
+      dispatch({ type: "merge-marketplace-listings", listings: next });
+      setHasMore(next.length === 48);
+    } finally {
+      setLoadingMore(false);
+    }
   }
 
   return (
@@ -324,6 +339,17 @@ function Explorer() {
           </div>
           {listings.length === 0 && (
             <p className="py-20 text-center text-[#6a6a6a]">Aucun bien ne correspond. Élargissez la destination ou le prix.</p>
+          )}
+          {hasMore && state.listings.filter((listing) => Boolean(listing.databaseId)).length >= 48 && (
+            <div className="py-8 text-center">
+              <button
+                className="rounded-full border border-[#222] bg-white px-5 py-3 text-sm font-semibold"
+                disabled={loadingMore}
+                onClick={() => void loadMore()}
+              >
+                {loadingMore ? "Chargement…" : "Afficher plus de biens"}
+              </button>
+            </div>
           )}
         </div>
         <div

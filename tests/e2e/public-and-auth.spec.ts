@@ -15,6 +15,12 @@ test("le catalogue public est servi avec les éléments SEO", async ({ page }) =
   expect(sitemapXml).toContain("<urlset");
   expect(sitemapXml).toContain("/services");
   expect(sitemapXml).toContain("/telecharger");
+
+  const health = await page.request.get("/api/health");
+  expect(health.ok()).toBeTruthy();
+  expect(await health.json()).toEqual(expect.objectContaining({
+    checks: expect.objectContaining({ database: true }),
+  }));
 });
 
 test("les parcours privés redirigent les visiteurs vers la connexion", async ({ page }) => {

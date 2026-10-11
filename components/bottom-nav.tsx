@@ -18,7 +18,7 @@ export function BottomNav() {
   if (pathname.startsWith("/admin") || pathname.startsWith("/logements/")) return null;
   if (
     pathname.startsWith("/gestion")
-    && (loading || profile?.account_type !== "proprietaire")
+    && (loading || persona !== "owner")
   ) return null;
   const hasActiveIndividualListing = state.listings.some((listing) =>
     listing.ownerUserId === user?.id

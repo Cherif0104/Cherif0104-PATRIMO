@@ -286,6 +286,7 @@ export default function AccountPage() {
         verified={profile?.identity_status === "verifie"}
         hasActiveListing={Boolean(activeOwnedListing)}
       />
+      {error && <p role="alert" className="mt-5 rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
 
       <div className="mt-6 grid grid-cols-2 rounded-full bg-[#f2f2f2] p-1 text-sm">
         <button onClick={() => setView("activity")} className={cx("rounded-full px-4 py-2.5 font-medium", view === "activity" && "bg-white shadow-sm")}>Activité</button>
@@ -433,7 +434,6 @@ export default function AccountPage() {
               </select>
             </label>
             {saved && <p className="text-sm text-[#145e57]">Profil enregistré.</p>}
-            {error && <p role="alert" className="text-sm text-[#a52a12]">{error}</p>}
             <button className={`${btnPrimary} w-full`}>Enregistrer</button>
           </form>
           {(accountType === "proprietaire" || accountType === "agence") && (

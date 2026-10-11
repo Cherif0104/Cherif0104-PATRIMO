@@ -74,7 +74,6 @@ function Explorer() {
   const [maxPrice, setMaxPrice] = useState(params.get("prix_max") ?? "");
   const [type, setType] = useState(params.get("type") ?? "");
   const [bedrooms, setBedrooms] = useState(params.get("chambres") ?? "");
-  const [verifiedOnly, setVerifiedOnly] = useState(params.get("certifie") === "1");
   const [purpose, setPurpose] = useState(params.get("marche") ?? "");
   const [furnishing, setFurnishing] = useState(params.get("ameublement") ?? "");
   const [standing, setStanding] = useState(params.get("standing") ?? "");
@@ -112,7 +111,6 @@ function Explorer() {
     setMaxPrice(params.get("prix_max") ?? "");
     setType(params.get("type") ?? "");
     setBedrooms(params.get("chambres") ?? "");
-    setVerifiedOnly(params.get("certifie") === "1");
     setPurpose(params.get("marche") ?? "");
     setFurnishing(params.get("ameublement") ?? "");
     setStanding(params.get("standing") ?? "");
@@ -132,8 +130,6 @@ function Explorer() {
     else next.delete("type");
     if (bedrooms) next.set("chambres", bedrooms);
     else next.delete("chambres");
-    if (verifiedOnly) next.set("certifie", "1");
-    else next.delete("certifie");
     if (purpose) next.set("marche", purpose);
     else next.delete("marche");
     if (furnishing) next.set("ameublement", furnishing);
@@ -148,7 +144,7 @@ function Explorer() {
       if (maxPrice && listing.price > Number(maxPrice)) return false;
       return true;
     });
-  }, [state.listings, params, mode, managedOnly, query, type, bedrooms, verifiedOnly, purpose, furnishing, standing, minPrice, maxPrice, blockedIds]);
+  }, [state.listings, params, mode, managedOnly, query, type, bedrooms, purpose, furnishing, standing, minPrice, maxPrice, blockedIds]);
 
   const activeListing = listings.find((listing) => listing.id === active) ?? null;
   const currentCategory = CATEGORIES.find((item) => item.value === category);
@@ -175,8 +171,7 @@ function Explorer() {
       if (value) next.set(key, value);
       else next.delete(key);
     }
-    if (verifiedOnly) next.set("certifie", "1");
-    else next.delete("certifie");
+    next.delete("certifie");
     if (managedOnly) next.set("gere", "1");
     else next.delete("gere");
     router.push(`/explorer${next.size ? `?${next.toString()}` : ""}`);
@@ -189,7 +184,6 @@ function Explorer() {
     setMaxPrice("");
     setType("");
     setBedrooms("");
-    setVerifiedOnly(false);
     setPurpose("");
     setFurnishing("");
     setStanding("");
@@ -314,10 +308,6 @@ function Explorer() {
               <input className={fieldClass} inputMode="numeric" placeholder="Budget maximum" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value.replace(/[^\d]/g, ""))} />
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-4">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={verifiedOnly} onChange={(event) => setVerifiedOnly(event.target.checked)} className="accent-[#FF4845]" />
-                Certifié
-              </label>
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={managedOnly} onChange={(event) => setManagedOnly(event.target.checked)} className="accent-[#FF4845]" />
                 Géré par la plateforme

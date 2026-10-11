@@ -181,7 +181,7 @@ export function Header() {
             {publishAction.label}
           </Link>
 
-          {state.role !== "voyageur" && (
+          {user && (
             <div className="relative" ref={noteRef}>
               <button
                 className="relative grid h-10 w-10 place-items-center rounded-full hover:bg-[#f2f2f2]"

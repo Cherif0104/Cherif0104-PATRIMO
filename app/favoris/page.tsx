@@ -32,7 +32,7 @@ export default function FavoritesPage() {
           <p className="mt-2 text-[15px] leading-6 text-[#6a6a6a]">
             Touchez le cœur d’un logement pour le retrouver ici.
           </p>
-          <Link href="/" className={`${btnPrimary} mt-6`}>Commencer à explorer</Link>
+          <Link href="/explorer" className={`${btnPrimary} mt-6`}>Commencer à explorer</Link>
         </section>
       )}
     </main>

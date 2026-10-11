@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, MessageCircle, Plus, Upload, Users } from "lucide-react";
 import { PageHead, Pill } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
-import { btnPrimary, btnSecondary, fieldClass, formatDate, formatMoney } from "@/lib/format";
+import { btnPrimary, btnSecondary, fieldClass, formatDate, formatMoney, whatsappHref } from "@/lib/format";
 import {
   createCrmContact,
   createCrmInteraction,
@@ -240,7 +240,7 @@ export default function CrmPage() {
                   <select className={`${fieldClass} w-auto`} value={selected.qualification} onChange={(event) => void qualify(event.target.value as CrmContact["qualification"])}>
                     <option value="nouveau">Nouveau</option><option value="a_qualifier">À qualifier</option><option value="qualifie">Qualifié</option><option value="prioritaire">Prioritaire</option><option value="inactif">Inactif</option>
                   </select>
-                  {selected.phone && <a href={`https://wa.me/${selected.phone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-[#16836f] px-4 py-2.5 text-sm font-semibold text-white"><MessageCircle className="h-4 w-4" /> WhatsApp</a>}
+                  {selected.phone && <a href={whatsappHref(selected.phone, `Bonjour ${selected.full_name}`)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-[#16836f] px-4 py-2.5 text-sm font-semibold text-white"><MessageCircle className="h-4 w-4" /> WhatsApp</a>}
                 </div>
               </div>
 

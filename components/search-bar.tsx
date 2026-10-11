@@ -36,7 +36,7 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
     if (minPrice) params.set("prix_min", minPrice);
     if (maxPrice) params.set("prix_max", maxPrice);
     if (bedrooms) params.set("chambres", bedrooms);
-    if (verified) params.set("certifie", "1");
+    if (verified) params.set("gere", "1");
     if (purpose) params.set("marche", purpose);
     if (furnishing) params.set("ameublement", furnishing);
     if (standing) params.set("standing", standing);
@@ -49,6 +49,7 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
         <div className="grid grid-cols-2 rounded-full bg-[#f2f2f2] p-1 text-sm">
           {(["sejour", "location"] as Mode[]).map((item) => (
             <button
+              type="button"
               key={item}
               className={`rounded-full px-5 py-2 font-medium ${mode === item ? "bg-white shadow-sm" : "text-[#6a6a6a]"}`}
               onClick={() => setMode(item)}
@@ -199,7 +200,7 @@ export function SearchBar({ initialMode = "sejour" }: { initialMode?: Mode }) {
           </label>
           <label className="flex items-center gap-2 self-end rounded-xl bg-[#FFF8ED] px-3 py-3 text-sm font-semibold text-[#182A39]">
             <input type="checkbox" checked={verified} onChange={(event) => setVerified(event.target.checked)} className="accent-[#FF4845]" />
-            Certifié
+            Géré par Se Loger au Sénégal
           </label>
         </div>
       )}

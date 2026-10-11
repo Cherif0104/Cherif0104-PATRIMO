@@ -39,7 +39,7 @@ export function DiscoveryHeader({
     if (type) params.set("type", type);
     if (minPrice) params.set("prix_min", minPrice);
     if (maxPrice) params.set("prix_max", maxPrice);
-    if (verified) params.set("certifie", "1");
+    if (verified) params.set("gere", "1");
     if (purpose) params.set("marche", purpose);
     if (standing) params.set("standing", standing);
     router.push(`/explorer?${params.toString()}`);
@@ -113,7 +113,7 @@ export function DiscoveryHeader({
           <input value={maxPrice} onChange={(event) => setMaxPrice(event.target.value.replace(/\D/g, ""))} inputMode="numeric" placeholder="Budget max." className="rounded-xl border border-[#dddddd] bg-transparent px-3 py-2.5 text-sm" />
           <label className="col-span-2 flex items-center gap-2 px-1 py-1 text-sm font-medium">
             <input type="checkbox" checked={verified} onChange={(event) => setVerified(event.target.checked)} className="accent-[#FF4845]" />
-            Annonces certifiées uniquement
+            Gérées par Se Loger au Sénégal
           </label>
         </div>
       )}

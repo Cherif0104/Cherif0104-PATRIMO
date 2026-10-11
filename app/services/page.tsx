@@ -63,6 +63,8 @@ function ServicesContent() {
   });
   const [applicationStatus, setApplicationStatus] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   useTitle("Services immobiliers · Se Loger au Sénégal");
 
   function openApplication() {
@@ -76,13 +78,17 @@ function ServicesContent() {
   }
 
   useEffect(() => {
+    setLoadError(false);
     loadPublishedPartners()
       .then(async (partners) => {
         const products = await loadPartnerProducts(partners.map((partner) => partner.id));
         setProfessionals([...partners.map((partner) => fromDatabase(partner, products)), ...demoProfessionals]);
       })
-      .catch(() => setProfessionals(demoProfessionals));
-  }, []);
+      .catch(() => {
+        setProfessionals(demoProfessionals);
+        setLoadError(true);
+      });
+  }, [reloadKey]);
 
   const visible = useMemo(() => professionals.filter((professional) => {
     const search = `${professional.businessName} ${professional.categoryLabel} ${professional.description} ${professional.services.join(" ")}`.toLowerCase();
@@ -218,6 +224,12 @@ function ServicesContent() {
 
       <section className="section-pearl px-4 py-10 md:px-10 xl:px-16">
         <div className="mx-auto max-w-6xl">
+          {loadError && (
+            <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">
+              <span>L’annuaire n’a pas pu être chargé. Vérifiez votre connexion.</span>
+              <button type="button" className="font-semibold underline" onClick={() => setReloadKey((value) => value + 1)}>Réessayer</button>
+            </div>
+          )}
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
               <h2 className="premium-title text-2xl">Professionnels disponibles</h2>

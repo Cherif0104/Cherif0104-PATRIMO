@@ -98,6 +98,12 @@ test("les états vides proposent toujours une action fonctionnelle", async ({ pa
 
 test("la recherche accepte une destination saisie et expose les filtres", async ({ page }) => {
   await page.goto("/");
+  const locationMode = page.getByRole("button", { name: "Locations", exact: true });
+  if (await locationMode.count()) {
+    await locationMode.click();
+    await expect(page).toHaveURL((url) => url.pathname === "/" && !url.search);
+    await expect(page.getByText("Emménagement", { exact: true })).toBeVisible();
+  }
   const search = page.locator('input[placeholder*="Appartement à Dakar"]:visible');
   await expect(search).toBeVisible();
   await search.fill("appartement à Dakar");

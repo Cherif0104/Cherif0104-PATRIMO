@@ -110,11 +110,17 @@ export default function TripsPage() {
                       <button
                         className={`${btnPrimary} mt-3`}
                         disabled={contractBusy === contract.id || !acceptedContractTerms.includes(contract.id)}
+                        aria-describedby={`contract-help-${contract.id}`}
                         onClick={() => void acceptContract(contract)}
                       >
                         <CheckCircle2 className="h-4 w-4" />
                         {contractBusy === contract.id ? "Acceptation…" : "Accepter le contrat"}
                       </button>
+                      {!acceptedContractTerms.includes(contract.id) && (
+                        <p id={`contract-help-${contract.id}`} className="mt-2 text-xs text-[#6a6a6a]">
+                          Téléchargez le PDF, vérifiez-le puis cochez la case pour activer ce bouton.
+                        </p>
+                      )}
                     </div>
                   )}
                   <a href={`/api/contracts/${contract.id}/pdf`} className={btnSecondary}>
@@ -165,7 +171,7 @@ export default function TripsPage() {
             <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-[#6a6a6a]">
               Vos demandes, contrats et paiements immobiliers seront regroupés ici, sans mélange avec d’autres services.
             </p>
-            <Link href={user ? "/" : "/connexion?retour=/voyages"} className={`${btnPrimary} mt-6`}>
+            <Link href={user ? "/explorer" : "/connexion?retour=/voyages"} className={`${btnPrimary} mt-6`}>
               {user ? "Commencer" : "Se connecter"}
             </Link>
           </div>

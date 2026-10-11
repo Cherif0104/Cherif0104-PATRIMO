@@ -5,7 +5,13 @@ import { useEffect, useState } from "react";
 import { CalendarDays, CheckCircle2, CreditCard, Download, FileText, Home, MapPinned } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { btnPrimary, btnSecondary, formatDate, formatMoney } from "@/lib/format";
-import { acceptPropertyContract, loadMyBookings, loadPropertyContracts, supabase } from "@/lib/supabase";
+import {
+  acceptPropertyContract,
+  loadMyBookings,
+  loadPropertyContracts,
+  supabase,
+  updateMarketBookingStatus,
+} from "@/lib/supabase";
 import type { MarketBooking, PropertyContract } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
@@ -15,6 +21,7 @@ export default function TripsPage() {
   const [contracts, setContracts] = useState<PropertyContract[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [paymentBusy, setPaymentBusy] = useState("");
+  const [cancelBusy, setCancelBusy] = useState("");
   const [contractBusy, setContractBusy] = useState("");
   const [acceptedContractTerms, setAcceptedContractTerms] = useState<string[]>([]);
   const [error, setError] = useState("");
@@ -27,9 +34,10 @@ export default function TripsPage() {
     }
     Promise.all([loadMyBookings(), loadPropertyContracts()])
       .then(([bookingRows, contractRows]) => {
-        setBookings(bookingRows.filter((booking) => !["declined", "cancelled", "expired"].includes(booking.status)));
+        setBookings(bookingRows);
         setContracts(contractRows);
       })
+      .catch(() => setError("Vos dossiers ne peuvent pas être chargés pour le moment."))
       .finally(() => setLoaded(true));
   }, [user]);
 
@@ -71,6 +79,20 @@ export default function TripsPage() {
       setError("Le contrat n’a pas pu être accepté. Rechargez la page puis réessayez.");
     } finally {
       setContractBusy("");
+    }
+  }
+
+  async function cancelBooking(booking: MarketBooking) {
+    if (!window.confirm("Annuler cette demande de logement ?")) return;
+    setCancelBusy(booking.id);
+    setError("");
+    try {
+      const updated = await updateMarketBookingStatus(booking.id, "cancelled");
+      setBookings((rows) => rows.map((row) => row.id === updated.id ? updated : row));
+    } catch {
+      setError("La demande n’a pas pu être annulée. Rechargez la page puis réessayez.");
+    } finally {
+      setCancelBusy("");
     }
   }
 
@@ -153,6 +175,15 @@ export default function TripsPage() {
                   {(booking.status === "preapproved" || booking.status === "awaiting_payment") && (
                     <button className={btnPrimary} disabled={paymentBusy === booking.id} onClick={() => void startPayment(booking)}>
                       <CreditCard className="h-4 w-4" /> {paymentBusy === booking.id ? "Ouverture…" : "Payer"}
+                    </button>
+                  )}
+                  {["requested", "preapproved", "awaiting_payment"].includes(booking.status) && (
+                    <button
+                      className={btnSecondary}
+                      disabled={cancelBusy === booking.id}
+                      onClick={() => void cancelBooking(booking)}
+                    >
+                      {cancelBusy === booking.id ? "Annulation…" : "Annuler la demande"}
                     </button>
                   )}
                 </div>

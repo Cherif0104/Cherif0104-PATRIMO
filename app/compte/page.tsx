@@ -16,6 +16,7 @@ import {
   saveHostPublicProfile,
   submitVerificationRequest,
   supabase,
+  updateMarketBookingStatus,
   updateProfile,
   uploadVerificationDocument,
 } from "@/lib/supabase";
@@ -54,6 +55,8 @@ export default function AccountPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [paymentBusy, setPaymentBusy] = useState("");
+  const [cancelBusy, setCancelBusy] = useState("");
+  const [paymentNotice, setPaymentNotice] = useState("");
   const [view, setView] = useState<"activity" | "profile">("activity");
   useTitle("Mon compte · Se Loger au Sénégal");
 
@@ -75,6 +78,17 @@ export default function AccountPage() {
     syncViewFromHash();
     window.addEventListener("hashchange", syncViewFromHash);
     return () => window.removeEventListener("hashchange", syncViewFromHash);
+  }, []);
+
+  useEffect(() => {
+    const paymentResult = new URLSearchParams(window.location.search).get("paiement");
+    if (paymentResult === "retour") {
+      setPaymentNotice("Paiement reçu. Sa confirmation sécurisée peut prendre quelques instants.");
+      setView("activity");
+    } else if (paymentResult === "annule") {
+      setPaymentNotice("Paiement interrompu. Aucun débit n’a été confirmé et votre dossier reste accessible.");
+      setView("activity");
+    }
   }, []);
 
   useEffect(() => {
@@ -248,6 +262,20 @@ export default function AccountPage() {
     }
   }
 
+  async function cancelBooking(booking: MarketBooking) {
+    if (!window.confirm("Annuler cette demande de logement ?")) return;
+    setCancelBusy(booking.id);
+    setError("");
+    try {
+      const updated = await updateMarketBookingStatus(booking.id, "cancelled");
+      setBookings((rows) => rows.map((row) => row.id === updated.id ? updated : row));
+    } catch {
+      setError("La demande n’a pas pu être annulée. Rechargez la page puis réessayez.");
+    } finally {
+      setCancelBusy("");
+    }
+  }
+
   const activeOwnedListing = state.listings.find((listing) =>
     listing.ownerUserId === user.id
     && !listing.organizationId
@@ -292,6 +320,11 @@ export default function AccountPage() {
         verificationRequest={verificationRequest}
         verificationDocuments={verificationDocuments.length}
       />
+      {paymentNotice && (
+        <p role="status" className="mt-5 rounded-xl bg-[#e7f4f2] px-4 py-3 text-sm text-[#145e57]">
+          {paymentNotice}
+        </p>
+      )}
       {error && <p role="alert" className="mt-5 rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
 
       <div className="mt-6 grid grid-cols-2 rounded-full bg-[#f2f2f2] p-1 text-sm">
@@ -380,6 +413,15 @@ export default function AccountPage() {
                     >
                       <CreditCard className="h-4 w-4" />
                       {paymentBusy === booking.id ? "Ouverture…" : "Payer de façon sécurisée"}
+                    </button>
+                  )}
+                  {["requested", "preapproved", "awaiting_payment"].includes(booking.status) && (
+                    <button
+                      className={btnSecondary}
+                      disabled={cancelBusy === booking.id}
+                      onClick={() => void cancelBooking(booking)}
+                    >
+                      {cancelBusy === booking.id ? "Annulation…" : "Annuler la demande"}
                     </button>
                   )}
                 </div>

@@ -29,7 +29,7 @@ test("l’inscription sépare recherche de logement et propriétaire", async ({ 
   await page.goto("/connexion");
   await page.getByRole("button", { name: "inscription" }).click();
   await expect(page.getByText("Trouver un logement", { exact: true })).toBeVisible();
-  await expect(page.getByText("Publier mon bien", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Publier mon bien/ })).toBeVisible();
   await expect(page.getByText("Proposer un service", { exact: true })).toHaveCount(0);
   await expect(page.getByText(/un seul bien actif/)).toBeVisible();
   await expect(page.getByText(/agence ERP\/CRM/i)).toHaveCount(0);
@@ -85,12 +85,13 @@ test("la recherche accepte une destination saisie et expose les filtres", async 
 
 test("la navigation desktop n’active qu’un seul marché", async ({ page }) => {
   await page.goto("/explorer?marche=location");
-  await expect(page.locator('header a[href="/explorer?marche=location"]')).toHaveAttribute("aria-current", "page");
-  await expect(page.locator('header a[href="/"]')).not.toHaveAttribute("aria-current", "page");
+  const offers = page.locator('nav[aria-label="Offres"]');
+  await expect(offers.locator('a[href="/explorer?marche=location"]')).toHaveAttribute("aria-current", "page");
+  await expect(offers.locator('a[href="/"]')).not.toHaveAttribute("aria-current", "page");
 
   await page.goto("/explorer?marche=vente");
-  await expect(page.locator('header a[href="/explorer?marche=vente"]')).toHaveAttribute("aria-current", "page");
-  await expect(page.locator('header a[href="/explorer?marche=location"]')).not.toHaveAttribute("aria-current", "page");
+  await expect(offers.locator('a[href="/explorer?marche=vente"]')).toHaveAttribute("aria-current", "page");
+  await expect(offers.locator('a[href="/explorer?marche=location"]')).not.toHaveAttribute("aria-current", "page");
 });
 
 test("les catégories ouvrent directement un catalogue minimaliste", async ({ page }) => {

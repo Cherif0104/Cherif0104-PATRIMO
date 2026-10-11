@@ -9,8 +9,9 @@ import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { PageHead } from "@/components/ui";
 import { btnPrimary, fieldClass, uid } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
-import { loadMyOrganizationMemberships, loadOrganizations, loadOwnedListings, submitListing, uploadListingPhoto } from "@/lib/supabase";
+import { loadOrganizations, loadOwnedListings, submitListing, uploadListingPhoto } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
+import { useAccess } from "@/lib/use-access";
 import { useTitle } from "@/lib/use-title";
 import type {
   Currency,
@@ -19,7 +20,6 @@ import type {
   ManagementMandate,
   Mode,
   Organization,
-  OrganizationMember,
   PropertyType,
   RentalTerm,
   Standing,
@@ -55,6 +55,7 @@ const AMENITY_OPTIONS = [
 export default function PublishPage() {
   const { dispatch } = useAmeena();
   const { user, profile, loading } = useAuth();
+  const { can } = useAccess();
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [place, setPlace] = useState(defaultPlace);
@@ -75,9 +76,7 @@ export default function PublishPage() {
   const [amenities, setAmenities] = useState<string[]>(["Wifi"]);
   const [description, setDescription] = useState("");
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [memberships, setMemberships] = useState<OrganizationMember[]>([]);
-  const [membershipsLoaded, setMembershipsLoaded] = useState(false);
-  const [membershipsUserId, setMembershipsUserId] = useState("");
+  const [publisherDataLoaded, setPublisherDataLoaded] = useState(false);
   const [existingIndividualListing, setExistingIndividualListing] = useState<{ id: string; title: string } | null>(null);
   const [organizationId, setOrganizationId] = useState("");
   const [images, setImages] = useState<string[]>([]);
@@ -89,26 +88,19 @@ export default function PublishPage() {
   const [step, setStep] = useState(1);
   useTitle("Publier un bien · Se Loger au Sénégal");
 
-  const verifiedProfessional = profile?.identity_status === "verifie"
-    && (profile?.account_type === "proprietaire" || profile?.account_type === "agence");
-  const delegatedPublisher = memberships.some((membership) =>
-    membership.role !== "viewer" && membership.functional_domains.includes("catalogue"));
-  const professional = verifiedProfessional || delegatedPublisher || user?.app_metadata?.role === "admin";
+  const professional = can("publish_listing");
   const isLand = type === "terrain" || type === "champ";
   const isProfessionalProperty = ["bureau", "commerce", "immeuble"].includes(type);
 
   useEffect(() => {
     if (!user) {
-      setMemberships([]);
-      setMembershipsUserId("");
       setExistingIndividualListing(null);
-      setMembershipsLoaded(true);
+      setPublisherDataLoaded(true);
       return;
     }
-    setMembershipsLoaded(false);
-    Promise.all([loadMyOrganizationMemberships(), loadOrganizations(), loadOwnedListings(user.id)])
-      .then(([membershipRows, organizationRows, listingRows]) => {
-        setMemberships(membershipRows);
+    setPublisherDataLoaded(false);
+    Promise.all([loadOrganizations(), loadOwnedListings(user.id)])
+      .then(([organizationRows, listingRows]) => {
         setOrganizations(organizationRows);
         setOrganizationId(organizationRows[0]?.id ?? "");
         const individualListing = listingRows.find((listing) =>
@@ -120,12 +112,10 @@ export default function PublishPage() {
         );
       })
       .catch(() => {
-        setMemberships([]);
         setOrganizations([]);
         setExistingIndividualListing(null);
       })
-      .finally(() => setMembershipsLoaded(true));
-    setMembershipsUserId(user.id);
+      .finally(() => setPublisherDataLoaded(true));
   }, [user]);
 
   async function onFiles(files: FileList | null) {
@@ -206,7 +196,7 @@ export default function PublishPage() {
     }
   }
 
-  if (loading || !membershipsLoaded || (user && membershipsUserId !== user.id)) {
+  if (loading || !publisherDataLoaded) {
     return <div className="p-12 text-center text-sm text-[#6a6a6a]">Ouverture de la publication…</div>;
   }
 

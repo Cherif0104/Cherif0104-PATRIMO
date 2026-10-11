@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -18,69 +17,38 @@ import {
   Wrench,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { canAccessManagement } from "@/lib/access";
 import { cx } from "@/lib/format";
-import { loadMyOrganizationMemberships } from "@/lib/supabase";
-import type { FunctionalDomain, OrganizationMember } from "@/lib/types";
+import { useAccess } from "@/lib/use-access";
 
 type GestionLink = {
   href: string;
   label: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
-  domain?: FunctionalDomain;
 };
 
 const links: GestionLink[] = [
   { href: "/gestion", label: "Tableau", icon: LayoutDashboard, exact: true },
-  { href: "/gestion/biens", label: "Biens", icon: Building2, domain: "catalogue" },
-  { href: "/gestion/reservations", label: "Réservations", icon: CalendarDays, domain: "reservations" },
-  { href: "/gestion/clients", label: "Clientèle", icon: Users, domain: "crm" },
-  { href: "/gestion/crm", label: "CRM", icon: ContactRound, domain: "crm" },
-  { href: "/gestion/contrats", label: "Contrats", icon: FileText, domain: "contracts" },
-  { href: "/gestion/finances", label: "Finances", icon: Wallet, domain: "finance" },
-  { href: "/gestion/equipe", label: "Équipe", icon: UserCog, domain: "administration" },
-  { href: "/gestion/incidents", label: "Incidents", icon: Wrench, domain: "maintenance" },
-  { href: "/gestion/etats-des-lieux", label: "États des lieux", icon: ClipboardCheck, domain: "maintenance" },
+  { href: "/gestion/biens", label: "Biens", icon: Building2 },
+  { href: "/gestion/reservations", label: "Réservations", icon: CalendarDays },
+  { href: "/gestion/clients", label: "Clientèle", icon: Users },
+  { href: "/gestion/crm", label: "CRM", icon: ContactRound },
+  { href: "/gestion/contrats", label: "Contrats", icon: FileText },
+  { href: "/gestion/finances", label: "Finances", icon: Wallet },
+  { href: "/gestion/equipe", label: "Équipe", icon: UserCog },
+  { href: "/gestion/incidents", label: "Incidents", icon: Wrench },
+  { href: "/gestion/etats-des-lieux", label: "États des lieux", icon: ClipboardCheck },
 ];
 
 export function GestionShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, profile, loading } = useAuth();
-  const [memberships, setMemberships] = useState<OrganizationMember[]>([]);
-  const [membershipsLoading, setMembershipsLoading] = useState(true);
-  const [membershipsUserId, setMembershipsUserId] = useState("");
-  const isAdmin = user?.app_metadata?.role === "admin";
-  const isVerifiedProfessional =
-    profile?.identity_status === "verifie"
-    && (profile.account_type === "proprietaire" || profile.account_type === "agence");
-  const isOrganizationMember = memberships.length > 0;
-  const memberDomains = useMemo(
-    () => new Set(memberships.flatMap((membership) => membership.functional_domains)),
-    [memberships],
-  );
-
-  useEffect(() => {
-    if (!user) {
-      setMemberships([]);
-      setMembershipsUserId("");
-      setMembershipsLoading(false);
-      return;
-    }
-    setMembershipsLoading(true);
-    loadMyOrganizationMemberships()
-      .then(setMemberships)
-      .catch(() => setMemberships([]))
-      .finally(() => {
-        setMembershipsUserId(user.id);
-        setMembershipsLoading(false);
-      });
-  }, [user]);
+  const { user, profile } = useAuth();
+  const { identity, persona, loading } = useAccess();
 
   function canOpen(link: GestionLink) {
-    if (!link.domain || isAdmin || profile?.account_type === "agence") return true;
-    if (isOrganizationMember) return memberDomains.has(link.domain);
-    return !["crm", "administration"].includes(link.domain);
+    return canAccessManagement(identity, link.href);
   }
 
   const visibleLinks = links.filter(canOpen);
@@ -95,11 +63,11 @@ export function GestionShell({ children }: { children: React.ReactNode }) {
     return link.label;
   };
 
-  if (loading || membershipsLoading || (user && membershipsUserId !== user.id)) {
+  if (loading) {
     return <div className="p-12 text-center text-sm text-[#6a6a6a]">Ouverture de la gestion…</div>;
   }
 
-  if (!user || (!isAdmin && !isVerifiedProfessional && !isOrganizationMember)) {
+  if (!user || !canAccessManagement(identity, "/gestion")) {
     return (
       <div className="mx-auto max-w-xl px-6 py-24 text-center">
         <p className="text-sm text-[#6a6a6a]">Espace de gestion</p>
@@ -134,7 +102,7 @@ export function GestionShell({ children }: { children: React.ReactNode }) {
         <div className="px-4 py-5">
           <p className="text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">Gestion</p>
           <p className="mt-1 font-semibold">
-            {isAdmin ? "Administration" : profile?.account_type === "agence" ? "Agence vérifiée" : isOrganizationMember ? "Collaborateur agence" : "Propriétaire vérifié"}
+            {persona === "admin" ? "Administration" : persona === "agency" ? "Agence vérifiée" : persona === "agency_member" ? "Collaborateur agence" : "Propriétaire vérifié"}
           </p>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:px-3">

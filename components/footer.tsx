@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import { useAccess } from "@/lib/use-access";
 
 const discoveryColumns = [
   {
@@ -28,16 +29,25 @@ const discoveryColumns = [
 ];
 
 export function Footer() {
-  const { user, profile } = useAuth();
-  const accountLinks = profile?.account_type === "agence"
+  const { user } = useAuth();
+  const { persona, can } = useAccess();
+  const accountLinks = persona === "admin"
     ? [
-        ["Pilotage de l’agence", "/gestion"],
-        ["Parc immobilier", "/gestion/biens"],
-        ["Équipe", "/gestion/equipe"],
+        ["Administration", "/admin"],
+        ["Pilotage", "/gestion"],
+        ["Modération des biens", "/admin"],
         ["Messages", "/messages"],
         ["Mon compte", "/compte"],
       ]
-    : profile?.account_type === "proprietaire"
+    : persona === "agency" || persona === "agency_member"
+    ? [
+        ["Pilotage de l’agence", "/gestion"],
+        [can("manage_catalog") ? "Parc immobilier" : "Mes dossiers", can("manage_catalog") ? "/gestion/biens" : "/voyages"],
+        [can("manage_team") ? "Équipe" : can("manage_reservations") ? "Réservations" : "Mes favoris", can("manage_team") ? "/gestion/equipe" : can("manage_reservations") ? "/gestion/reservations" : "/favoris"],
+        ["Messages", "/messages"],
+        ["Mon compte", "/compte"],
+      ]
+    : persona === "owner"
       ? [
           ["Mon espace propriétaire", "/gestion"],
           ["Mon bien", "/gestion/biens"],
@@ -45,6 +55,14 @@ export function Footer() {
           ["Messages", "/messages"],
           ["Mon compte", "/compte"],
         ]
+      : persona === "owner_pending" || persona === "agency_pending"
+        ? [
+            ["Activer la publication", "/compte#certification"],
+            ["Explorer les biens", "/explorer"],
+            ["Mes favoris", "/favoris"],
+            ["Mes messages", "/messages"],
+            ["Mon compte", "/compte"],
+          ]
       : user
         ? [
             ["Explorer les biens", "/explorer"],

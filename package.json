@@ -5,7 +5,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "tsx --test lib/quote.test.ts lib/payments/paydunya.test.ts lib/transactional-email.test.ts",
+    "test": "tsx --test lib/access.test.ts lib/quote.test.ts lib/payments/paydunya.test.ts lib/transactional-email.test.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

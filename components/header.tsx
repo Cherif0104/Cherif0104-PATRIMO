@@ -11,6 +11,7 @@ import { CompactPreferences } from "@/components/preference-controls";
 import { BrandLogo } from "@/components/brand-logo";
 import { usePreferences } from "@/lib/preferences";
 import { useAmeena } from "@/lib/store";
+import { useAccess } from "@/lib/use-access";
 import type { Role, UserNotification } from "@/lib/types";
 
 export function Header() {
@@ -18,6 +19,7 @@ export function Header() {
   const searchParams = useSearchParams();
   const { state, dispatch } = useAmeena();
   const { user, profile } = useAuth();
+  const { persona, can } = useAccess();
   const { t } = usePreferences();
   const [openNotes, setOpenNotes] = useState(false);
   const [notes, setNotes] = useState<UserNotification[]>([]);
@@ -33,20 +35,16 @@ export function Header() {
   }, []);
 
   useEffect(() => {
-    if (!user) {
-      if (state.role !== "voyageur") dispatch({ type: "set-role", role: "voyageur" });
-      return;
-    }
     const role: Role =
-      user.app_metadata?.role === "admin"
+      persona === "admin"
         ? "admin"
-        : profile?.account_type === "agence"
+        : persona === "agency" || persona === "agency_member" || persona === "agency_pending"
           ? "agence"
-          : profile?.account_type === "proprietaire"
+          : persona === "owner" || persona === "owner_pending"
             ? "proprietaire"
             : "voyageur";
     if (state.role !== role) dispatch({ type: "set-role", role });
-  }, [dispatch, profile?.account_type, state.role, user]);
+  }, [dispatch, persona, state.role]);
 
   useEffect(() => {
     const client = supabase;
@@ -85,22 +83,22 @@ export function Header() {
     listing.ownerUserId === user?.id
     && !listing.organizationId
     && listing.publicationStatus !== "archived");
-  const workspaceLink = profile?.account_type === "agence"
+  const workspaceLink = persona === "agency" || persona === "agency_member"
     ? { href: "/gestion", label: "Pilotage agence" }
-    : profile?.account_type === "proprietaire"
+    : persona === "owner"
       ? { href: "/gestion", label: "Mon espace propriétaire" }
       : null;
-  const publishAction = profile?.account_type === "agence"
+  const publishAction = (persona === "agency" || persona === "agency_member") && can("publish_listing")
     ? { href: "/publier", label: "Ajouter un bien" }
-    : profile?.account_type === "proprietaire" && hasActiveIndividualListing
+    : persona === "owner" && hasActiveIndividualListing
       ? { href: "/gestion", label: "Mon espace" }
-      : profile?.requested_account_type === "proprietaire" && profile.identity_status !== "verifie"
+      : persona === "owner_pending" || persona === "agency_pending"
         ? { href: "/compte#certification", label: "Activer la publication" }
         : { href: "/publier", label: "Publier mon bien" };
   const links = [
     { href: "/explorer", label: "Tous les biens" },
     ...(workspaceLink ? [workspaceLink] : []),
-    ...(state.role === "admin" ? [{ href: "/admin", label: "Réglages" }] : []),
+    ...(persona === "admin" ? [{ href: "/admin", label: "Réglages" }] : []),
   ];
 
   return (

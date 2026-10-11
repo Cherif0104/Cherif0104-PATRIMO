@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BadgeCheck, CalendarDays, CreditCard, Home, LogOut, MessageCircle, Settings, ShieldCheck, Upload, UserRound } from "lucide-react";
 import { InstallAppCard } from "@/components/install-app-card";
+import { ProfileJourney } from "@/components/profile-journey";
 import { PreferencesPanel } from "@/components/preference-controls";
 import { useAuth } from "@/lib/auth";
 import { btnPrimary, btnSecondary, cx, fieldClass, formatDate, formatMoney, normalizePhoneE164 } from "@/lib/format";
@@ -19,6 +20,7 @@ import {
   uploadVerificationDocument,
 } from "@/lib/supabase";
 import { useAmeena } from "@/lib/store";
+import { useAccess } from "@/lib/use-access";
 import type { AccountType, MarketBooking, VerificationDocument, VerificationRequest } from "@/lib/types";
 import { useTitle } from "@/lib/use-title";
 
@@ -281,10 +283,14 @@ export default function AccountPage() {
       </div>
 
       <RoleActions
-        accountType={profile?.account_type ?? "voyageur"}
-        requestedAccountType={profile?.requested_account_type ?? "voyageur"}
-        verified={profile?.identity_status === "verifie"}
         hasActiveListing={Boolean(activeOwnedListing)}
+      />
+      <ProfileJourney
+        hasActiveListing={Boolean(activeOwnedListing)}
+        hasBookings={bookings.length > 0}
+        profileComplete={Boolean(profile?.full_name.trim() && profile.phone)}
+        verificationRequest={verificationRequest}
+        verificationDocuments={verificationDocuments.length}
       />
       {error && <p role="alert" className="mt-5 rounded-xl bg-[#fff1ee] px-4 py-3 text-sm text-[#a52a12]">{error}</p>}
 
@@ -505,24 +511,25 @@ export default function AccountPage() {
 }
 
 function RoleActions({
-  accountType,
-  requestedAccountType,
-  verified,
   hasActiveListing,
 }: {
-  accountType: AccountType;
-  requestedAccountType: AccountType;
-  verified: boolean;
   hasActiveListing: boolean;
 }) {
-  const actions = accountType === "agence"
+  const { persona, can } = useAccess();
+  const actions = persona === "admin"
     ? [
-        { href: "/gestion", label: "Piloter l’agence", icon: Home },
-        { href: "/publier", label: "Publier un bien", icon: Upload },
-        { href: "/gestion/crm", label: "Ouvrir le CRM", icon: MessageCircle },
-        { href: "/gestion/equipe", label: "Gérer l’équipe", icon: Settings },
+        { href: "/admin", label: "Administrer", icon: Settings },
+        { href: "/gestion", label: "Piloter l’activité", icon: Home },
+        { href: "/messages", label: "Voir les messages", icon: MessageCircle },
       ]
-    : accountType === "proprietaire"
+    : persona === "agency" || persona === "agency_member"
+      ? [
+          { href: "/gestion", label: "Piloter l’agence", icon: Home },
+          ...(can("publish_listing") ? [{ href: "/publier", label: "Publier un bien", icon: Upload }] : []),
+          ...(can("manage_crm") ? [{ href: "/gestion/crm", label: "Ouvrir le CRM", icon: MessageCircle }] : []),
+          ...(can("manage_team") ? [{ href: "/gestion/equipe", label: "Gérer l’équipe", icon: Settings }] : []),
+        ]
+    : persona === "owner"
       ? hasActiveListing
         ? [
             { href: "/gestion/biens", label: "Gérer mon bien", icon: Home },
@@ -534,11 +541,11 @@ function RoleActions({
             { href: "/explorer", label: "Voir le marché", icon: Home },
             { href: "/messages", label: "Voir les messages", icon: MessageCircle },
           ]
-      : requestedAccountType === "proprietaire"
+      : persona === "owner_pending" || persona === "agency_pending"
         ? [
           {
-            href: verified ? "/publier" : "/compte#certification",
-            label: verified ? "Publier un bien" : "Activer la publication",
+            href: "/compte#certification",
+            label: "Activer la publication",
             icon: Upload,
           },
           { href: "/explorer", label: "Voir le marché", icon: Home },

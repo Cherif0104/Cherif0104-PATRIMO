@@ -1,5 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { can, canAccessManagement, type AccessIdentity } from "./lib/access";
+import type { OrganizationMember, Profile } from "./lib/types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -80,7 +82,7 @@ export async function proxy(request: NextRequest) {
     const [{ data: profile }, { data: memberships }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("account_type, identity_status")
+        .select("account_type, requested_account_type, identity_status")
         .eq("id", user!.id)
         .maybeSingle(),
       supabase
@@ -88,19 +90,15 @@ export async function proxy(request: NextRequest) {
         .select("role, functional_domains")
         .eq("user_id", user!.id),
     ]);
-    const verifiedProfessional = Boolean(
-      profile
-      && ["proprietaire", "agence"].includes(profile.account_type)
-      && profile.identity_status === "verifie",
-    );
-    const organizationAccess = (memberships ?? []).some((membership) =>
-      pathname.startsWith("/gestion")
-      || (
-        pathname.startsWith("/publier")
-        && membership.role !== "viewer"
-        && membership.functional_domains?.includes("catalogue")
-      ));
-    if (!verifiedProfessional && !organizationAccess) {
+    const identity: AccessIdentity = {
+      authenticated: true,
+      profile: profile as Pick<Profile, "account_type" | "requested_account_type" | "identity_status"> | null,
+      memberships: (memberships ?? []) as Array<Pick<OrganizationMember, "role" | "functional_domains">>,
+    };
+    const allowed = pathname.startsWith("/publier")
+      ? can(identity, "publish_listing")
+      : canAccessManagement(identity, pathname);
+    if (!allowed) {
       return redirectWithCookies(request, response, "/compte");
     }
   }

@@ -7,11 +7,13 @@ import { cx } from "@/lib/format";
 import { usePreferences } from "@/lib/preferences";
 import { useAuth } from "@/lib/auth";
 import { useAmeena } from "@/lib/store";
+import { useAccess } from "@/lib/use-access";
 
 export function BottomNav() {
   const pathname = usePathname();
   const { t } = usePreferences();
-  const { user, profile, loading } = useAuth();
+  const { user } = useAuth();
+  const { persona, can, loading } = useAccess();
   const { state } = useAmeena();
   if (pathname.startsWith("/admin") || pathname.startsWith("/logements/")) return null;
   if (
@@ -42,10 +44,10 @@ export function BottomNav() {
     {
       href: hasActiveIndividualListing
         ? "/gestion"
-        : profile?.identity_status === "verifie" ? "/publier" : "/compte#certification",
+        : persona === "owner" ? "/publier" : "/compte#certification",
       label: hasActiveIndividualListing
         ? "Mon espace"
-        : profile?.identity_status === "verifie" ? "Publier" : "Activer",
+        : persona === "owner" ? "Publier" : "Activer",
       icon: hasActiveIndividualListing ? Building2 : PlusCircle,
       active: pathname.startsWith("/publier")
         || (
@@ -63,16 +65,18 @@ export function BottomNav() {
   const agencyItems = [
     { href: "/", label: "Accueil", icon: Home, active: pathname === "/" },
     { href: "/gestion", label: "Pilotage", icon: LayoutDashboard, active: pathname === "/gestion" },
-    { href: "/publier", label: "Publier", icon: PlusCircle, active: pathname.startsWith("/publier") },
-    { href: "/gestion/biens", label: "Parc", icon: Building2, active: pathname.startsWith("/gestion/biens") },
+    can("publish_listing")
+      ? { href: "/publier", label: "Publier", icon: PlusCircle, active: pathname.startsWith("/publier") }
+      : { href: "/messages", label: t("messages"), icon: MessageSquare, active: pathname.startsWith("/messages") },
+    can("manage_catalog")
+      ? { href: "/gestion/biens", label: "Parc", icon: Building2, active: pathname.startsWith("/gestion/biens") }
+      : { href: "/voyages", label: "Dossiers", icon: FileText, active: pathname.startsWith("/voyages") },
     { href: "/compte", label: t("profile"), icon: UserRound, active: pathname.startsWith("/compte") },
   ];
-  const publisherIntent = profile?.account_type === "proprietaire"
-    || profile?.requested_account_type === "proprietaire";
   const items = !loading && user
-    ? profile?.account_type === "agence"
+    ? persona === "agency" || persona === "agency_member"
       ? agencyItems
-      : publisherIntent
+      : persona === "owner" || persona === "owner_pending" || persona === "agency_pending"
         ? ownerItems
         : travelerItems
     : publicItems;

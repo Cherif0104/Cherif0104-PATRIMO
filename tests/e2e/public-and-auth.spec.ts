@@ -83,6 +83,16 @@ test("la recherche accepte une destination saisie et expose les filtres", async 
   expect(new URL(page.url()).searchParams.get("q")).toBe("appartement à Dakar");
 });
 
+test("la navigation desktop n’active qu’un seul marché", async ({ page }) => {
+  await page.goto("/explorer?marche=location");
+  await expect(page.locator('header a[href="/explorer?marche=location"]')).toHaveAttribute("aria-current", "page");
+  await expect(page.locator('header a[href="/"]')).not.toHaveAttribute("aria-current", "page");
+
+  await page.goto("/explorer?marche=vente");
+  await expect(page.locator('header a[href="/explorer?marche=vente"]')).toHaveAttribute("aria-current", "page");
+  await expect(page.locator('header a[href="/explorer?marche=location"]')).not.toHaveAttribute("aria-current", "page");
+});
+
 test("les catégories ouvrent directement un catalogue minimaliste", async ({ page }) => {
   await page.goto("/explorer?categorie=terrain");
   await expect(page.getByRole("heading", { name: "Terrains & champs" })).toBeVisible();

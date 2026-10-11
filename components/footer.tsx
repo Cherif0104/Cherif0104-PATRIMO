@@ -1,20 +1,9 @@
-import Link from "next/link";
+"use client";
 
-const columns = [
-  {
-    title: "Se Loger au Sénégal",
-    links: [
-      ["Mon compte", "/compte"],
-      ["Centre de confiance", "/confiance"],
-      ["Conditions d’utilisation", "/conditions"],
-      ["Confidentialité", "/confidentialite"],
-      ["Explorer la carte", "/explorer"],
-      ["Services immobiliers", "/services"],
-      ["Télécharger l’application", "/telecharger"],
-      ["Publier un bien", "/publier"],
-      ["Inscrire une agence", "/agences"],
-    ],
-  },
+import Link from "next/link";
+import { useAuth } from "@/lib/auth";
+
+const discoveryColumns = [
   {
     title: "Villes",
     links: [
@@ -39,6 +28,43 @@ const columns = [
 ];
 
 export function Footer() {
+  const { user, profile } = useAuth();
+  const accountLinks = profile?.account_type === "agence"
+    ? [
+        ["Pilotage de l’agence", "/gestion"],
+        ["Parc immobilier", "/gestion/biens"],
+        ["Équipe", "/gestion/equipe"],
+        ["Messages", "/messages"],
+        ["Mon compte", "/compte"],
+      ]
+    : profile?.account_type === "proprietaire"
+      ? [
+          ["Mon espace propriétaire", "/gestion"],
+          ["Mon bien", "/gestion/biens"],
+          ["Demandes reçues", "/gestion/reservations"],
+          ["Messages", "/messages"],
+          ["Mon compte", "/compte"],
+        ]
+      : user
+        ? [
+            ["Explorer les biens", "/explorer"],
+            ["Mes favoris", "/favoris"],
+            ["Mes dossiers", "/voyages"],
+            ["Mes messages", "/messages"],
+            ["Mon compte", "/compte"],
+          ]
+        : [
+            ["Explorer les biens", "/explorer"],
+            ["Se connecter", "/connexion"],
+            ["Publier mon bien", "/publier"],
+            ["Centre de confiance", "/confiance"],
+            ["Télécharger l’application", "/telecharger"],
+          ];
+  const columns = [
+    { title: user ? "Votre espace" : "Se Loger au Sénégal", links: accountLinks },
+    ...discoveryColumns,
+  ];
+
   return (
     <footer className="mt-16 border-t border-[#ebebeb] bg-[#f7f7f7]">
       <div className="grid gap-10 px-6 py-12 md:grid-cols-3 md:px-10 xl:px-16">

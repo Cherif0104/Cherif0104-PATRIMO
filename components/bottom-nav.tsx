@@ -13,7 +13,11 @@ export function BottomNav() {
   const { t } = usePreferences();
   const { user, profile, loading } = useAuth();
   const { state } = useAmeena();
-  if (pathname.startsWith("/gestion") || pathname.startsWith("/admin") || pathname.startsWith("/logements/")) return null;
+  if (pathname.startsWith("/admin") || pathname.startsWith("/logements/")) return null;
+  if (
+    pathname.startsWith("/gestion")
+    && (loading || profile?.account_type !== "proprietaire")
+  ) return null;
   const hasActiveIndividualListing = state.listings.some((listing) =>
     listing.ownerUserId === user?.id
     && !listing.organizationId
@@ -34,18 +38,25 @@ export function BottomNav() {
     { href: "/compte", label: t("profile"), icon: UserRound, active: pathname.startsWith("/compte") },
   ];
   const ownerItems = [
-    { href: "/", label: "Accueil", icon: Home, active: pathname === "/" || pathname.startsWith("/explorer") },
+    { href: "/", label: "Accueil", icon: Home, active: pathname === "/" },
     {
       href: hasActiveIndividualListing
-        ? "/gestion/biens"
+        ? "/gestion"
         : profile?.identity_status === "verifie" ? "/publier" : "/compte#certification",
       label: hasActiveIndividualListing
-        ? "Mon bien"
+        ? "Mon espace"
         : profile?.identity_status === "verifie" ? "Publier" : "Activer",
       icon: hasActiveIndividualListing ? Building2 : PlusCircle,
-      active: pathname.startsWith("/publier") || (hasActiveIndividualListing && pathname.startsWith("/gestion/biens")),
+      active: pathname.startsWith("/publier")
+        || (
+          hasActiveIndividualListing
+          && pathname.startsWith("/gestion")
+          && !pathname.startsWith("/gestion/reservations")
+        ),
     },
-    { href: "/explorer", label: "Explorer", icon: Search, active: pathname.startsWith("/explorer") },
+    hasActiveIndividualListing
+      ? { href: "/gestion/reservations", label: "Demandes", icon: FileText, active: pathname.startsWith("/gestion/reservations") }
+      : { href: "/explorer", label: "Explorer", icon: Search, active: pathname.startsWith("/explorer") },
     { href: "/messages", label: t("messages"), icon: MessageSquare, active: pathname.startsWith("/messages") },
     { href: "/compte", label: t("profile"), icon: UserRound, active: pathname.startsWith("/compte") },
   ];
@@ -73,7 +84,11 @@ export function BottomNav() {
           const Icon = item.icon;
           return (
             <li key={item.label}>
-              <Link href={item.href} className="flex min-h-12 flex-col items-center justify-center gap-1 py-1">
+              <Link
+                href={item.href}
+                aria-current={item.active ? "page" : undefined}
+                className="flex min-h-12 flex-col items-center justify-center gap-1 py-1"
+              >
                 <Icon className={cx("h-[23px] w-[23px]", item.active ? "text-[#FF4845]" : "theme-muted text-[#6a6a6a]")} strokeWidth={item.active ? 2.35 : 1.75} />
                 <span className={cx("text-[10px] leading-tight", item.active ? "font-semibold text-[#FF4845]" : "theme-muted text-[#6a6a6a]")}>
                   {item.label}

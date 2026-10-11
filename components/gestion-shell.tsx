@@ -87,6 +87,13 @@ export function GestionShell({ children }: { children: React.ReactNode }) {
   const currentLink = links.find((link) =>
     link.exact ? pathname === link.href : pathname === link.href || pathname.startsWith(`${link.href}/`));
   const currentAllowed = !currentLink || canOpen(currentLink);
+  const linkLabel = (link: GestionLink) => {
+    if (profile?.account_type !== "proprietaire") return link.label;
+    if (link.href === "/gestion") return "Vue d’ensemble";
+    if (link.href === "/gestion/biens") return "Mon bien";
+    if (link.href === "/gestion/reservations") return "Demandes";
+    return link.label;
+  };
 
   if (loading || membershipsLoading || (user && membershipsUserId !== user.id)) {
     return <div className="p-12 text-center text-sm text-[#6a6a6a]">Ouverture de la gestion…</div>;
@@ -119,7 +126,10 @@ export function GestionShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="grid min-h-[calc(100vh-5rem)] lg:grid-cols-[250px_1fr]">
+    <div className={cx(
+      "grid min-h-[calc(100vh-5rem)] lg:grid-cols-[250px_1fr]",
+      profile?.account_type === "proprietaire" && "pb-20 lg:pb-0",
+    )}>
       <aside className="no-print border-b border-[#ebebeb] bg-[#fafafa] lg:border-b-0 lg:border-r">
         <div className="px-4 py-5">
           <p className="text-xs uppercase tracking-[0.14em] text-[#6a6a6a]">Gestion</p>
@@ -135,13 +145,14 @@ export function GestionShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={link.href}
                 href={link.href}
+                aria-current={active ? "page" : undefined}
                 className={cx(
                   "flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-sm lg:rounded-xl",
-                  active ? "bg-white font-medium shadow-sm" : "hover:bg-white/70",
+                  active ? "bg-white font-semibold text-[#C13515] shadow-sm" : "hover:bg-white/70",
                 )}
               >
                 <Icon className="h-4 w-4" />
-                {link.label}
+                {linkLabel(link)}
               </Link>
             );
           })}

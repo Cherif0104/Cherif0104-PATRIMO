@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Bell, Building2, Home, KeyRound, UserRound, Wrench } from "lucide-react";
 import { btnGhost, cx, formatDateTime } from "@/lib/format";
@@ -15,6 +15,7 @@ import type { Role, UserNotification } from "@/lib/types";
 
 export function Header() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { state, dispatch } = useAmeena();
   const { user, profile } = useAuth();
   const { t } = usePreferences();
@@ -80,10 +81,25 @@ export function Header() {
     setNotes((rows) => rows.map((note) => note.read_at ? note : { ...note, read_at: readAt }));
   }
 
+  const hasActiveIndividualListing = state.listings.some((listing) =>
+    listing.ownerUserId === user?.id
+    && !listing.organizationId
+    && listing.publicationStatus !== "archived");
+  const workspaceLink = profile?.account_type === "agence"
+    ? { href: "/gestion", label: "Pilotage agence" }
+    : profile?.account_type === "proprietaire"
+      ? { href: "/gestion", label: "Mon espace propriétaire" }
+      : null;
+  const publishAction = profile?.account_type === "agence"
+    ? { href: "/publier", label: "Ajouter un bien" }
+    : profile?.account_type === "proprietaire" && hasActiveIndividualListing
+      ? { href: "/gestion", label: "Mon espace" }
+      : profile?.requested_account_type === "proprietaire" && profile.identity_status !== "verifie"
+        ? { href: "/compte#certification", label: "Activer la publication" }
+        : { href: "/publier", label: "Publier mon bien" };
   const links = [
     { href: "/explorer", label: "Tous les biens" },
-    ...(state.role !== "voyageur" ? [{ href: "/gestion", label: "Gérer mes biens" }] : []),
-    { href: "/agences", label: "Espace agences" },
+    ...(workspaceLink ? [workspaceLink] : []),
     ...(state.role === "admin" ? [{ href: "/admin", label: "Réglages" }] : []),
   ];
 
@@ -98,19 +114,19 @@ export function Header() {
               href: "/",
               label: "Accueil",
               icon: Home,
-              active: pathname === "/" || pathname.startsWith("/logements") || pathname.startsWith("/explorer"),
+              active: pathname === "/" || pathname.startsWith("/logements"),
             },
             {
               href: "/explorer?marche=location",
               label: "Louer",
               icon: KeyRound,
-              active: pathname.startsWith("/explorer") && pathname.includes("marche=location"),
+              active: pathname.startsWith("/explorer") && searchParams.get("marche") === "location",
             },
             {
               href: "/explorer?marche=vente",
               label: "Acheter",
               icon: Building2,
-              active: pathname.startsWith("/explorer") && pathname.includes("marche=vente"),
+              active: pathname.startsWith("/explorer") && searchParams.get("marche") === "vente",
             },
             {
               href: "/services",
@@ -121,7 +137,12 @@ export function Header() {
           ].map((item) => {
             const Icon = item.icon;
             return (
-              <Link key={item.href} href={item.href} className="flex flex-col items-center gap-1">
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={item.active ? "page" : undefined}
+                className="flex flex-col items-center gap-1"
+              >
                 <Icon className={cx("h-6 w-6", item.active ? "text-[#222]" : "text-[#6a6a6a]")} strokeWidth={item.active ? 2.2 : 1.6} />
                 <span
                   className={cx(
@@ -144,6 +165,7 @@ export function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  aria-current={active ? "page" : undefined}
                   className={cx(
                     "rounded-full px-3 py-2 text-sm font-medium",
                     active ? "bg-[#f2f2f2]" : "hover:bg-[#f7f7f7]",
@@ -155,8 +177,8 @@ export function Header() {
             })}
           </nav>
           <CompactPreferences />
-          <Link href="/publier" className={`${btnGhost} hidden sm:inline-flex`}>
-            {t("publish")}
+          <Link href={publishAction.href} className={`${btnGhost} hidden sm:inline-flex`}>
+            {publishAction.label}
           </Link>
 
           {state.role !== "voyageur" && (

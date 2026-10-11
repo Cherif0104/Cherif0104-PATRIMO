@@ -28,7 +28,12 @@ Le passage à `live` est interdit tant que les scénarios de recette ci-dessous 
 - `TRANSACTIONAL_EMAIL_FROM` sur un domaine vérifié.
 - `CRON_SECRET` généré aléatoirement.
 
-Vercel appelle `/api/jobs/transactional-email` toutes les cinq minutes. La file `email_outbox` conserve les tentatives et permet cinq reprises avec délai progressif.
+Configurer un ordonnanceur compatible avec le plan d’hébergement pour appeler
+`GET /api/jobs/transactional-email` toutes les cinq minutes avec l’en-tête
+`Authorization: Bearer <CRON_SECRET>`. Le plan Vercel actuellement lié au projet
+refuse les crons sous-journaliers : utiliser Vercel Pro ou un ordonnanceur externe
+avant l’ouverture. La file `email_outbox` conserve les tentatives et permet cinq
+reprises avec délai progressif.
 
 ## 2. Contrôles de mise en service
 

@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const startedAt = Date.now();
+  const version = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local";
   const supabase = await createServerSupabaseClient();
   let database = false;
   if (supabase) {
@@ -37,12 +38,19 @@ export async function GET() {
         payments,
         transactionalEmail,
       },
+      deployment: {
+        version,
+        environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "unknown",
+      },
       durationMs: Date.now() - startedAt,
       timestamp: new Date().toISOString(),
     },
     {
       status: database ? 200 : 503,
-      headers: { "Cache-Control": "no-store" },
+      headers: {
+        "Cache-Control": "no-store",
+        "X-App-Version": version,
+      },
     },
   );
 }

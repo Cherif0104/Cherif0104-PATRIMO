@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import { BottomNav } from "@/components/bottom-nav";
 import { FooterGate } from "@/components/footer-gate";
@@ -75,7 +76,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <PreferencesProvider>
           <AuthProvider>
             <Providers>
-              <Header />
+              <Suspense fallback={<div className="hidden h-20 border-b border-[#ebebeb] lg:block" />}>
+                <Header />
+              </Suspense>
               <main>{children}</main>
               <FooterGate />
               <BottomNav />
